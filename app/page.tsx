@@ -130,7 +130,6 @@ export default function Home() {
               mode="outline"
               stretched
               onClick={() => setCurrentIndex(currentIndex + 1)}
-              label="Следующий вопрос"
             >
               Следующий вопрос
             </Button>
@@ -138,7 +137,12 @@ export default function Home() {
         )}
         {currentIndex === cards.length - 1 && (
           <div className="button-container">
-            <Button size="l" mode="outline" stretched>
+            <Button
+              size="l"
+              mode="outline"
+              stretched
+              onClick={() => setCurrentPage("end")}
+            >
               Завершить игру
             </Button>
           </div>
