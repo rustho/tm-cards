@@ -95,6 +95,18 @@ export default function Home() {
     );
   };
 
+  const End = () => {
+    return (
+      <div className="page">
+        <div className="card">
+          <div className="card-content">
+            <h1>Игра завершена</h1>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   const Game = () => {
     return (
       <div className="page">
@@ -111,20 +123,35 @@ export default function Home() {
           </div>
         </div>
 
-        <div className="button-container">
-          <Button
-            size="l"
-            mode="outline"
-            stretched
-            onClick={() => setCurrentIndex(currentIndex + 1)}
-            label="Next"
-          >
-            Следующий вопрос
-          </Button>
-        </div>
+        {currentIndex < cards.length - 1 && (
+          <div className="button-container">
+            <Button
+              size="l"
+              mode="outline"
+              stretched
+              onClick={() => setCurrentIndex(currentIndex + 1)}
+              label="Следующий вопрос"
+            >
+              Следующий вопрос
+            </Button>
+          </div>
+        )}
+        {currentIndex === cards.length - 1 && (
+          <div className="button-container">
+            <Button size="l" mode="outline" stretched>
+              Завершить игру
+            </Button>
+          </div>
+        )}
       </div>
     );
   };
 
-  return currentPage === "rules" ? <Rules /> : <Game />;
+  return currentPage === "rules" ? (
+    <Rules />
+  ) : currentPage === "end" ? (
+    <End />
+  ) : (
+    <Game />
+  );
 }
