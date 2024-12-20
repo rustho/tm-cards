@@ -3,90 +3,56 @@
 import { useState } from "react";
 import { useSwipeable } from "react-swipeable";
 import "./pageStyles.css";
+import { Button } from "@telegram-apps/telegram-ui";
 
 export default function Home() {
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [currentPage, setCurrentPage] = useState("rules");
 
   const cards = [
     {
       id: 1,
-      text: "Какие шоу тебе нравятся?",
+      text: "Если бы ты мог пригласить кого-нибудь на ужин (близкого человека, умершего родственника, знаменитость), кого бы ты выбрал?",
     },
     {
       id: 2,
-      text: "Каковы ваши претензии на славу?",
+      text: "Если бы ты мог, что бы ты изменил в том, как тебя воспитывали?",
     },
     {
       id: 3,
-      text: "Как часто вы занимаетесь спортом?",
+      text: "За 4 минуты расскажи партнеру историю твоей жизни настолько подробно, насколько это возможно.",
     },
     {
       id: 4,
-      text: "Вы обычно рано или поздно?",
+      text: "Если бы ты смог сейчас оказаться в любой стране в мире, то что бы ты выбрал (а)",
     },
     {
       id: 5,
-      text: "Какие у вас причуды?",
+      text: "Какое твое самое ценное воспоминание из детства?",
     },
     {
       id: 6,
-      text: "Как часто вы, люди, смотрите?",
+      text: "Что для тебя является изменой в отношениях?",
     },
     {
       id: 7,
-      text: "Какой твой любимый напиток?",
+      text: "Какая песня вызывает в тебе самые сильные чувства? Почему именно она?",
     },
     {
       id: 8,
-      text: "Что ты надеешься никогда не изменится?",
+      text: "Есть ли что-то, что ты уже давно мечтаешь сделать? Почему ты еще не сделал этого?",
     },
     {
       id: 9,
-      text: "Какая машина твоей мечты?",
+      text: "Что в дружбе для тебя наиболее ценно?",
     },
     {
       id: 10,
-      text: "Откуда бы вы предпочли?",
+      text: "Что для тебя значит дружба?",
     },
     {
       id: 11,
-      text: "Какие песни вы полностью запомнили?",
-    },
-    {
-      id: 12,
-      text: "Что бы вы оценили 10/10?",
-    },
-    {
-      id: 13,
-      text: "Какой твой любимый цвет?",
-    },
-    {
-      id: 14,
-      text: "Какая твоя любимая кухня?",
-    },
-    {
-      id: 15,
-      text: "Какой твой любимый напиток?",
-    },
-    {
-      id: 16,
-      text: "Какая ваша самая рекомендуемая книга?",
-    },
-    {
-      id: 17,
-      text: "Какая твоя самая страшная история?",
-    },
-    {
-      id: 18,
-      text: "Какой ваш самый ненавистный напиток или еда?",
-    },
-    {
-      id: 19,
-      text: "Какой твой любимый фильм?",
-    },
-    {
-      id: 20,
-      text: "Какой твой любимый боевик?",
+      text: "Какое путешествие сильнее всего повлияло на тебя?",
     },
   ];
 
@@ -105,30 +71,60 @@ export default function Home() {
     trackMouse: true,
   });
 
-  return (
-    <div className="page">
-      <div {...handlers} className="swipe-container">
-        <div
-          className="cards-wrapper"
-          style={{ transform: `translateX(-${currentIndex * 100}%)` }}
-        >
-          {cards.map((card) => (
-            <div key={card.id} className="card">
-              <div className="card-content">{card.text}</div>
-            </div>
-          ))}
+  const Rules = () => {
+    return (
+      <div className="page">
+        <div className="card">
+          <div className="card-content">
+            <p>Игра состоит из 11 вопросов.</p>
+            <br />
+            <p>Отвечайте честно и откровенно.</p>
+          </div>
+        </div>
+        <div className="button-container">
+          <Button
+            size="l"
+            mode="outline"
+            stretched
+            onClick={() => setCurrentPage("game")}
+          >
+            Начать игру
+          </Button>
         </div>
       </div>
+    );
+  };
 
-      <div className="dots">
-        {cards.map((_, index) => (
+  const Game = () => {
+    return (
+      <div className="page">
+        <div {...handlers} className="swipe-container">
           <div
-            key={index}
-            className={`dot ${index === currentIndex ? "active" : ""}`}
-            onClick={() => setCurrentIndex(index)}
-          />
-        ))}
+            className="cards-wrapper"
+            style={{ transform: `translateX(-${currentIndex * 100}%)` }}
+          >
+            {cards.map((card) => (
+              <div key={card.id} className="card">
+                <div className="card-content">{card.text}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="button-container">
+          <Button
+            size="l"
+            mode="outline"
+            stretched
+            onClick={() => setCurrentIndex(currentIndex + 1)}
+            label="Next"
+          >
+            Следующий вопрос
+          </Button>
+        </div>
       </div>
-    </div>
-  );
+    );
+  };
+
+  return currentPage === "rules" ? <Rules /> : <Game />;
 }
