@@ -5,6 +5,14 @@ import { useSwipeable } from "react-swipeable";
 import "./pageStyles.css";
 import { Button } from "@telegram-apps/telegram-ui";
 
+const typePages = [
+  "green-paper",
+  "light-blue-paper",
+  "gray-blue-paper",
+  "blue-paper",
+  "light-gray-paper",
+];
+
 export default function Home() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [currentPage, setCurrentPage] = useState("rules");
@@ -71,11 +79,13 @@ export default function Home() {
     trackMouse: true,
   });
 
+  const cardContentClass = typePages[currentIndex % typePages.length];
+
   const Rules = () => {
     return (
       <div className="page">
         <div className="card">
-          <div className="card-content">
+          <div className={`card-content ${cardContentClass}`}>
             <p>Игра состоит из 11 вопросов.</p>
             <br />
             <p>Отвечайте честно и откровенно.</p>
@@ -99,7 +109,7 @@ export default function Home() {
     return (
       <div className="page">
         <div className="card">
-          <div className="card-content">
+          <div className={`card-content ${cardContentClass}`}>
             <h1>Игра завершена</h1>
           </div>
         </div>
@@ -117,7 +127,9 @@ export default function Home() {
           >
             {cards.map((card) => (
               <div key={card.id} className="card">
-                <div className="card-content">{card.text}</div>
+                <div className={`card-content ${cardContentClass}`}>
+                  {card.text}
+                </div>
               </div>
             ))}
           </div>

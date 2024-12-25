@@ -38,6 +38,43 @@ html {
   padding: 16px;
 }
 
+/* Green Paper Texture */
+.card-content.green-paper {
+  background-color: #a5d6a7;
+}
+
+/* Light Blue Paper Texture */
+.card-content.light-blue-paper {
+  background-color: #b3e5fc;
+}
+
+/* Gray-Blue Paper Texture */
+.card-content.gray-blue-paper {
+  background-color: #b0bec5;
+}
+
+/* Blue Paper Texture */
+.card-content.blue-paper {
+  background-color: #90caf9;
+}
+
+/* Light Gray Paper Texture */
+.card-content.light-gray-paper {
+  background-color: #cfd8dc;
+}
+
+.card-content::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: url("../public/texture.png");
+  opacity: 0.25;
+  pointer-events: none;
+}
+
 .card-content {
   border-radius: 8px;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
@@ -54,6 +91,9 @@ html {
   justify-content: center;
   align-items: center;
   font-size: 2rem;
+  background-size: cover;
+  position: relative;
+  overflow: hidden;
 }
 
 .button-container {
