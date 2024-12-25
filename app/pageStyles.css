@@ -1,11 +1,16 @@
 /* styles.css */
 @import url("https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap");
+
+body {
+  font-family: "Roboto", sans-serif;
+}
 body,
 html {
   margin: 0;
   padding: 0;
   height: 100%;
-  font-family: "Roboto Mono", monospace;
+  /* font-family: "Roboto Mono", monospace; */
 }
 
 .page {
@@ -40,27 +45,52 @@ html {
 
 /* Green Paper Texture */
 .card-content.green-paper {
-  background-color: #a5d6a7;
+  background-color: #a5d6a7; /* Soft Green */
+  /* Other variants: */
+  /* background-color: #81c784; */ /* Light Mint */
+  /* background-color: #66bb6a; */ /* Fresh Leaf */
+  /* background-color: #4caf50; */ /* Lush Green */
+  /* background-color: #388e3c; */ /* Forest Green */
 }
 
 /* Light Blue Paper Texture */
 .card-content.light-blue-paper {
-  background-color: #b3e5fc;
+  background-color: #b3e5fc; /* Soft Sky Blue */
+  /* Other variants: */
+  /* background-color: #81d4fa; */ /* Aqua Mist */
+  /* background-color: #4fc3f7; */ /* Clear Water */
+  /* background-color: #29b6f6; */ /* Ocean Blue */
+  /* background-color: #0288d1; */ /* Deep Sea Blue */
 }
 
 /* Gray-Blue Paper Texture */
 .card-content.gray-blue-paper {
-  background-color: #b0bec5;
+  background-color: #b0bec5; /* Subtle Gray Blue */
+  /* Other variants: */
+  /* background-color: #90a4ae; */ /* Calm Gray */
+  /* background-color: #78909c; */ /* Steel Blue */
+  /* background-color: #607d8b; */ /* Smoky Blue */
+  /* background-color: #455a64; */ /* Dark Slate */
 }
 
 /* Blue Paper Texture */
 .card-content.blue-paper {
-  background-color: #90caf9;
+  background-color: #90caf9; /* Light Azure */
+  /* Other variants: */
+  /* background-color: #64b5f6; */ /* Bright Sky */
+  /* background-color: #42a5f5; */ /* Vivid Blue */
+  /* background-color: #1e88e5; */ /* Mid Blue */
+  /* background-color: #1565c0; */ /* Royal Blue */
 }
 
 /* Light Gray Paper Texture */
 .card-content.light-gray-paper {
-  background-color: #cfd8dc;
+  background-color: #cfd8dc; /* Soft Light Gray */
+  /* Other variants: */
+  /* background-color: #b0bec5; */ /* Cloud Gray */
+  /* background-color: #90a4ae; */ /* Ash Gray */
+  /* background-color: #78909c; */ /* Cool Gray */
+  /* background-color: #607d8b; */ /* Charcoal Gray */
 }
 
 .card-content::after {
@@ -70,7 +100,6 @@ html {
   left: 0;
   width: 100%;
   height: 100%;
-  background-image: url("../public/texture.png");
   opacity: 0.25;
   pointer-events: none;
 }
