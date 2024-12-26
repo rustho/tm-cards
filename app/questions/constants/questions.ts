@@ -1,7 +1,16 @@
 export type Question = {
   id: number;
   text: string;
+  type: string;
 };
+
+const typePages = [
+  "green-paper",
+  "light-blue-paper",
+  "gray-blue-paper",
+  "blue-paper",
+  "light-gray-paper",
+];
 
 export const QUESTIONS: Question[] = [
   {
@@ -128,4 +137,7 @@ export const QUESTIONS: Question[] = [
     id: 16,
     text: "Какое твое самое ценное воспоминание из детства?",
   },
-];
+].map((question, index) => ({
+  ...question,
+  type: typePages[index % typePages.length],
+}));

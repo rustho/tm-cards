@@ -5,14 +5,6 @@ import { useSwipeable } from "react-swipeable";
 import { Button } from "@telegram-apps/telegram-ui";
 import { QUESTIONS } from "../constants/questions";
 
-const typePages = [
-  "green-paper",
-  "light-blue-paper",
-  "gray-blue-paper",
-  "blue-paper",
-  "light-gray-paper",
-];
-
 interface GameProps {
   onEndGame: () => void;
 }
@@ -35,8 +27,6 @@ export default function Game({ onEndGame }: GameProps) {
     trackMouse: true,
   });
 
-  const cardContentClass = typePages[currentIndex % typePages.length];
-
   return (
     <div className="page">
       <div {...handlers} className="swipe-container">
@@ -46,7 +36,7 @@ export default function Game({ onEndGame }: GameProps) {
         >
           {QUESTIONS.map((card) => (
             <div key={card.id} className="card">
-              <div className={`card-content ${cardContentClass}`}>
+              <div className={`card-content ${card.type}`}>
                 {card.text}
               </div>
             </div>
