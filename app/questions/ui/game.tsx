@@ -3,7 +3,11 @@
 import { useState, useMemo } from "react";
 import { useSwipeable } from "react-swipeable";
 import { Button } from "@telegram-apps/telegram-ui";
-import { QUESTIONS, questionsCategoriesLabels } from "../constants/questions";
+import {
+  QUESTIONS,
+  questionsCategoriesLabels,
+  getRandomQuestionsWithoutCategoryRepetition,
+} from "../constants/questions";
 
 interface GameProps {
   onEndGame: () => void;
@@ -11,7 +15,7 @@ interface GameProps {
 
 export default function Game({ onEndGame }: GameProps) {
   const randomQuestions = useMemo(
-    () => QUESTIONS.sort(() => Math.random() - 0.5),
+    () => getRandomQuestionsWithoutCategoryRepetition(QUESTIONS),
     []
   );
   const [currentIndex, setCurrentIndex] = useState(0);

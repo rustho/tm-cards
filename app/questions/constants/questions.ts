@@ -183,3 +183,42 @@ export const QUESTIONS: Question[] = [
     type: "tasks" as QuestionCategory,
   })),
 ];
+
+function shuffleArray<T>(array: T[]): T[] {
+  const newArray = [...array];
+  for (let i = newArray.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
+  }
+  return newArray;
+}
+
+export const getRandomQuestionsWithoutCategoryRepetition = (
+  questions: Question[],
+  windowSize: number = 3
+): Question[] => {
+  const shuffled = shuffleArray(questions);
+  const result: Question[] = [];
+
+  for (let i = 0; i < shuffled.length; i++) {
+    const currentQuestion = shuffled[i];
+    const recentCategories = result
+      .slice(Math.max(0, result.length - (windowSize - 1)))
+      .map((q) => q.type);
+
+    if (!recentCategories.includes(currentQuestion.type)) {
+      result.push(currentQuestion);
+    } else {
+      const nextValidQuestion = shuffled
+        .slice(i + 1)
+        .find((q) => !recentCategories.includes(q.type));
+
+      if (nextValidQuestion) {
+        result.push(nextValidQuestion);
+        shuffled.splice(shuffled.indexOf(nextValidQuestion), 1);
+      }
+    }
+  }
+
+  return result;
+};
