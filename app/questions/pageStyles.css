@@ -141,25 +141,25 @@
 }
 
 .card-content.general {
-  background-color: #d6d6d6;
+  background-color: #e0e0e0; /* Brighter Gray */
 }
 .card-content.relations {
-  background-color: #a0d8f1;
+  background-color: #b3e5fc; /* Brighter Blue */
 }
 .card-content.loveAndRomance {
-  background-color: #f8c4d6;
+  background-color: #f8bbd0; /* Brighter Pink */
 }
 .card-content.career {
-  background-color: #f7c387;
+  background-color: #ffcc80; /* Brighter Orange */
 }
 .card-content.travel {
-  background-color: #b2e4c5;
+  background-color: #c8e6c9; /* Brighter Green */
 }
 .card-content.childhood {
-  background-color: #b9a8ff;
+  background-color: #d1c4e9; /* Brighter Purple */
 }
 .card-content.tasks {
-  background-color: #f0e5a9;
+  background-color: #fff59d; /* Brighter Yellow */
 }
 
 .button-container {
