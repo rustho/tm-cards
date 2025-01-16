@@ -89,6 +89,11 @@
   /* background-color: #607d8b; */ /* Charcoal Gray */
 }
 
+.card-content.start-game {
+  font-size: 1.2rem;
+  background-color: #e0e0e0;
+}
+
 .card-content::after {
   content: "";
   position: absolute;
