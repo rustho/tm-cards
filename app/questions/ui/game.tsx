@@ -8,6 +8,7 @@ import {
   questionsCategoriesLabels,
   getRandomQuestionsWithoutCategoryRepetition,
 } from "../constants/questions";
+import logo from "../../../public/logo-black.png";
 
 interface GameProps {
   onEndGame: () => void;
@@ -45,6 +46,9 @@ export default function Game({ onEndGame }: GameProps) {
           {randomQuestions.map((card) => (
             <div key={card.id} className="card">
               <div className={`card-content ${card.type}`}>
+                <div className="card-logo logo-font">
+                  TRAVEL MATE
+                </div>
                 <div className="card-text">{card.text}</div>
                 <div className="card-category">
                   {questionsCategoriesLabels[card.type]}
@@ -59,7 +63,7 @@ export default function Game({ onEndGame }: GameProps) {
         <div className="button-container">
           <Button
             size="l"
-            mode="outline"
+            mode="filled"
             stretched
             onClick={() => setCurrentIndex(currentIndex + 1)}
           >

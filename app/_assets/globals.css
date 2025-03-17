@@ -3,6 +3,10 @@
 @tailwind utilities;
 
 @import url("https://fonts.googleapis.com/css2?family=Rubik:wght@300;400;500;700&display=swap");
+@font-face {
+  font-family: 'HardPixel';
+  src: url('../_assets/HardPixel.otf') format('opentype');
+}
 
 body {
   background: var(--tg-theme-secondary-bg-color, white);
@@ -21,4 +25,10 @@ html {
 
 h2 {
   color: var(--tg-theme-secondary-bg-color, white);
+}
+
+.logo {
+  font-family: "HardPixel", sans-serif;
+  font-size: 24px;
+  color: var(--tg-theme-text-color, black);
 }

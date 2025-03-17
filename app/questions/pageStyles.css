@@ -94,6 +94,15 @@
   background-color: #e0e0e0;
 }
 
+.card-logo {
+  position: absolute;
+  top: 10%;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: "HardPixel", sans-serif;
+  font-size: 1.5rem;
+}
+
 .card-content::after {
   content: "";
   position: absolute;
@@ -171,4 +180,14 @@
   display: flex;
   justify-content: center;
   padding: 16px;
+}
+
+.easter-egg {
+  width: 100px;
+  height: 100px;
+  background: transparent;
+  position: absolute;
+  top: 0;
+  right: 0;
+  z-index: 1000;
 }

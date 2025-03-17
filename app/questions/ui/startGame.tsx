@@ -1,15 +1,30 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { Button } from "@telegram-apps/telegram-ui";
+import { useRouter } from "next/navigation";
 
 interface StartGameProps {
   onStartGame: () => void;
 }
 
 export default function StartGame({ onStartGame }: StartGameProps) {
+  const [isEasterEggClickedTimes, setIsEasterEggClickedTimes] = useState(0);
+  const router = useRouter();
+
+  useEffect(() => {
+    if (isEasterEggClickedTimes === 5) {
+      router.push("/profile");
+    }
+  }, [isEasterEggClickedTimes]);
+
   const Rules = () => {
     return (
       <div className="page">
+        <div
+          className="easter-egg"
+          onClick={() => setIsEasterEggClickedTimes((i) => i + 1)}
+        />
         <div className="card">
           <div className={`card-content start-game`}>
             <p>
