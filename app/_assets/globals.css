@@ -4,8 +4,8 @@
 
 @import url("https://fonts.googleapis.com/css2?family=Rubik:wght@300;400;500;700&display=swap");
 @font-face {
-  font-family: 'HardPixel';
-  src: url('../_assets/HardPixel.otf') format('opentype');
+  font-family: "HardPixel";
+  src: url("./HardPixel.otf") format("opentype");
 }
 
 body {
