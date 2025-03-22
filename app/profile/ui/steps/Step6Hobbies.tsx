@@ -1,7 +1,7 @@
 "use client";
 
 import { SelectedButton, SelectionGrid, StepContainer } from "@/components";
-import { StepProps, ProfileData, HOBBIES } from "../../types";
+import { StepProps, ProfileData, HOBBIES } from "@/models/types";
 
 export interface Step6HobbiesProps extends StepProps {
   data: ProfileData["hobbies"];

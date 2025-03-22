@@ -1,7 +1,7 @@
 "use client";
 
 import { Input, StepContainer } from "@/components";
-import { ProfileData, StepProps } from "../../types";
+import { ProfileData, StepProps } from "@/models/types";
 
 // Step 8: About
 export interface Step8AboutProps extends StepProps {

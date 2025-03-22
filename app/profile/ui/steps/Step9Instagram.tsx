@@ -1,10 +1,10 @@
 "use client";
 
 import { Input, StepContainer } from "@/components";
-import { StepProps, ProfileData } from "../../types";
+import { StepProps, Profile } from "@/models/types";
 
 export interface Step9InstagramProps extends StepProps {
-  data: ProfileData["instagram"];
+  data: Profile["instagram"];
   onUpdate: (instagram: string) => void;
 }
 

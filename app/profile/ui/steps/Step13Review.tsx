@@ -1,11 +1,11 @@
 "use client";
 
 import { StepContainer } from "@/components";
-import { StepProps, ProfileData } from "../../types";
+import { StepProps, Profile } from "@/models/types";
 
 export interface Step13ReviewProps extends StepProps {
-  data: ProfileData;
-  onUpdate: (data: ProfileData) => void;
+  data: Profile;
+  onUpdate: (data: Profile) => void;
 }
 
 export function Step13Review({
@@ -32,7 +32,7 @@ export function Step13Review({
           <div className="review-item">
             <strong>Имя:</strong> {data.name}
           </div>
-          <div className="review-item">
+          {/* <div className="review-item">
             <strong>Возраст:</strong> {data.age}
           </div>
           <div className="review-item">
@@ -40,11 +40,11 @@ export function Step13Review({
           </div>
           <div className="review-item">
             <strong>Черты характера:</strong> {data.personality.join(", ")}
-          </div>
+          </div> */}
           <div className="review-item">
             <strong>Интересы:</strong> {data.interests.join(", ")}
           </div>
-          <div className="review-item">
+          {/* <div className="review-item">
             <strong>Хобби:</strong> {data.hobbies.join(", ")}
           </div>
           <div className="review-item">
@@ -52,13 +52,12 @@ export function Step13Review({
           </div>
           <div className="review-item">
             <strong>О себе:</strong> {data.about}
-          </div>
+          </div> */}
           <div className="review-item">
             <strong>Instagram:</strong> {data.instagram}
           </div>
           <div className="review-item">
-            <strong>Город:</strong> {data.location.country},{" "}
-            {data.location.region}
+            <strong>Город:</strong> {data.country}, {data.region}
           </div>
         </div>
       </div>

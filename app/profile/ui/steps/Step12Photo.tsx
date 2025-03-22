@@ -1,11 +1,11 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { ProfileData, StepProps } from "../../types";
+import { Profile, StepProps } from "@/models/types";
 
 export interface Step12PhotoProps extends StepProps {
-  data: ProfileData["photo"];
-  onUpdate: (photo: ProfileData["photo"]) => void;
+  data: Profile["photo"];
+  onUpdate: (photo: Profile["photo"]) => void;
 }
 
 export function Step12Photo({

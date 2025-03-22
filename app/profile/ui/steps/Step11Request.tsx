@@ -1,11 +1,11 @@
 "use client";
 
 import { Textarea } from "@telegram-apps/telegram-ui";
-import { ProfileData, StepProps } from "../../types";
+import { Profile, StepProps } from "@/models/types";
 
 interface Step11RequestProps extends StepProps {
-  data: ProfileData["request"];
-  onUpdate: (request: ProfileData["request"]) => void;
+  data: Profile["announcement"];
+  onUpdate: (announcement: Profile["announcement"]) => void;
 }
 
 export function Step11Request({

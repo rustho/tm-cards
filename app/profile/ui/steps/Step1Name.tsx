@@ -1,10 +1,10 @@
 "use client";
 
 import { Input, StepContainer } from "../../../../components";
-import { StepProps, ProfileData } from "../../types";
+import { StepProps, Profile } from "@/models/types";
 
 export interface Step1NameProps extends StepProps {
-  data: ProfileData["name"];
+  data: Profile["name"];
   onUpdate: (name: string) => void;
 }
 

@@ -15,27 +15,24 @@ import { Step10Location } from "./steps/Step10Location";
 import { Step11Request } from "./steps/Step11Request";
 import { Step12Photo } from "./steps/Step12Photo";
 import { Step13Review } from "./steps/Step13Review";
-import { ProfileData } from "../types";
+import { Profile } from "@/models/types";
 const TOTAL_STEPS = 13;
 
 export function Wizard() {
   const [currentStep, setCurrentStep] = useState(1);
-  const [profileData, setProfileData] = useState<ProfileData>({
+  const [profileData, setProfileData] = useState<Profile>({
+    id: "",
+    username: "",
     name: "",
-    age: "",
-    occupation: "",
-    personality: [],
     interests: [],
-    hobbies: [],
-    travel: "",
-    about: "",
+    similarInterests: "",
+    announcement: "",
+    profile: "",
+    placesToVisit: "",
     instagram: "",
-    location: {
-      country: "",
-      region: "",
-    },
-    photo: null,
-    request: "",
+    photo: "",
+    country: "",
+    region: "",
   });
 
   const handleNext = () => {
@@ -50,8 +47,7 @@ export function Wizard() {
     }
   };
 
-  const updateProfileData = (data: Partial<ProfileData>) => {
-    console.log(data);
+  const updateProfileData = (data: Partial<Profile>) => {
     setProfileData((prev) => ({ ...prev, ...data }));
   };
 
@@ -67,32 +63,32 @@ export function Wizard() {
           />
         );
       case 2:
-        return (
-          <Step2Age
-            data={profileData.age.toString()}
-            onUpdate={(age) => updateProfileData({ age })}
-            onNext={handleNext}
-            onBack={handleBack}
-          />
-        );
+      // return (
+      //   <Step2Age
+      //     data={profileData.age.toString()}
+      //     onUpdate={(age) => updateProfileData({ age })}
+      //     onNext={handleNext}
+      //     onBack={handleBack}
+      //   />
+      // );
       case 3:
-        return (
-          <Step3Occupation
-            data={profileData.occupation}
-            onUpdate={(occupation) => updateProfileData({ occupation })}
-            onNext={handleNext}
-            onBack={handleBack}
-          />
-        );
+      // return (
+      //   <Step3Occupation
+      //     data={profileData.occupation}
+      //     onUpdate={(occupation) => updateProfileData({ occupation })}
+      //     onNext={handleNext}
+      //     onBack={handleBack}
+      //   />
+      // );
       case 4:
-        return (
-          <Step4Personality
-            data={profileData.personality}
-            onUpdate={(personality) => updateProfileData({ personality })}
-            onNext={handleNext}
-            onBack={handleBack}
-          />
-        );
+      // return (
+      //   <Step4Personality
+      //     data={profileData.personality}
+      //     onUpdate={(personality) => updateProfileData({ personality })}
+      //     onNext={handleNext}
+      //     onBack={handleBack}
+      //   />
+      // );
       case 5:
         return (
           <Step5Interests
@@ -103,32 +99,32 @@ export function Wizard() {
           />
         );
       case 6:
-        return (
-          <Step6Hobbies
-            data={profileData.hobbies}
-            onUpdate={(hobbies) => updateProfileData({ hobbies })}
-            onNext={handleNext}
-            onBack={handleBack}
-          />
-        );
+      // return (
+      //   <Step6Hobbies
+      //     data={profileData.hobbies}
+      //     onUpdate={(hobbies) => updateProfileData({ hobbies })}
+      //     onNext={handleNext}
+      //     onBack={handleBack}
+      //   />
+      // );
       case 7:
         return (
           <Step7Travel
-            data={profileData.travel}
-            onUpdate={(travel) => updateProfileData({ travel })}
+            data={profileData.placesToVisit}
+            onUpdate={(placesToVisit) => updateProfileData({ placesToVisit })}
             onNext={handleNext}
             onBack={handleBack}
           />
         );
       case 8:
-        return (
-          <Step8About
-            data={profileData.about}
-            onUpdate={(about) => updateProfileData({ about })}
-            onNext={handleNext}
-            onBack={handleBack}
-          />
-        );
+      // return (
+      //   <Step8About
+      //     data={profileData.about}
+      //     onUpdate={(about) => updateProfileData({ about })}
+      //     onNext={handleNext}
+      //     onBack={handleBack}
+      //   />
+      // );
       case 9:
         return (
           <Step9Instagram
@@ -141,8 +137,13 @@ export function Wizard() {
       case 10:
         return (
           <Step10Location
-            data={profileData.location}
-            onUpdate={(location) => updateProfileData({ location })}
+            data={{ country: profileData.country, region: profileData.region }}
+            onUpdate={(location) =>
+              updateProfileData({
+                country: location.country,
+                region: location.region,
+              })
+            }
             onNext={handleNext}
             onBack={handleBack}
           />
@@ -150,8 +151,8 @@ export function Wizard() {
       case 11:
         return (
           <Step11Request
-            data={profileData.request}
-            onUpdate={(request) => updateProfileData({ request })}
+            data={profileData.announcement}
+            onUpdate={(announcement) => updateProfileData({ announcement })}
             onNext={handleNext}
             onBack={handleBack}
           />

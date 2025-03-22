@@ -1,7 +1,7 @@
 "use client";
 
 import { Input, StepContainer } from "../../../../components";
-import { StepProps, ProfileData } from "../../types";
+import { StepProps, ProfileData } from "@/models/types";
 
 // Step 2: Age
 export interface Step2AgeProps extends StepProps {

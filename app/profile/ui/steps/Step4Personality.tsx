@@ -5,11 +5,11 @@ import {
   SelectionGrid,
   StepContainer,
 } from "../../../../components";
-import { PERSONALITY_TRAITS, StepProps, ProfileData } from "../../types";
+import { PERSONALITY_TRAITS, StepProps, ProfileData } from "@/models/types";
 
 // Step 4: Personality
 export interface Step4PersonalityProps extends StepProps {
-  data: ProfileData["personality"];
+  data: ProfileData["personalityTraits"];
   onUpdate: (personality: string[]) => void;
 }
 

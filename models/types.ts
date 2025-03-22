@@ -4,25 +4,6 @@ export interface StepProps {
   onBack: () => void;
 }
 
-interface Location {
-  country: string;
-  region: string;
-}
-
-export type ProfileData = {
-  name: string;
-  age: string;
-  occupation: string;
-  personality: string[];
-  interests: string[];
-  hobbies: string[];
-  travel: string;
-  about: string;
-  instagram: string;
-  location: Location;
-  request: string;
-  photo: string | null;
-};
 // Constants
 export const PERSONALITY_TRAITS = [
   "Креативный",
@@ -118,3 +99,46 @@ export const LOCATIONS: Array<{
 export type PersonalityTrait = (typeof PERSONALITY_TRAITS)[number];
 export type Interest = (typeof INTERESTS)[number];
 export type Hobby = (typeof HOBBIES)[number];
+
+export interface User {
+  id: string;
+  username: string;
+  name: string;
+  goal: string;
+  gender: string;
+  country: string;
+  region: string;
+  interests: string[];
+  similarInterests: string;
+  announcement: string;
+  profile: string;
+  placesToVisit: string;
+  instagram: string;
+  skip: number;
+  previousMatch: any[];
+  nextMatch: string;
+}
+
+interface Location {
+  country: string;
+  region: string;
+}
+
+export type Profile = Omit<
+  User,
+  "gender" | "goal" | "nextMatch" | "previousMatch" | "skip"
+> & {
+  photo: string;
+};
+
+export type ProfileData = Profile & {
+  age: string;
+  about: string;
+  occupation: string;
+  interests: string[];
+  hobbies: string[];
+  personalityTraits: string[];
+  placesToVisit: string;
+  instagram: string;
+  announcement: string;
+};

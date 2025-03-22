@@ -3,12 +3,18 @@
 import { StepContainer } from "@/components";
 import { Select } from "@telegram-apps/telegram-ui";
 import { useState } from "react";
-import { ProfileData, StepProps, LOCATIONS } from "../../types";
+import { Profile, StepProps, LOCATIONS } from "@/models/types";
 
 // Step 10: Location
 export interface Step10LocationProps extends StepProps {
-  data: ProfileData["location"];
-  onUpdate: (location: ProfileData["location"]) => void;
+  data: {
+    country: Profile["country"];
+    region: Profile["region"];
+  };
+  onUpdate: (location: {
+    country: Profile["country"];
+    region: Profile["region"];
+  }) => void;
 }
 
 export function Step10Location({

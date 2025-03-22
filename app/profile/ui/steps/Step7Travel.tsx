@@ -1,12 +1,12 @@
 "use client";
 
 import { Input, StepContainer } from "@/components";
-import { StepProps, ProfileData } from "../../types";
+import { StepProps, Profile } from "@/models/types";
 
 // Step 7: Travel
 export interface Step7TravelProps extends StepProps {
-  data: ProfileData["travel"];
-  onUpdate: (travel: string) => void;
+  data: Profile["placesToVisit"];
+  onUpdate: (placesToVisit: string) => void;
 }
 
 export function Step7Travel({
