@@ -10,13 +10,11 @@ export default function Home() {
   const user = useSignal(initData.user);
   const [matches, setMatches] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(true);
-  const [users, setUsers] = useState<any[]>([]);
 
   useEffect(() => {
-    const userId = "135052006";
     const fetchMatches = async () => {
       try {
-        const response = await fetch(`/api/matches/${userId}`);
+        const response = await fetch(`/api/matches/${user?.id}`);
         if (!response.ok) {
           throw new Error("Failed to fetch matches");
         }
@@ -30,26 +28,6 @@ export default function Home() {
     };
 
     fetchMatches();
-  }, []);
-
-  useEffect(() => {
-    const fetchUsers = async () => {
-      try {
-        const response = await fetch("/api/users");
-        if (!response.ok) {
-          throw new Error("Failed to fetch users");
-        }
-        const data = await response.json();
-        console.log(data);
-        setUsers(data);
-      } catch (error) {
-        console.error("Error fetching users:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchUsers();
   }, []);
 
   const handleMatchClick = (match: Profile) => {
