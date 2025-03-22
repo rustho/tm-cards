@@ -10,6 +10,7 @@ import { APP_METADATA } from "@/config/constants";
 import "@telegram-apps/telegram-ui/dist/styles.css";
 import "normalize.css/normalize.css";
 import "./_assets/globals.css";
+import { useAuth } from "@/hooks/useAuth";
 
 export const metadata: Metadata = APP_METADATA;
 
@@ -20,10 +21,7 @@ export default async function RootLayout({ children }: PropsWithChildren) {
     <html lang={locale}>
       <body>
         <I18nProvider>
-          <Root>
-            {children}
-            <FooterMenu />
-          </Root>
+          <Root>{children}</Root>
         </I18nProvider>
       </body>
     </html>

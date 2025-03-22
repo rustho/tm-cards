@@ -5,6 +5,7 @@ import { useParams } from "next/navigation";
 import { Profile } from "@/models/types";
 import { Button } from "@telegram-apps/telegram-ui";
 import { useSignal, initData } from "@telegram-apps/sdk-react";
+import { FooterMenu } from "@/components/FooterMenu";
 
 export default function UserProfile() {
   const params = useParams();
@@ -139,6 +140,7 @@ export default function UserProfile() {
           </div>
         </div>
       </div>
+      <FooterMenu />
     </div>
   );
 }

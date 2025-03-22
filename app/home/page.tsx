@@ -3,9 +3,8 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSignal, initData } from "@telegram-apps/sdk-react";
-import { Button } from "@telegram-apps/telegram-ui";
 import { Profile } from "@/models/types";
-
+import { FooterMenu } from "@/components/FooterMenu";
 export default function Home() {
   const router = useRouter();
   const user = useSignal(initData.user);
@@ -119,6 +118,7 @@ export default function Home() {
           </div>
         )}
       </div>
+      <FooterMenu />
     </div>
   );
 }
