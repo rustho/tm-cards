@@ -2,5 +2,238 @@
   "i18n": {
     "header": "Application supports i18n",
     "footer": "You can select a different language from the dropdown menu."
+  },
+  "app": {
+    "title": "TravelMate",
+    "description": "Find your perfect travel companion"
+  },
+  "menu": {
+    "questions": "Question Cards",
+    "profile": "Create Profile", 
+    "home": "Home",
+    "settings": "Settings"
+  },
+  "home": {
+    "title": "Your Matches",
+    "loading": "Loading...",
+    "matchNumber": "Match #",
+    "noMatches": "No matches found. Complete your profile to get started!"
+  },
+  "profile": {
+    "title": "Profile",
+    "wizard": {
+      "step": "Step",
+      "of": "of",
+      "stepIndicator": "Step {current} of {total}",
+      "finish": "Finish",
+      "next": "Next",
+      "back": "Back"
+    },
+    "steps": {
+      "name": {
+        "title": "What's your name?",
+        "description": "Enter your name",
+        "placeholder": "Your name",
+        "error": "Name must contain at least 2 characters"
+      },
+      "age": {
+        "title": "How old are you?",
+        "description": "Enter your age",
+        "placeholder": "Your age"
+      },
+      "occupation": {
+        "title": "What do you do for work?",
+        "description": "Enter your occupation",
+        "placeholder": "Your occupation"
+      },
+      "personality": {
+        "title": "What describes your personality?",
+        "description": "Choose traits that describe you",
+        "error": "Select at least one personality trait"
+      },
+      "interests": {
+        "title": "What interests you?",
+        "description": "Choose your interests",
+        "error": "Select at least one interest"
+      },
+      "hobbies": {
+        "title": "What are your hobbies?",
+        "description": "Choose your hobbies",
+        "error": "Select at least one hobby"
+      },
+      "travel": {
+        "title": "Where are you planning to go in the next 3 months?",
+        "description": "For example: Paris, France or Tokyo, Japan",
+        "placeholder": "Enter cities and countries"
+      },
+      "about": {
+        "title": "Tell us about yourself",
+        "description": "Write a brief description about yourself",
+        "placeholder": "About yourself..."
+      },
+      "instagram": {
+        "title": "What's your Instagram?",
+        "description": "Enter your Instagram handle",
+        "placeholder": "@username"
+      },
+      "location": {
+        "title": "In which city do you want to find a travel companion?",
+        "description": "Specify the city where you plan to look for a travel companion"
+      },
+      "request": {
+        "title": "What are you looking for in a travel companion?",
+        "description": "Describe what kind of travel companion you're seeking",
+        "placeholder": "I'm looking for..."
+      },
+      "photo": {
+        "title": "Add your photo",
+        "description": "Upload a profile photo",
+        "upload": "Upload Photo",
+        "change": "Change Photo"
+      },
+      "review": {
+        "title": "Review your information",
+        "description": "Make sure all information is correct",
+        "name": "Name:",
+        "age": "Age:",
+        "occupation": "Occupation:",
+        "personality": "Personality:",
+        "interests": "Interests:",
+        "hobbies": "Hobbies:",
+        "travel": "Travel plans:",
+        "about": "About:",
+        "instagram": "Instagram:",
+        "location": "City:",
+        "request": "Looking for:"
+      }
+    },
+    "view": {
+      "loading": "Loading...",
+      "notFound": "Profile not found",
+      "location": "Location",
+      "personality": "Personality",
+      "interests": "Interests",
+      "hobbies": "Hobbies",
+      "travelStyle": "Travel Style",
+      "instagram": "Instagram",
+      "lookingFor": "Looking for",
+      "writeToMatch": "Write to Match"
+    }
+  },
+  "questions": {
+    "title": "Question Cards",
+    "gameTitle": "Perfect Strangers",
+    "rules": "Rules",
+    "rule1": "1. Ask each other questions",
+    "rule2": "2. Answer in detail and honestly to get to know each other better",
+    "rule3": "3. You can skip uncomfortable questions",
+    "goodGame": "Have a good game 🫂",
+    "startGame": "Start Game",
+    "endGame": "End Game",
+    "gameEnded": "Game Ended",
+    "thankYou": "Thank you for playing!",
+    "playAgain": "Play Again",
+    "nextQuestion": "Next Question",
+    "finishGame": "Finish Game"
+  },
+  "admin": {
+    "title": "Admin Panel"
+  },
+  "common": {
+    "loading": "Loading...",
+    "error": "An error occurred",
+    "save": "Save",
+    "cancel": "Cancel",
+    "back": "Back",
+    "next": "Next",
+    "previous": "Previous",
+    "submit": "Submit",
+    "close": "Close"
+  },
+  "errors": {
+    "pageNotFound": "Page not found",
+    "goHome": "Go to Home",
+    "general": "Something went wrong"
+  },
+  "settings": {
+    "title": "Settings",
+    "editProfile": {
+      "title": "Edit Profile",
+      "description": "Update your profile information"
+    },
+    "notifications": {
+      "title": "Notification Settings",
+      "description": "Manage your notification preferences",
+      "newMatches": "New Matches",
+      "newMatchesDesc": "Get notified when you have new matches",
+      "messages": "Messages",
+      "messagesDesc": "Get notified when you receive messages",
+      "profileViews": "Profile Views",
+      "profileViewsDesc": "Get notified when someone views your profile",
+      "gameInvites": "Game Invites",
+      "gameInvitesDesc": "Get notified when someone invites you to play games",
+      "weeklyDigest": "Weekly Digest",
+      "weeklyDigestDesc": "Receive weekly summary of your activity",
+      "saveChanges": "Save Changes",
+      "saving": "Saving...",
+      "savedSuccessfully": "Notification settings saved successfully!",
+      "saveFailed": "Failed to save settings. Please try again.",
+      "loading": "Loading..."
+    },
+    "subscription": {
+      "title": "Subscription",
+      "description": "View subscription details",
+      "everythingFree": "Everything is Free!",
+      "betaDescription": "Enjoy all TravelMate features at no cost during our beta period",
+      "currentPlan": "Current Plan: Free Beta",
+      "features": {
+        "unlimitedProfiles": "Unlimited profile creation",
+        "unlimitedMatches": "Unlimited matches",
+        "interactiveGames": "Interactive question games",
+        "allDestinations": "All travel destinations",
+        "prioritySupport": "Priority customer support"
+      },
+      "comingSoon": "Coming Soon",
+      "comingSoonDesc": "We're working on premium features that will enhance your travel matching experience:",
+      "premiumFeatures": {
+        "advancedMatching": "Advanced matching algorithms",
+        "directMessaging": "Direct messaging",
+        "locationPreferences": "Location-based preferences",
+        "compatibilityInsights": "Travel compatibility insights"
+      },
+      "stayTuned": "Stay tuned for updates! We'll notify you when premium features become available."
+    },
+    "matchingSchedule": {
+      "title": "Matching Schedule",
+      "description": "Set when you want to receive matches",
+      "aboutTitle": "About Matching Schedule",
+      "aboutDesc": "Control when you receive new matches. You can pause matching temporarily or indefinitely and resume anytime.",
+      "options": {
+        "active": "Active Matching",
+        "activeDesc": "Continue receiving matches as usual",
+        "pauseWeek": "Pause for 1 Week",
+        "pauseWeekDesc": "Resume matching automatically next week",
+        "pauseMonth": "Pause for 1 Month",
+        "pauseMonthDesc": "Resume matching automatically next month",
+        "pauseCustom": "Pause Until Specific Date",
+        "pauseCustomDesc": "Choose when to resume matching",
+        "pauseIndefinite": "Pause Indefinitely",
+        "pauseIndefiniteDesc": "Manually resume when ready"
+      },
+      "selectResumeDate": "Select resume date:",
+      "matchingWillResume": "Matching will resume on:",
+      "indefiniteNote": "Note: You'll need to manually change this setting to resume matching.",
+      "saveSchedule": "Save Schedule",
+      "saving": "Saving...",
+      "resumeNow": "Resume Matching Now",
+      "savedSuccessfully": "Matching schedule updated successfully!",
+      "saveFailed": "Failed to save schedule. Please try again."
+    },
+    "common": {
+      "back": "← Back",
+      "loading": "Loading...",
+      "save": "Save",
+      "cancel": "Cancel"
+    }
   }
 }

@@ -142,3 +142,25 @@ export type ProfileData = Profile & {
   instagram: string;
   announcement: string;
 };
+
+// Settings Types
+export interface NotificationSettings {
+  newMatches: boolean;
+  messages: boolean;
+  profileViews: boolean;
+  gameInvites: boolean;
+  weeklyDigest: boolean;
+}
+
+export interface MatchingScheduleSettings {
+  option: "active" | "pause_week" | "pause_month" | "pause_custom" | "pause_indefinite";
+  customDate?: string | null;
+  resumeDate?: string | null;
+  lastUpdated: string;
+}
+
+export interface UserSettings {
+  userId: string;
+  notifications: NotificationSettings;
+  matchingSchedule: MatchingScheduleSettings;
+}

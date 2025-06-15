@@ -2,11 +2,14 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useSignal, initData } from "@telegram-apps/sdk-react";
 import { Profile } from "@/models/types";
 import { FooterMenu } from "@/components/FooterMenu";
+
 export default function Home() {
   const router = useRouter();
+  const t = useTranslations('home');
   const user = useSignal(initData.user);
   const [matches, setMatches] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(true);
@@ -38,14 +41,14 @@ export default function Home() {
   if (loading) {
     return (
       <div className="container mx-auto p-8">
-        <div className="text-center">Loading...</div>
+        <div className="text-center">{t('loading')}</div>
       </div>
     );
   }
 
   return (
     <div className="container mx-auto p-8">
-      <h1 className="text-2xl font-bold mb-6">Your Matches</h1>
+      <h1 className="text-2xl font-bold mb-6">{t('title')}</h1>
       <div className="space-y-4">
         {matches.map((match) => (
           <div
@@ -56,7 +59,7 @@ export default function Home() {
             <div className="flex justify-between items-center">
               <div>
                 <h2 className="text-xl font-semibold mb-2">
-                  Match #{match.id.slice(-6)}
+                  {t('matchNumber')}{match.id.slice(-6)}
                 </h2>
                 {/* <p className="text-gray-600">
                   Status:{" "}
@@ -92,7 +95,7 @@ export default function Home() {
         ))}
         {matches.length === 0 && (
           <div className="text-center text-gray-600">
-            No matches found. Complete your profile to get started!
+            {t('noMatches')}
           </div>
         )}
       </div>

@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { Input, StepContainer } from "../../../../components";
 import { StepProps, Profile } from "@/models/types";
 
@@ -9,6 +10,8 @@ export interface Step1NameProps extends StepProps {
 }
 
 export function Step1Name({ data, onUpdate, onNext, onBack }: Step1NameProps) {
+  const t = useTranslations('profile.steps.name');
+  
   const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     onUpdate(e.target.value);
   };
@@ -17,8 +20,8 @@ export function Step1Name({ data, onUpdate, onNext, onBack }: Step1NameProps) {
 
   return (
     <StepContainer
-      title="Как тебя зовут?"
-      description="Введите ваше имя"
+      title={t('title')}
+      description={t('description')}
       onBack={onBack}
       onNext={onNext}
       nextDisabled={!isValidName}
@@ -27,13 +30,13 @@ export function Step1Name({ data, onUpdate, onNext, onBack }: Step1NameProps) {
         type="text"
         value={data}
         onChange={handleNameChange}
-        placeholder="Ваше имя"
+        placeholder={t('placeholder')}
         maxLength={50}
         required
       />
       {data && !isValidName && (
         <div className="input-error-text">
-          Имя должно содержать минимум 2 символа
+          {t('error')}
         </div>
       )}
     </StepContainer>

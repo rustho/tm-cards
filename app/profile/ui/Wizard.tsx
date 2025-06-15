@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { Progress } from "@telegram-apps/telegram-ui";
 import { Step1Name } from "./steps/Step1Name";
 import { Step2Age } from "./steps/Step2Age";
@@ -19,6 +20,7 @@ import { Profile } from "@/models/types";
 const TOTAL_STEPS = 13;
 
 export function Wizard() {
+  const t = useTranslations('profile.wizard');
   const [currentStep, setCurrentStep] = useState(1);
   const [profileData, setProfileData] = useState<Profile>({
     id: "",
@@ -185,7 +187,7 @@ export function Wizard() {
       <div className="wizard-progress">
         <Progress value={(currentStep * 100) / TOTAL_STEPS} />
         <div className="step-indicator">
-          Шаг {currentStep} из {TOTAL_STEPS}
+          {t('step')} {currentStep} {t('of')} {TOTAL_STEPS}
         </div>
       </div>
       <div className="wizard-content">{renderStep()}</div>

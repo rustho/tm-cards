@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import {
   SelectedButton,
   SelectionGrid,
@@ -19,6 +20,8 @@ export function Step5Interests({
   onNext,
   onBack,
 }: Step5InterestsProps) {
+  const t = useTranslations('profile.steps.interests');
+  
   const handleToggleInterest = (interest: string) => {
     if (data.includes(interest)) {
       onUpdate(data.filter((i) => i !== interest));
@@ -31,8 +34,8 @@ export function Step5Interests({
 
   return (
     <StepContainer
-      title="Что тебе интересно?"
-      description="Выберите ваши интересы"
+      title={t('title')}
+      description={t('description')}
       onBack={onBack}
       onNext={onNext}
       nextDisabled={!isValidSelection}
@@ -50,7 +53,7 @@ export function Step5Interests({
         ))}
       </SelectionGrid>
       {!isValidSelection && (
-        <div className="input-error-text">Выберите хотя бы один интерес</div>
+        <div className="input-error-text">{t('error')}</div>
       )}
     </StepContainer>
   );

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import { Button } from "@telegram-apps/telegram-ui";
 import { useRouter } from "next/navigation";
 
@@ -9,6 +10,7 @@ interface StartGameProps {
 }
 
 export default function StartGame({ onStartGame }: StartGameProps) {
+  const t = useTranslations('questions');
   const [isEasterEggClickedTimes, setIsEasterEggClickedTimes] = useState(0);
   const router = useRouter();
 
@@ -28,24 +30,22 @@ export default function StartGame({ onStartGame }: StartGameProps) {
         <div className="card">
           <div className={`card-content start-game`}>
             <p>
-              <b>Идеальные незнакомцы</b>
+              <b>{t('gameTitle')}</b>
             </p>
             <br />
-            <p>Правила</p>
+            <p>{t('rules')}</p>
             <ul>
-              <li>1. Задавайте вопросы друг другу</li>
-              <li>
-                2. Отвечайте подробно и искренне, чтобы лучше узнать друг друга
-              </li>
-              <li>3. Можно пропускать неудобные вопросы</li>
+              <li>{t('rule1')}</li>
+              <li>{t('rule2')}</li>
+              <li>{t('rule3')}</li>
             </ul>
             <br />
-            <p>Хорошей игры 🫂</p>
+            <p>{t('goodGame')}</p>
           </div>
         </div>
         <div className="button-container">
           <Button size="l" mode="outline" stretched onClick={onStartGame}>
-            Начать игру
+            {t('startGame')}
           </Button>
         </div>
       </div>

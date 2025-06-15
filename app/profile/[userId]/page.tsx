@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { Profile } from "@/models/types";
 import { Button } from "@telegram-apps/telegram-ui";
 import { useSignal, initData } from "@telegram-apps/sdk-react";
@@ -10,6 +11,7 @@ import { FooterMenu } from "@/components/FooterMenu";
 export default function UserProfile() {
   const params = useParams();
   const user = useSignal(initData.user);
+  const t = useTranslations('profile.view');
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -35,7 +37,7 @@ export default function UserProfile() {
   if (loading) {
     return (
       <div className="container mx-auto p-8">
-        <div className="text-center">Loading...</div>
+        <div className="text-center">{t('loading')}</div>
       </div>
     );
   }
@@ -43,7 +45,7 @@ export default function UserProfile() {
   if (!profile) {
     return (
       <div className="container mx-auto p-8">
-        <div className="text-center text-red-600">Profile not found</div>
+        <div className="text-center text-red-600">{t('notFound')}</div>
       </div>
     );
   }
@@ -64,14 +66,14 @@ export default function UserProfile() {
             <p className="text-gray-700 mb-4">{profile.announcement}</p>
 
             <div className="mb-4">
-              <h2 className="text-lg font-semibold mb-2">Location</h2>
+              <h2 className="text-lg font-semibold mb-2">{t('location')}</h2>
               <p>
                 {profile.region}, {profile.country}
               </p>
             </div>
 
             <div className="mb-4">
-              <h2 className="text-lg font-semibold mb-2">Personality</h2>
+              <h2 className="text-lg font-semibold mb-2">{t('personality')}</h2>
               {/* <div className="flex flex-wrap gap-2">
                 {profile.personality.map((trait) => (
                   <span
@@ -85,7 +87,7 @@ export default function UserProfile() {
             </div>
 
             <div className="mb-4">
-              <h2 className="text-lg font-semibold mb-2">Interests</h2>
+              <h2 className="text-lg font-semibold mb-2">{t('interests')}</h2>
               <div className="flex flex-wrap gap-2">
                 {profile.interests.map((interest) => (
                   <span
@@ -99,7 +101,7 @@ export default function UserProfile() {
             </div>
 
             <div className="mb-4">
-              <h2 className="text-lg font-semibold mb-2">Hobbies</h2>
+              <h2 className="text-lg font-semibold mb-2">{t('hobbies')}</h2>
               {/* <div className="flex flex-wrap gap-2">
                 {profile.hobbies.map((hobby) => (
                   <span
@@ -113,12 +115,12 @@ export default function UserProfile() {
             </div>
 
             <div className="mb-4">
-              <h2 className="text-lg font-semibold mb-2">Travel Style</h2>
+              <h2 className="text-lg font-semibold mb-2">{t('travelStyle')}</h2>
               <p className="text-gray-700">{profile.placesToVisit}</p>
             </div>
 
             <div className="mb-4">
-              <h2 className="text-lg font-semibold mb-2">Instagram</h2>
+              <h2 className="text-lg font-semibold mb-2">{t('instagram')}</h2>
               <a
                 href={`https://instagram.com/${profile.instagram.slice(1)}`}
                 target="_blank"
@@ -130,12 +132,12 @@ export default function UserProfile() {
             </div>
 
             <div className="mb-4">
-              <h2 className="text-lg font-semibold mb-2">Looking for</h2>
+              <h2 className="text-lg font-semibold mb-2">{t('lookingFor')}</h2>
               <p className="text-gray-700">{profile.announcement}</p>
             </div>
 
             {user?.id !== parseInt(params.userId as string) && (
-              <Button className="mt-4">Write to Match</Button>
+              <Button className="mt-4">{t('writeToMatch')}</Button>
             )}
           </div>
         </div>

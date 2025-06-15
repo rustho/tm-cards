@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { StepContainer } from "@/components";
 import { StepProps, Profile } from "@/models/types";
 
@@ -14,13 +15,16 @@ export function Step13Review({
   onNext,
   onBack,
 }: Step13ReviewProps) {
+  const t = useTranslations('profile.steps.review');
+  const tWizard = useTranslations('profile.wizard');
+
   return (
     <StepContainer
-      title="Проверь свои данные"
-      description="Убедись, что все информация корректна"
+      title={t('title')}
+      description={t('description')}
       onBack={onBack}
       onNext={onNext}
-      nextText="Завершить"
+      nextText={tWizard('finish')}
     >
       <div className="review-container">
         {data.photo && (
@@ -30,34 +34,37 @@ export function Step13Review({
         )}
         <div className="review-details">
           <div className="review-item">
-            <strong>Имя:</strong> {data.name}
+            <strong>{t('name')}</strong> {data.name}
           </div>
           {/* <div className="review-item">
-            <strong>Возраст:</strong> {data.age}
+            <strong>{t('age')}</strong> {data.age}
           </div>
           <div className="review-item">
-            <strong>Профессия:</strong> {data.occupation}
+            <strong>{t('occupation')}</strong> {data.occupation}
           </div>
           <div className="review-item">
-            <strong>Черты характера:</strong> {data.personality.join(", ")}
+            <strong>{t('personality')}</strong> {data.personality.join(", ")}
           </div> */}
           <div className="review-item">
-            <strong>Интересы:</strong> {data.interests.join(", ")}
+            <strong>{t('interests')}</strong> {data.interests.join(", ")}
           </div>
           {/* <div className="review-item">
-            <strong>Хобби:</strong> {data.hobbies.join(", ")}
+            <strong>{t('hobbies')}</strong> {data.hobbies.join(", ")}
           </div>
           <div className="review-item">
-            <strong>Планы на путешествие:</strong> {data.travel}
+            <strong>{t('travel')}</strong> {data.travel}
           </div>
           <div className="review-item">
-            <strong>О себе:</strong> {data.about}
+            <strong>{t('about')}</strong> {data.about}
           </div> */}
           <div className="review-item">
-            <strong>Instagram:</strong> {data.instagram}
+            <strong>{t('instagram')}</strong> {data.instagram}
           </div>
           <div className="review-item">
-            <strong>Город:</strong> {data.country}, {data.region}
+            <strong>{t('location')}</strong> {data.country}, {data.region}
+          </div>
+          <div className="review-item">
+            <strong>{t('request')}</strong> {data.announcement}
           </div>
         </div>
       </div>

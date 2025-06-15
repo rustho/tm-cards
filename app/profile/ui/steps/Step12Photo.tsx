@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useRef } from "react";
+import { useTranslations } from "next-intl";
+import { StepContainer } from "@/components";
 import { Profile, StepProps } from "@/models/types";
 
 export interface Step12PhotoProps extends StepProps {
@@ -14,6 +16,7 @@ export function Step12Photo({
   onNext,
   onBack,
 }: Step12PhotoProps) {
+  const t = useTranslations('profile.steps.photo');
   const [preview, setPreview] = useState<string | null>(data);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -30,47 +33,34 @@ export function Step12Photo({
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (data) {
-      onNext();
-    }
-  };
-
   return (
-    <div className="step-container">
-      <h2>Пришли свое фото для анкеты.</h2>
-      <form onSubmit={handleSubmit}>
-        <div
-          className="photo-upload"
-          onClick={() => fileInputRef.current?.click()}
-        >
-          {preview ? (
-            <img src={preview} alt="Preview" className="photo-preview" />
-          ) : (
-            <div>
-              <p>Нажмите для загрузки фото</p>
-              <p className="step-description">или перетащите файл сюда</p>
-            </div>
-          )}
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*"
-            onChange={handleFileChange}
-            style={{ display: "none" }}
-            required
-          />
-        </div>
-        <div className="navigation-buttons">
-          <button type="button" onClick={onBack}>
-            Назад
-          </button>
-          <button type="submit" disabled={!data}>
-            Завершить
-          </button>
-        </div>
-      </form>
-    </div>
+    <StepContainer
+      title={t('title')}
+      description={t('description')}
+      onBack={onBack}
+      onNext={onNext}
+      nextDisabled={!data}
+    >
+      <div
+        className="photo-upload"
+        onClick={() => fileInputRef.current?.click()}
+      >
+        {preview ? (
+          <img src={preview} alt="Preview" className="photo-preview" />
+        ) : (
+          <div>
+            <p>{t('upload')}</p>
+          </div>
+        )}
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          onChange={handleFileChange}
+          style={{ display: "none" }}
+          required
+        />
+      </div>
+    </StepContainer>
   );
 }

@@ -1,6 +1,8 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { Textarea } from "@telegram-apps/telegram-ui";
+import { StepContainer } from "@/components";
 import { Profile, StepProps } from "@/models/types";
 
 interface Step11RequestProps extends StepProps {
@@ -14,37 +16,22 @@ export function Step11Request({
   onNext,
   onBack,
 }: Step11RequestProps) {
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (data.trim()) {
-      onNext();
-    }
-  };
+  const t = useTranslations('profile.steps.request');
 
   return (
-    <div className="step-container">
-      <h2>Теперь самое время рассказать про свой запрос на встречу.</h2>
-      <p className="step-description">
-        Это свободный формат без ограничений по символам. Ты можешь написать
-        только одно и самое актуальное объявление и менять его в любое время или
-        сразу указать несколько вариантов 😊
-      </p>
-      <form onSubmit={handleSubmit}>
-        <Textarea
-          value={data}
-          onChange={(e) => onUpdate(e.target.value)}
-          placeholder="Опишите ваш запрос на встречу..."
-          required
-        />
-        <div className="navigation-buttons">
-          <button type="button" onClick={onBack}>
-            Назад
-          </button>
-          <button type="submit" disabled={!data.trim()}>
-            Далее
-          </button>
-        </div>
-      </form>
-    </div>
+    <StepContainer
+      title={t('title')}
+      description={t('description')}
+      onBack={onBack}
+      onNext={onNext}
+      nextDisabled={!data.trim()}
+    >
+      <Textarea
+        value={data}
+        onChange={(e) => onUpdate(e.target.value)}
+        placeholder={t('placeholder')}
+        required
+      />
+    </StepContainer>
   );
 }

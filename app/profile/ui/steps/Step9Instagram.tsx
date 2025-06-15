@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { Input, StepContainer } from "@/components";
 import { StepProps, Profile } from "@/models/types";
 
@@ -14,6 +15,8 @@ export function Step9Instagram({
   onNext,
   onBack,
 }: Step9InstagramProps) {
+  const t = useTranslations('profile.steps.instagram');
+  
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     // Remove @ symbol if present
     const value = e.target.value.replace(/^@/, "");
@@ -22,8 +25,8 @@ export function Step9Instagram({
 
   return (
     <StepContainer
-      title="Пришли ник своего инстаграма без ссылки и значка @"
-      description="Это поможет нам лучше познакомиться с тобой"
+      title={t('title')}
+      description={t('description')}
       onBack={onBack}
       onNext={onNext}
       nextDisabled={!data.trim()}
@@ -32,7 +35,7 @@ export function Step9Instagram({
         type="text"
         value={data}
         onChange={handleChange}
-        placeholder="username"
+        placeholder={t('placeholder')}
         required
       />
     </StepContainer>

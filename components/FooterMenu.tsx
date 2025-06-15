@@ -11,6 +11,7 @@ export const FooterMenu = () => {
         <Tabbar.Item onClick={() => router.push("/home")}>🏠</Tabbar.Item>
         <Tabbar.Item onClick={() => router.push("/profile")}>👤</Tabbar.Item>
         <Tabbar.Item onClick={() => router.push("/questions")}>💬</Tabbar.Item>
+        <Tabbar.Item onClick={() => router.push("/settings")}>⚙️</Tabbar.Item>
       </Tabbar>
     </FixedLayout>
   );

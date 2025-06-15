@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { Input, StepContainer } from "@/components";
 import { StepProps, Profile } from "@/models/types";
 
@@ -15,10 +16,12 @@ export function Step7Travel({
   onNext,
   onBack,
 }: Step7TravelProps) {
+  const t = useTranslations('profile.steps.travel');
+  
   return (
     <StepContainer
-      title="Куда ты планируешь поехать в ближайшие 3 месяца?"
-      description="Например: Париж, Франция или Токио, Япония"
+      title={t('title')}
+      description={t('description')}
       onBack={onBack}
       onNext={onNext}
       nextDisabled={!data.trim()}
@@ -27,7 +30,7 @@ export function Step7Travel({
         type="text"
         value={data}
         onChange={(e) => onUpdate(e.target.value)}
-        placeholder="Введите города и страны"
+        placeholder={t('placeholder')}
         required
       />
     </StepContainer>

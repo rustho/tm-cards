@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { StepContainer } from "@/components";
 import { Select } from "@telegram-apps/telegram-ui";
 import { useState } from "react";
@@ -23,6 +24,7 @@ export function Step10Location({
   onBack,
   onUpdate,
 }: Step10LocationProps) {
+  const t = useTranslations('profile.steps.location');
   const [selectedCountry, setSelectedCountry] = useState<string>(data.country);
   const [selectedRegion, setSelectedRegion] = useState<string>("");
   const nextDisabled = !selectedCountry && !selectedRegion;
@@ -34,8 +36,8 @@ export function Step10Location({
 
   return (
     <StepContainer
-      title="В каком городе ты хочешь найти попутчика?"
-      description="Укажи город, где ты планируешь искать попутчика для путешествия"
+      title={t('title')}
+      description={t('description')}
       onBack={onBack}
       onNext={handleUpdate}
       nextDisabled={nextDisabled}

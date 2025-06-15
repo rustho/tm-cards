@@ -20,6 +20,6 @@ export const MENU_ITEMS = [
 ] as const;
 
 export const APP_METADATA = {
-  title: "Your Application Title Goes Here",
-  description: "Your application description goes here",
+  title: "TravelMate",
+  description: "Find your perfect travel companion",
 } as const;
