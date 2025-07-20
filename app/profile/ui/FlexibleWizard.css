@@ -1,0 +1,135 @@
+/* Flexible Wizard Styles */
+.flexible-wizard {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 1rem;
+}
+
+.flexible-wizard.full {
+  padding: 2rem;
+}
+
+.flexible-wizard.edit {
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Step Navigation */
+.step-navigation {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 0.5rem;
+  margin-bottom: 2rem;
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.step-nav-button {
+  padding: 0.5rem;
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.step-nav-button:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.step-nav-button.active {
+  background: #007aff;
+  border-color: #007aff;
+  color: white;
+}
+
+.step-nav-button.completed {
+  background: rgba(0, 200, 0, 0.2);
+  border-color: rgba(0, 200, 0, 0.4);
+}
+
+.step-nav-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.step-nav-button .check-mark {
+  color: #00c800;
+  font-weight: bold;
+  font-size: 0.9rem;
+}
+
+.step-nav-button .required-mark {
+  color: #ff6b6b;
+  font-weight: bold;
+  position: absolute;
+  top: 2px;
+  right: 4px;
+  font-size: 0.7rem;
+}
+
+/* Edit Mode Header */
+.edit-mode-header {
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.edit-mode-header h3 {
+  margin: 0;
+  color: #ffffff;
+  font-size: 1.2rem;
+  font-weight: 500;
+}
+
+/* Wizard Progress (Full Mode) */
+.wizard-progress {
+  margin-bottom: 2rem;
+}
+
+.step-indicator {
+  margin-top: 0.5rem;
+  color: #cccccc;
+  font-size: 0.9rem;
+  text-align: center;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .step-navigation {
+    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+    gap: 0.25rem;
+    padding: 0.5rem;
+  }
+  
+  .step-nav-button {
+    padding: 0.4rem;
+    font-size: 0.7rem;
+  }
+  
+  .flexible-wizard.full {
+    padding: 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .step-navigation {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .flexible-wizard {
+    padding: 0.5rem;
+  }
+} 

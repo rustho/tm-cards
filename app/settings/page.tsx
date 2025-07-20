@@ -15,7 +15,7 @@ export default function Settings() {
       title: t('editProfile.title'),
       description: t('editProfile.description'),
       icon: "👤",
-      onClick: () => router.push("/profile"),
+      onClick: () => router.push("/profile/settings"),
     },
     {
       title: t('notifications.title'),

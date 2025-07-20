@@ -1,0 +1,376 @@
+/* Usage Examples Styles */
+
+/* Example 1: Full Profile Creation */
+.completion-message {
+  text-align: center;
+  padding: 3rem;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.completion-message h2 {
+  color: #00c800;
+  margin-bottom: 1rem;
+}
+
+.completion-message p {
+  color: #ffffff;
+  margin-bottom: 2rem;
+}
+
+.completion-message button {
+  padding: 0.8rem 2rem;
+  background: #007aff;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.completion-message button:hover {
+  background: #0056b3;
+}
+
+/* Example 2: Single Step Edit */
+.profile-editor {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.profile-editor h2 {
+  color: #ffffff;
+  margin-bottom: 2rem;
+  text-align: center;
+}
+
+.profile-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.profile-field {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.profile-field label {
+  font-weight: 600;
+  color: #cccccc;
+  min-width: 120px;
+}
+
+.profile-field span {
+  flex: 1;
+  color: #ffffff;
+}
+
+.profile-field button {
+  padding: 0.5rem 1rem;
+  background: #007aff;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.profile-field button:hover {
+  background: #0056b3;
+}
+
+/* Example 3: Profile Review with Inline Editing */
+.inline-edit-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-backdrop {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(4px);
+}
+
+.modal-content {
+  position: relative;
+  max-width: 600px;
+  width: 90%;
+  max-height: 80vh;
+  overflow-y: auto;
+  background: #1a1a1a;
+  border-radius: 12px;
+  padding: 2rem;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+}
+
+.profile-review {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.profile-review h2 {
+  color: #ffffff;
+  margin-bottom: 2rem;
+  text-align: center;
+}
+
+.review-card {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 2rem;
+}
+
+.review-section {
+  margin-bottom: 2rem;
+}
+
+.review-section:last-child {
+  margin-bottom: 0;
+}
+
+.review-section h3 {
+  color: #ffffff;
+  margin-bottom: 1rem;
+  font-size: 1.2rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  padding-bottom: 0.5rem;
+}
+
+.review-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.8rem 0;
+}
+
+.review-item strong {
+  color: #cccccc;
+  min-width: 140px;
+}
+
+.review-item span {
+  flex: 1;
+  color: #ffffff;
+}
+
+.edit-btn {
+  background: transparent;
+  border: none;
+  color: #007aff;
+  cursor: pointer;
+  padding: 0.25rem;
+  border-radius: 4px;
+  transition: background 0.2s;
+}
+
+.edit-btn:hover {
+  background: rgba(0, 122, 255, 0.1);
+}
+
+/* Example 4: Progressive Profile Completion */
+.progressive-completion {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.progressive-completion h2 {
+  color: #ffffff;
+  margin-bottom: 2rem;
+  text-align: center;
+}
+
+.completion-stats {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  text-align: center;
+}
+
+.progress-bar {
+  width: 100%;
+  height: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 1rem;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #007aff, #00c800);
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+.completion-stats p {
+  color: #ffffff;
+  font-size: 1.1rem;
+  margin-bottom: 1rem;
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.status-badge.complete {
+  background: rgba(0, 200, 0, 0.2);
+  color: #00c800;
+  border: 1px solid rgba(0, 200, 0, 0.4);
+}
+
+.status-badge.incomplete {
+  background: rgba(255, 107, 107, 0.2);
+  color: #ff6b6b;
+  border: 1px solid rgba(255, 107, 107, 0.4);
+}
+
+.step-categories {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+  margin-bottom: 2rem;
+}
+
+.category {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 1.5rem;
+}
+
+.category h3 {
+  color: #ffffff;
+  margin-bottom: 1rem;
+  font-size: 1.1rem;
+}
+
+.step-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.8rem 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.step-item:last-child {
+  border-bottom: none;
+}
+
+.step-item span:first-child {
+  color: #ffffff;
+  font-weight: 500;
+}
+
+.step-item.completed span:first-child {
+  color: #00c800;
+}
+
+.step-item .status {
+  color: #00c800;
+  font-size: 0.9rem;
+}
+
+.step-item button {
+  padding: 0.4rem 0.8rem;
+  background: #007aff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  transition: background 0.2s;
+}
+
+.step-item button:hover {
+  background: #0056b3;
+}
+
+.quick-start {
+  text-align: center;
+  background: rgba(0, 122, 255, 0.1);
+  border-radius: 12px;
+  border: 1px solid rgba(0, 122, 255, 0.3);
+  padding: 1.5rem;
+}
+
+.quick-start h3 {
+  color: #ffffff;
+  margin-bottom: 1rem;
+}
+
+.primary-button {
+  padding: 0.8rem 2rem;
+  background: #007aff;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 500;
+  transition: background 0.2s;
+}
+
+.primary-button:hover {
+  background: #0056b3;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .step-categories {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+  
+  .profile-field {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+  
+  .profile-field label {
+    min-width: auto;
+  }
+  
+  .review-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+  
+  .review-item strong {
+    min-width: auto;
+  }
+  
+  .modal-content {
+    width: 95%;
+    padding: 1rem;
+  }
+} 
