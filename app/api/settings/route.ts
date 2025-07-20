@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import type { UserSettings, NotificationSettings, MatchingScheduleSettings } from "@/models/types";
 
+export const dynamic = 'force-dynamic';
+
 // Mock data storage (in production, this would be database)
 const mockUserSettings: { [userId: string]: UserSettings } = {
   "default": {

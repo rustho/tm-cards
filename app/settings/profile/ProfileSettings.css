@@ -1,9 +1,10 @@
-/* Modern Profile Settings Styles */
+/* Modern Profile Settings - Beautiful Brand Theme */
 .profile-settings {
   max-width: 900px;
   margin: 0 auto;
   padding: 2rem;
   min-height: 100vh;
+  background: var(--theme-bg-primary);
 }
 
 /* Header */
@@ -13,18 +14,18 @@
 }
 
 .settings-header h1 {
-  color: #ffffff;
+  color: var(--theme-text-primary);
   font-size: 2.5rem;
   font-weight: 700;
   margin-bottom: 0.5rem;
-  background: linear-gradient(135deg, #007aff, #5ac8fa);
+  background: linear-gradient(135deg, var(--theme-primary), var(--theme-accent));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
 
 .settings-header p {
-  color: #aaaaaa;
+  color: var(--theme-text-secondary);
   font-size: 1.1rem;
   font-weight: 400;
 }
@@ -37,27 +38,30 @@
 }
 
 .settings-section {
-  background: rgba(255, 255, 255, 0.08);
-  border-radius: 16px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: var(--theme-surface);
+  border-radius: var(--theme-radius-large);
+  border: 1px solid var(--theme-border);
   overflow: hidden;
   transition: all 0.3s ease;
+  box-shadow: 0 2px 8px var(--theme-shadow);
 }
 
 .settings-section:hover {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: rgba(255, 255, 255, 0.2);
+  background: var(--theme-surface-elevated);
+  border-color: var(--theme-border-hover);
   transform: translateY(-2px);
+  box-shadow: 0 8px 24px var(--theme-shadow-elevated);
 }
 
 /* Section Headers */
 .section-header {
   padding: 1.5rem 2rem 1rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid var(--theme-border);
+  background: var(--theme-surface);
 }
 
 .section-header h2 {
-  color: #ffffff;
+  color: var(--theme-text-primary);
   font-size: 1.4rem;
   font-weight: 600;
   margin-bottom: 0.25rem;
@@ -67,7 +71,7 @@
 }
 
 .section-header p {
-  color: #cccccc;
+  color: var(--theme-text-secondary);
   font-size: 0.9rem;
   margin: 0;
 }
@@ -75,6 +79,7 @@
 /* Setting Items */
 .setting-items {
   padding: 0 2rem 1.5rem;
+  background: var(--theme-surface);
 }
 
 .setting-item {
@@ -82,7 +87,7 @@
   align-items: center;
   justify-content: space-between;
   padding: 1.5rem 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  border-bottom: 1px solid var(--theme-border);
   transition: all 0.2s ease;
 }
 
@@ -91,11 +96,11 @@
 }
 
 .setting-item:hover {
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--theme-surface-elevated);
   margin: 0 -2rem;
   padding-left: 2rem;
   padding-right: 2rem;
-  border-radius: 8px;
+  border-radius: var(--theme-radius);
 }
 
 /* Completion Status */
@@ -107,13 +112,13 @@
   content: "✓";
   position: absolute;
   left: -1.5rem;
-  color: #00d4aa;
+  color: var(--theme-success);
   font-weight: bold;
   font-size: 1.1rem;
 }
 
 .setting-item.incomplete .setting-value {
-  color: #888888;
+  color: var(--theme-text-secondary);
   font-style: italic;
 }
 
@@ -126,7 +131,7 @@
 }
 
 .setting-info label {
-  color: #cccccc;
+  color: var(--theme-text-secondary);
   font-size: 0.9rem;
   font-weight: 600;
   text-transform: uppercase;
@@ -134,7 +139,7 @@
 }
 
 .setting-value {
-  color: #ffffff;
+  color: var(--theme-text-primary);
   font-size: 1.1rem;
   line-height: 1.5;
   font-weight: 400;
@@ -142,23 +147,23 @@
 
 /* Edit Button */
 .edit-button {
-  padding: 0.75rem 1.5rem;
-  background: linear-gradient(135deg, #007aff, #5ac8fa);
-  color: white;
+  background: linear-gradient(135deg, var(--theme-primary), var(--theme-primary-hover));
+  color: var(--theme-text-on-color);
   border: none;
-  border-radius: 12px;
+  border-radius: var(--theme-radius-large);
+  padding: 0.75rem 1.5rem;
   font-size: 0.9rem;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
   min-width: 85px;
-  box-shadow: 0 4px 12px rgba(0, 122, 255, 0.3);
+  box-shadow: 0 2px 8px var(--theme-shadow-primary);
 }
 
 .edit-button:hover {
-  background: linear-gradient(135deg, #0056b3, #4a9eff);
+  background: linear-gradient(135deg, var(--theme-primary-hover), var(--theme-primary-light));
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(0, 122, 255, 0.4);
+  box-shadow: 0 4px 16px var(--theme-shadow-primary);
 }
 
 .edit-button:active {
@@ -167,8 +172,8 @@
 
 /* Optional Section */
 .settings-section.optional {
-  background: rgba(255, 255, 255, 0.04);
-  border: 2px dashed rgba(255, 255, 255, 0.15);
+  background: var(--theme-surface-elevated);
+  border: 2px dashed var(--theme-border);
 }
 
 .optional-grid {
@@ -176,12 +181,13 @@
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: 1rem;
   padding: 0 2rem 2rem;
+  background: var(--theme-surface);
 }
 
 .optional-card {
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 12px;
+  background: var(--theme-surface);
+  border: 1px solid var(--theme-border);
+  border-radius: var(--theme-radius-large);
   padding: 1.5rem;
   cursor: pointer;
   transition: all 0.3s ease;
@@ -193,10 +199,10 @@
 }
 
 .optional-card:hover {
-  background: rgba(255, 255, 255, 0.12);
-  border-color: rgba(255, 255, 255, 0.25);
+  background: var(--theme-surface-elevated);
+  border-color: var(--theme-primary);
   transform: translateY(-4px);
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 8px 24px var(--theme-shadow-elevated);
 }
 
 .card-icon {
@@ -205,13 +211,13 @@
 }
 
 .card-title {
-  color: #ffffff;
+  color: var(--theme-text-primary);
   font-size: 1rem;
   font-weight: 600;
 }
 
 .card-subtitle {
-  color: #aaaaaa;
+  color: var(--theme-text-secondary);
   font-size: 0.85rem;
 }
 
@@ -222,7 +228,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.85);
+  background: rgba(0, 0, 0, 0.6);
   backdrop-filter: blur(8px);
   z-index: 1000;
   display: flex;
@@ -238,9 +244,10 @@
 }
 
 .edit-modal {
-  background: #1a1a1a;
-  border-radius: 16px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+  background: var(--theme-bg-secondary);
+  border: 1px solid var(--theme-border);
+  border-radius: var(--theme-radius-large);
+  box-shadow: 0 20px 60px var(--theme-shadow-elevated);
   max-width: 650px;
   width: 100%;
   max-height: 90vh;
@@ -264,25 +271,25 @@
   align-items: center;
   justify-content: space-between;
   padding: 1.5rem 2rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  background: rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid var(--theme-border);
+  background: var(--theme-surface);
 }
 
 .edit-header h3 {
-  color: #ffffff;
+  color: var(--theme-text-primary);
   font-size: 1.3rem;
   font-weight: 600;
   margin: 0;
 }
 
 .close-button {
-  background: rgba(255, 255, 255, 0.1);
-  border: none;
-  color: #ffffff;
+  background: var(--theme-surface-elevated);
+  border: 1px solid var(--theme-border);
+  color: var(--theme-text-primary);
   font-size: 1.5rem;
   width: 36px;
   height: 36px;
-  border-radius: 8px;
+  border-radius: var(--theme-radius);
   cursor: pointer;
   transition: all 0.2s ease;
   display: flex;
@@ -291,13 +298,15 @@
 }
 
 .close-button:hover {
-  background: rgba(255, 255, 255, 0.2);
+  background: var(--theme-surface-elevated);
+  border-color: var(--theme-border-hover);
   transform: scale(1.1);
 }
 
 .edit-content {
   overflow-y: auto;
   max-height: calc(90vh - 80px);
+  background: var(--theme-bg-secondary);
 }
 
 /* Responsive Design */
@@ -310,39 +319,17 @@
     font-size: 2rem;
   }
   
-  .settings-section {
-    border-radius: 12px;
+  .section-header {
+    padding: 1rem 1.5rem 0.5rem;
   }
   
-  .section-header,
   .setting-items {
-    padding-left: 1rem;
-    padding-right: 1rem;
-  }
-  
-  .setting-item {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 1rem;
-  }
-  
-  .edit-button {
-    align-self: stretch;
-    text-align: center;
+    padding: 0 1.5rem 1rem;
   }
   
   .optional-grid {
     grid-template-columns: 1fr;
-    padding: 0 1rem 1.5rem;
-  }
-  
-  .edit-modal {
-    margin: 0.5rem;
-    max-height: 95vh;
-  }
-  
-  .edit-header {
-    padding: 1rem 1.5rem;
+    padding: 0 1.5rem 1.5rem;
   }
 }
 
@@ -356,14 +343,24 @@
   }
   
   .settings-header h1 {
-    font-size: 1.8rem;
+    font-size: 1.75rem;
   }
   
-  .settings-header p {
-    font-size: 1rem;
+  .section-header {
+    padding: 1rem;
   }
   
-  .edit-overlay {
-    padding: 0.5rem;
+  .setting-items {
+    padding: 0 1rem 1rem;
+  }
+  
+  .setting-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+  
+  .edit-button {
+    align-self: stretch;
   }
 } 

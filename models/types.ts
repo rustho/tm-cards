@@ -129,10 +129,10 @@ export type Profile = Omit<
   "gender" | "goal" | "nextMatch" | "previousMatch" | "skip"
 > & {
   photo: string;
+  dateOfBirth: string;
 };
 
 export type ProfileData = Profile & {
-  age: string;
   about: string;
   occupation: string;
   interests: string[];
@@ -153,7 +153,12 @@ export interface NotificationSettings {
 }
 
 export interface MatchingScheduleSettings {
-  option: "active" | "pause_week" | "pause_month" | "pause_custom" | "pause_indefinite";
+  option:
+    | "active"
+    | "pause_week"
+    | "pause_month"
+    | "pause_custom"
+    | "pause_indefinite";
   customDate?: string | null;
   resumeDate?: string | null;
   lastUpdated: string;

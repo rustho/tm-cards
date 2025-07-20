@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useTranslations } from "next-intl";
 import { Progress } from "@telegram-apps/telegram-ui";
 import { Step1Name } from "./steps/Step1Name";
-import { Step2Age } from "./steps/Step2Age";
+import { Step2DateOfBirth } from "./steps/Step2DateOfBirth";
 import { Step3Occupation } from "./steps/Step3Occupation";
 import { Step4Personality } from "./steps/Step4Personality";
 import { Step5Interests } from "./steps/Step5Interests";
@@ -60,12 +60,13 @@ export function FlexibleWizard({
     photo: "",
     country: "",
     region: "",
+    dateOfBirth: "",
     ...initialData,
   });
 
   const [steps, setSteps] = useState<WizardStep[]>([
     { id: 1, name: 'Name', completed: false, required: true },
-    { id: 2, name: 'Age', completed: false, required: false },
+    { id: 2, name: 'Date of Birth', completed: false, required: false },
     { id: 3, name: 'Occupation', completed: false, required: false },
     { id: 4, name: 'Personality', completed: false, required: false },
     { id: 5, name: 'Interests', completed: false, required: true },
@@ -159,9 +160,9 @@ export function FlexibleWizard({
         );
       case 2:
         return (
-          <Step2Age
-            data={profileData.profile}
-            onUpdate={(age) => updateProfileData({ profile: profileData.profile })}
+          <Step2DateOfBirth
+            data={profileData.dateOfBirth}
+            onUpdate={(dateOfBirth) => updateProfileData({ dateOfBirth })}
             {...stepProps}
           />
         );

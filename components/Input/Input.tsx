@@ -14,7 +14,7 @@ export function Input({ label, error, helperText, className, ...props }: InputPr
     <div className="input-container">
       {label && <label className="input-label">{label}</label>}
       <TelegramInput
-        className={`input-field ${error ? "input-error" : ""} ${className || ""}`}
+        className={`input-field theme-input ${error ? "input-error" : ""} ${className || ""}`}
         {...props}
       />
       {helperText && !error && <span className="input-helper">{helperText}</span>}

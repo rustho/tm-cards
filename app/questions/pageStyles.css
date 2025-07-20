@@ -1,9 +1,5 @@
-/* styles.css */
-@import url("https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;700&display=swap");
-@import url("https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap");
-@import url("https://fonts.googleapis.com/css2?family=Fira+Sans:wght@300;400;500;700&display=swap");
-@import url("https://fonts.googleapis.com/css2?family=Fira+Mono:wght@400;500;700&display=swap");
-@import url("https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;700&display=swap");
+/* Beautiful Questions Game - Brand Theme System */
+@import url("https://fonts.googleapis.com/css2?family=Rubik:wght@300;400;500;700&display=swap");
 
 .page {
   display: flex;
@@ -12,6 +8,8 @@
   height: 100%;
   padding: 15vh 0;
   gap: 2rem;
+  background: var(--theme-bg-primary);
+  min-height: 100vh;
 }
 
 .swipe-container {
@@ -35,63 +33,38 @@
   padding: 16px;
 }
 
-/* Green Paper Texture */
+/* Brand-themed card backgrounds using your palette */
 .card-content.green-paper {
-  background-color: #a5d6a7; /* Soft Green */
-  /* Other variants: */
-  /* background-color: #81c784; */ /* Light Mint */
-  /* background-color: #66bb6a; */ /* Fresh Leaf */
-  /* background-color: #4caf50; */ /* Lush Green */
-  /* background-color: #388e3c; */ /* Forest Green */
-  /* font-family: "Fira Sans", sans-serif; */
+  background: linear-gradient(135deg, var(--theme-accent), #71B3A1);
+  color: white;
 }
 
-/* Light Blue Paper Texture */
 .card-content.light-blue-paper {
-  background-color: #b3e5fc; /* Soft Sky Blue */
-  /* Other variants: */
-  /* background-color: #81d4fa; */ /* Aqua Mist */
-  /* background-color: #4fc3f7; */ /* Clear Water */
-  /* background-color: #29b6f6; */ /* Ocean Blue */
-  /* background-color: #0288d1; */ /* Deep Sea Blue */
-  /* font-family: "Fira Mono", monospace; */
+  background: linear-gradient(135deg, var(--theme-secondary), var(--brand-muted));
+  color: var(--theme-text-primary);
 }
 
-/* Gray-Blue Paper Texture */
 .card-content.gray-blue-paper {
-  background-color: #b0bec5; /* Subtle Gray Blue */
-  /* Other variants: */
-  /* background-color: #90a4ae; */ /* Calm Gray */
-  /* background-color: #78909c; */ /* Steel Blue */
-  /* background-color: #607d8b; */ /* Smoky Blue */
-  /* background-color: #455a64; */ /* Dark Slate */
-  /* font-family: "IBM Plex Sans", sans-serif; */
+  background: linear-gradient(135deg, var(--brand-muted), #7792A1);
+  color: white;
 }
 
-/* Blue Paper Texture */
 .card-content.blue-paper {
-  background-color: #90caf9; /* Light Azure */
-  /* Other variants: */
-  /* background-color: #64b5f6; */ /* Bright Sky */
-  /* background-color: #42a5f5; */ /* Vivid Blue */
-  /* background-color: #1e88e5; */ /* Mid Blue */
-  /* background-color: #1565c0; */ /* Royal Blue */
-  /* font-family: "Rubik", sans-serif; */
+  background: linear-gradient(135deg, var(--theme-primary), var(--theme-primary-hover));
+  color: var(--theme-text-on-color);
 }
 
-/* Light Gray Paper Texture */
 .card-content.light-gray-paper {
-  background-color: #cfd8dc; /* Soft Light Gray */
-  /* Other variants: */
-  /* background-color: #b0bec5; */ /* Cloud Gray */
-  /* background-color: #90a4ae; */ /* Ash Gray */
-  /* background-color: #78909c; */ /* Cool Gray */
-  /* background-color: #607d8b; */ /* Charcoal Gray */
+  background: var(--theme-surface);
+  color: var(--theme-text-primary);
+  border: 2px solid var(--theme-border);
 }
 
 .card-content.start-game {
   font-size: 1.2rem;
-  background-color: #e0e0e0;
+  background: var(--theme-surface-elevated);
+  color: var(--theme-text-primary);
+  border: 2px solid var(--theme-border);
 }
 
 .card-logo {
@@ -99,8 +72,10 @@
   top: 10%;
   left: 50%;
   transform: translateX(-50%);
-  font-family: "HardPixel", sans-serif;
+  font-family: "Rubik", sans-serif;
   font-size: 1.5rem;
+  font-weight: 700;
+  opacity: 0.9;
 }
 
 .card-content::after {
@@ -110,22 +85,22 @@
   left: 0;
   width: 100%;
   height: 100%;
-  opacity: 0.25;
+  opacity: 0.1;
   pointer-events: none;
+  background: linear-gradient(45deg, rgba(255,255,255,0.2) 25%, transparent 25%, transparent 75%, rgba(255,255,255,0.2) 75%);
+  background-size: 20px 20px;
 }
 
 .card-content {
   position: relative;
-  border-radius: 8px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  border-radius: var(--theme-radius-large);
+  box-shadow: 0 8px 32px var(--theme-shadow-elevated);
   padding: 24px;
   width: 100%;
   max-width: 320px;
   min-height: 60vh;
   text-align: center;
   font-size: 18px;
-  background-color: white;
-  color: black;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -134,52 +109,93 @@
   background-size: cover;
   position: relative;
   overflow: hidden;
-  background-color: #a5d6a7;
   font-family: "Rubik", sans-serif;
+  transition: all 0.3s ease;
+}
+
+.card-content:hover {
+  transform: translateY(-4px) scale(1.02);
+  box-shadow: 0 12px 48px var(--theme-shadow-elevated);
 }
 
 .card-text {
   font-size: 1.5rem;
+  line-height: 1.4;
+  margin: 1rem 0;
+  z-index: 2;
+  position: relative;
 }
 
 .card-category {
   position: absolute;
   bottom: 40px;
   font-size: 1rem;
-  background: #ffffff;
+  background: var(--theme-surface);
   font-weight: 700;
   padding: 0.5rem 1rem;
-  color: #000000;
-  border-radius: 10px;
-  opacity: 0.4;
+  color: var(--theme-text-primary);
+  border-radius: var(--theme-radius);
+  opacity: 0.9;
+  border: 1px solid var(--theme-border);
+  backdrop-filter: blur(10px);
 }
 
+/* Category-specific brand colors */
 .card-content.general {
-  background-color: #e0e0e0; /* Brighter Gray */
+  background: var(--theme-surface);
+  color: var(--theme-text-primary);
+  border: 2px solid var(--theme-border);
 }
+
 .card-content.relations {
-  background-color: #b3e5fc; /* Brighter Blue */
+  background: linear-gradient(135deg, var(--theme-primary), var(--theme-primary-light));
+  color: var(--theme-text-on-color);
 }
+
 .card-content.loveAndRomance {
-  background-color: #f8bbd0; /* Brighter Pink */
+  background: linear-gradient(135deg, #F8BBD0, #E91E63);
+  color: white;
 }
+
 .card-content.career {
-  background-color: #ffcc80; /* Brighter Orange */
+  background: linear-gradient(135deg, #FFCC80, #FF9800);
+  color: white;
 }
+
 .card-content.travel {
-  background-color: #c8e6c9; /* Brighter Green */
+  background: linear-gradient(135deg, var(--theme-accent), #4CAF50);
+  color: white;
 }
+
 .card-content.childhood {
-  background-color: #d1c4e9; /* Brighter Purple */
+  background: linear-gradient(135deg, #D1C4E9, #9C27B0);
+  color: white;
 }
+
 .card-content.tasks {
-  background-color: #fff59d; /* Brighter Yellow */
+  background: linear-gradient(135deg, #FFF59D, #FBC02D);
+  color: var(--theme-text-primary);
 }
 
 .button-container {
   display: flex;
   justify-content: center;
   padding: 16px;
+}
+
+.button-container button {
+  border-radius: var(--theme-radius-large) !important;
+  font-family: "Rubik", sans-serif !important;
+  font-weight: 600 !important;
+  background: linear-gradient(135deg, var(--theme-primary), var(--theme-primary-hover)) !important;
+  color: var(--theme-text-on-color) !important;
+  box-shadow: 0 4px 16px var(--theme-shadow-primary) !important;
+  border: none !important;
+}
+
+.button-container button:hover {
+  transform: translateY(-2px) !important;
+  box-shadow: 0 8px 24px var(--theme-shadow-primary) !important;
 }
 
 .easter-egg {
@@ -190,4 +206,14 @@
   top: 0;
   right: 0;
   z-index: 1000;
+}
+
+/* Logo font style */
+.logo-font {
+  background: linear-gradient(135deg, var(--theme-primary), var(--theme-accent));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  font-weight: 700;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }

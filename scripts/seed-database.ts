@@ -2,6 +2,7 @@ import connectDB from '@/lib/mongodb';
 import { userService } from '@/lib/services/user.service';
 import { profileService } from '@/lib/services/profile.service';
 import { INTERESTS, HOBBIES, PERSONALITY_TRAITS, LOCATIONS } from '@/models/types';
+import { getDateOfBirthFromAge } from '@/lib/dateUtils';
 
 interface SeedUser {
   telegramId: string;
@@ -12,7 +13,7 @@ interface SeedUser {
   chatId: string;
   profile: {
     name: string;
-    age: string;
+    dateOfBirth: string;
     occupation: string;
     about: string;
     country: string;
@@ -85,7 +86,7 @@ function generateUsers(): SeedUser[] {
       chatId: `chat_${i}`,
       profile: {
         name: firstName,
-        age: (Math.floor(Math.random() * 30) + 20).toString(), // 20-50
+        dateOfBirth: getDateOfBirthFromAge(Math.floor(Math.random() * 30) + 20), // 20-50 years old
         occupation: getRandomItem(sampleOccupations),
         about: getRandomItem(sampleAbouts),
         country: location.country,
@@ -114,8 +115,8 @@ async function seedDatabase() {
     console.log('🗑️ Clearing existing data...');
     
     // Clear existing data
-    await userService.model.deleteMany({});
-    await profileService.model.deleteMany({});
+    await userService.deleteMany({});
+    await profileService.deleteMany({});
     console.log('✅ Existing data cleared');
 
     console.log('🌱 Generating seed data...');
@@ -137,7 +138,7 @@ async function seedDatabase() {
         });
 
         // Create profile
-        await profileService.createProfile(user._id.toString(), seedUser.profile);
+        await profileService.createProfile(String(user._id), seedUser.profile);
         
         createdCount++;
         if (createdCount % 10 === 0) {

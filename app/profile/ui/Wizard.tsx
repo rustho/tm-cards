@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { Progress } from "@telegram-apps/telegram-ui";
 import { Step1Name } from "./steps/Step1Name";
-import { Step2Age } from "./steps/Step2Age";
+import { Step2DateOfBirth } from "./steps/Step2DateOfBirth";
 import { Step3Occupation } from "./steps/Step3Occupation";
 import { Step4Personality } from "./steps/Step4Personality";
 import { Step5Interests } from "./steps/Step5Interests";
@@ -35,6 +35,7 @@ export function Wizard() {
     photo: "",
     country: "",
     region: "",
+    dateOfBirth: "",
   });
 
   const handleNext = () => {
@@ -65,14 +66,14 @@ export function Wizard() {
           />
         );
       case 2:
-      // return (
-      //   <Step2Age
-      //     data={profileData.age.toString()}
-      //     onUpdate={(age) => updateProfileData({ age })}
-      //     onNext={handleNext}
-      //     onBack={handleBack}
-      //   />
-      // );
+      return (
+        <Step2DateOfBirth
+          data={profileData.dateOfBirth}
+          onUpdate={(dateOfBirth) => updateProfileData({ dateOfBirth })}
+          onNext={handleNext}
+          onBack={handleBack}
+        />
+      );
       case 3:
       // return (
       //   <Step3Occupation

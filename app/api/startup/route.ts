@@ -1,16 +1,31 @@
 import { NextResponse } from 'next/server';
 import { initializeServices } from '@/lib/initializeServices';
 
+export const dynamic = 'force-dynamic';
+
 // This endpoint auto-initializes services on first app startup
 export async function GET() {
   try {
-    console.log('🚀 Auto-starting TravelMate services...');
-    await initializeServices();
+    // Skip initialization during build time to prevent timeouts
+    if (process.env.NODE_ENV === 'production' && process.env.VERCEL_ENV === 'production') {
+      console.log('🚀 Auto-starting TravelMate services...');
+      
+      // Add timeout to prevent hanging during deployment
+      const initPromise = initializeServices();
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Initialization timeout')), 30000)
+      );
+      
+      await Promise.race([initPromise, timeoutPromise]);
+    } else {
+      console.log('⏭️ Skipping service initialization during build/development');
+    }
     
     return NextResponse.json({
       success: true,
-      message: 'All services initialized successfully',
-      timestamp: new Date().toISOString()
+      message: 'Services startup endpoint ready',
+      timestamp: new Date().toISOString(),
+      environment: process.env.NODE_ENV || 'unknown'
     });
   } catch (error) {
     console.error('❌ Failed to initialize services:', error);

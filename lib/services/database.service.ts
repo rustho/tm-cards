@@ -85,6 +85,15 @@ export class DatabaseService<T extends Document> {
     }
   }
 
+  async deleteMany(filter: FilterQuery<T> = {}): Promise<number> {
+    try {
+      const result = await this.model.deleteMany(filter).exec();
+      return result.deletedCount || 0;
+    } catch (error: any) {
+      throw new Error(`DeleteMany operation failed: ${error.message}`);
+    }
+  }
+
   async count(filter: FilterQuery<T> = {}): Promise<number> {
     try {
       return await this.model.countDocuments(filter).exec();

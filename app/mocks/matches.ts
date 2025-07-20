@@ -5,6 +5,7 @@ export const mockProfiles: Record<number, Profile> = {
     id: "123456",
     username: "anna.travels",
     name: "Anna",
+    dateOfBirth: "1995-03-15",
     interests: ["Travel", "Photography", "Cooking"],
     similarInterests: "Travel, Photography",
     announcement:
@@ -20,6 +21,7 @@ export const mockProfiles: Record<number, Profile> = {
     id: "789012",
     username: "mike.tech",
     name: "Mike",
+    dateOfBirth: "1992-07-22",
     interests: ["Technology", "Travel", "Languages"],
     similarInterests: "Technology, Travel, Languages",
     announcement: "I enjoy slow travel and immersing myself in local cultures",

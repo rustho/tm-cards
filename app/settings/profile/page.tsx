@@ -19,6 +19,7 @@ export default function ProfileSettingsPage() {
     photo: "",
     country: "USA",
     region: "California",
+    dateOfBirth: "1995-03-15",
   });
 
   const handleProfileUpdate = (updatedProfile: Profile) => {

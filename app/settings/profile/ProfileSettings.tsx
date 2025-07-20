@@ -4,6 +4,7 @@ import { useState } from "react";
 import { FlexibleWizard } from "../../profile/ui/FlexibleWizard";
 import { Profile } from "@/models/types";
 import { SuccessToast } from "./SuccessToast";
+import { calculateAge } from "@/lib/dateUtils";
 import "./ProfileSettings.css";
 
 interface ProfileSettingsProps {
@@ -29,6 +30,7 @@ export function ProfileSettings({
       photo: "",
       country: "",
       region: "",
+      dateOfBirth: "",
     }
   );
 
@@ -63,7 +65,7 @@ export function ProfileSettings({
   const getStepName = (step: number): string => {
     const stepNames: { [key: number]: string } = {
       1: "Name",
-      2: "Age", 
+      2: "Date of Birth", 
       3: "Occupation",
       4: "Personality",
       5: "Interests",
@@ -282,8 +284,13 @@ export function ProfileSettings({
                 onClick={() => handleEditStep(2)}
               >
                 <div className="card-icon">🎂</div>
-                <div className="card-title">Age</div>
-                <div className="card-subtitle">Add your age</div>
+                <div className="card-title">Date of Birth</div>
+                <div className="card-subtitle">
+                  {currentProfile.dateOfBirth 
+                    ? `Age: ${calculateAge(currentProfile.dateOfBirth)}` 
+                    : "Add your date of birth"
+                  }
+                </div>
               </button>
               
               <button 

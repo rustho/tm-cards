@@ -1,4 +1,4 @@
-import cron from 'node-cron';
+import cron, { ScheduledTask } from 'node-cron';
 import MatchingService from './matchingService';
 import BotLogger from './botLogger';
 
@@ -14,7 +14,7 @@ class MatchingScheduler {
   private matchingService: MatchingService;
   private logger: BotLogger;
   private config: SchedulerConfig;
-  private cronTask: cron.ScheduledTask | null = null;
+  private cronTask: ScheduledTask | null = null;
   private isSchedulerRunning: boolean = false;
 
   static getInstance(): MatchingScheduler {
@@ -54,7 +54,6 @@ class MatchingScheduler {
           await this.runScheduledMatching();
         },
         {
-          scheduled: this.config.enabled,
           timezone: this.config.timezone
         }
       );

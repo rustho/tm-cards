@@ -1,12 +1,13 @@
 import { Schema, model, models, Types, Document } from 'mongoose';
 import { createBaseSchema } from './base.schema';
+import { validateDateOfBirth } from '../../lib/dateUtils';
 
 export interface IProfile extends Document {
   userId: Types.ObjectId;
   
   // Basic Info (from actual ProfileData)
   name: string;                 // from Profile.name
-  age: string;                  // from ProfileData.age (string, not number!)
+  dateOfBirth: string;          // from ProfileData.dateOfBirth (ISO date string)
   occupation: string;           // from ProfileData.occupation
   about: string;               // from ProfileData.about
   
@@ -52,15 +53,15 @@ const profileSchemaDefinition = {
     minlength: 2,
     maxlength: 100
   },
-  age: {
-    type: String,  // String, not Number! (as per actual implementation)
+  dateOfBirth: {
+    type: String,  // ISO date string (YYYY-MM-DD)
     required: true,
     validate: {
       validator: function(v: string) {
-        const age = parseInt(v);
-        return age >= 18 && age <= 100;
+        const validation = validateDateOfBirth(v);
+        return validation.isValid;
       },
-      message: 'Age must be between 18 and 100'
+      message: 'Date of birth must result in age between 18 and 100'
     }
   },
   occupation: {
@@ -184,7 +185,7 @@ profileSchema.index({ interests: 1 });
 
 // Calculate completion percentage before save
 profileSchema.pre('save', function(next) {
-  const requiredFields = ['name', 'age', 'occupation', 'about', 'country', 'region', 'interests', 'placesToVisit', 'announcement'];
+  const requiredFields = ['name', 'dateOfBirth', 'occupation', 'about', 'country', 'region', 'interests', 'placesToVisit', 'announcement'];
   const optionalFields = ['hobbies', 'personalityTraits', 'instagram', 'photo', 'profile'];
   
   let completedRequired = 0;

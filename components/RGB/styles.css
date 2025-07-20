@@ -2,11 +2,15 @@
   display: inline-flex;
   align-items: center;
   gap: 5px;
+  color: var(--theme-text-primary);
+  font-family: "Rubik", sans-serif;
+  font-weight: 500;
 }
 
 .rgb__icon {
   width: 18px;
   aspect-ratio: 1;
-  border: 1px solid #555;
+  border: 1px solid var(--theme-border);
   border-radius: 50%;
+  box-shadow: 0 2px 4px var(--theme-shadow);
 }

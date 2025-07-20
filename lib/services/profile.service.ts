@@ -2,6 +2,7 @@ import { Profile, IProfile } from '@/models/schemas/profile.schema';
 import { DatabaseService } from './database.service';
 import { Types } from 'mongoose';
 import type { ProfileData } from '@/models/types';
+import { calculateAge } from '../dateUtils';
 
 export class ProfileService extends DatabaseService<IProfile> {
   constructor() {
@@ -16,7 +17,7 @@ export class ProfileService extends DatabaseService<IProfile> {
     return await this.create({
       userId: new Types.ObjectId(userId),
       name: profileData.name || '',
-      age: profileData.age || '',
+      dateOfBirth: profileData.dateOfBirth || '',
       occupation: profileData.occupation || '',
       about: profileData.about || '',
       country: profileData.country || '',
@@ -89,8 +90,8 @@ export class ProfileService extends DatabaseService<IProfile> {
     }
 
     // Age compatibility (20 points)
-    const age1 = parseInt(profile1.age);
-    const age2 = parseInt(profile2.age);
+    const age1 = calculateAge(profile1.dateOfBirth);
+    const age2 = calculateAge(profile2.dateOfBirth);
     const ageDiff = Math.abs(age1 - age2);
     if (ageDiff <= 5) {
       score += 20;

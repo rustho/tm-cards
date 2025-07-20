@@ -9,15 +9,25 @@ export async function GET(
     const userId = parseInt(params.userId);
     console.log(userId);
     const users = await getCachedSheetData();
+    
+    if (!users || users.length === 0) {
+      return NextResponse.json({ error: "No users data available" }, { status: 404 });
+    }
+    
     const profile = users.find((user) => user.id == userId);
+    
+    if (!profile) {
+      return NextResponse.json({ error: "User profile not found" }, { status: 404 });
+    }
+    
     const previousMatches = profile?.previousMatch;
-    const matches = users.filter((user) => previousMatches.includes(user.id));
+    
+    // Check if previousMatches exists and is an array before filtering
+    const matches = previousMatches && Array.isArray(previousMatches) 
+      ? users.filter((user) => previousMatches.includes(user.id))
+      : [];
 
     console.log(matches);
-
-    if (!matches) {
-      return NextResponse.json({ error: "No matches found" }, { status: 404 });
-    }
 
     return NextResponse.json(matches);
   } catch (error) {

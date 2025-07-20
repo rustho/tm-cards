@@ -36,10 +36,10 @@
         "placeholder": "Your name",
         "error": "Name must contain at least 2 characters"
       },
-      "age": {
-        "title": "How old are you?",
-        "description": "Enter your age",
-        "placeholder": "Your age"
+      "dateOfBirth": {
+        "title": "When were you born?",
+        "description": "Select your date of birth",
+        "placeholder": "Date of birth"
       },
       "occupation": {
         "title": "What do you do for work?",

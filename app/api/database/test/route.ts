@@ -54,9 +54,9 @@ export async function POST(request: NextRequest) {
     });
 
     // Create a test profile
-    const testProfile = await profileService.createProfile(testUser._id.toString(), {
+    const testProfile = await profileService.createProfile(String(testUser._id), {
       name: 'Test User',
-      age: '25',
+      dateOfBirth: '1999-01-01',
       occupation: 'Software Developer',
       about: 'Test user for database validation',
       country: 'Вьетнам',

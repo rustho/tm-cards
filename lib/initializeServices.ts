@@ -125,9 +125,9 @@ export async function getServicesHealth() {
   const health = {
     timestamp: new Date().toISOString(),
     services: {
-      bot: { status: 'unknown', error: null },
-      scheduler: { status: 'unknown', error: null },
-      database: { status: 'unknown', error: null }
+      bot: { status: 'unknown', error: null as string | null },
+      scheduler: { status: 'unknown', error: null as string | null },
+      database: { status: 'unknown', error: null as string | null }
     },
     overall: 'unknown' as 'healthy' | 'partial' | 'unhealthy' | 'unknown'
   };

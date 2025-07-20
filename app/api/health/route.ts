@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServicesHealth, initializeServices } from '@/lib/initializeServices';
 
+export const dynamic = 'force-dynamic';
+
 // GET - Health check for all services
 export async function GET(request: NextRequest) {
   try {

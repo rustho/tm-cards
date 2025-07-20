@@ -1,9 +1,5 @@
-/* styles.css */
-@import url("https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;700&display=swap");
-@import url("https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap");
-@import url("https://fonts.googleapis.com/css2?family=Fira+Sans:wght@300;400;500;700&display=swap");
-@import url("https://fonts.googleapis.com/css2?family=Fira+Mono:wght@400;500;700&display=swap");
-@import url("https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;700&display=swap");
+/* Profile Page - Brand Theme System */
+@import url("https://fonts.googleapis.com/css2?family=Rubik:wght@300;400;500;700&display=swap");
 
 .page {
   display: flex;
@@ -12,27 +8,34 @@
   height: 100%;
   padding: 15vh 0;
   gap: 2rem;
+  background: var(--theme-bg-primary);
+  min-height: 100vh;
 }
 
 .card-text {
   font-size: 1.5rem;
+  color: var(--theme-text-primary);
+  font-weight: 600;
 }
 
 .card-category {
   position: absolute;
   bottom: 40px;
   font-size: 1rem;
-  background: #ffffff;
+  background: var(--theme-surface);
   font-weight: 700;
   padding: 0.5rem 1rem;
-  color: #000000;
-  border-radius: 10px;
-  opacity: 0.4;
+  color: var(--theme-text-primary);
+  border: 1px solid var(--theme-border);
+  border-radius: var(--theme-radius-large);
+  opacity: 0.9;
+  box-shadow: 0 2px 8px var(--theme-shadow);
 }
 
 .button-container {
   display: flex;
   justify-content: center;
+  gap: 1rem;
   padding: 16px;
 }
 
@@ -40,12 +43,15 @@
   max-width: 800px;
   margin: 0 auto;
   padding: 2rem;
+  background: var(--theme-bg-primary);
+  min-height: 100vh;
 }
 
 .wizard-container {
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  background: var(--theme-surface);
+  border: 1px solid var(--theme-border);
+  border-radius: var(--theme-radius-large);
+  box-shadow: 0 2px 8px var(--theme-shadow);
   padding: 2rem;
   margin-top: 2rem;
 }
@@ -56,14 +62,15 @@
 
 .progress-bar {
   height: 4px;
-  background: #007aff;
-  border-radius: 2px;
+  background: linear-gradient(135deg, var(--theme-primary), var(--theme-primary-hover));
+  border-radius: var(--theme-radius);
   transition: width 0.3s ease;
+  box-shadow: 0 2px 8px var(--theme-shadow-primary);
 }
 
 .step-indicator {
   margin-top: 0.5rem;
-  color: #666;
+  color: var(--theme-text-secondary);
   font-size: 0.9rem;
 }
 
@@ -75,8 +82,20 @@
 
 .step-container h2 {
   font-size: 1.5rem;
-  color: white;
+  color: var(--theme-text-primary);
   margin-bottom: 1rem;
+  background: linear-gradient(135deg, var(--theme-primary), var(--theme-accent));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  font-weight: 600;
+}
+
+.step-container .step-description {
+  color: var(--theme-text-secondary);
+  margin-bottom: 1.5rem;
+  line-height: 1.6;
+  font-size: 0.95rem;
 }
 
 .step-container form {
@@ -85,32 +104,57 @@
   gap: 1rem;
 }
 
-.step-container input {
-  padding: 0.8rem;
-  border: 1px solid #ddd;
-  border-radius: 8px;
+.step-container input,
+.step-container textarea {
+  background: var(--theme-surface);
+  border: 1px solid var(--theme-border);
+  border-radius: var(--theme-radius);
+  color: var(--theme-text-primary);
+  padding: 0.75rem;
   font-size: 1rem;
-  color: #ffffff;
+  font-family: "Rubik", sans-serif;
+  transition: all 0.2s ease;
+  width: 100%;
+}
+
+.step-container input:focus,
+.step-container textarea:focus {
+  outline: none;
+  border-color: var(--theme-primary);
+  box-shadow: 0 0 0 3px var(--theme-shadow-primary);
+}
+
+.step-container input::placeholder,
+.step-container textarea::placeholder {
+  color: var(--theme-text-secondary);
 }
 
 .step-container button {
-  padding: 0.8rem 1.5rem;
-  background: #007aff;
-  color: white;
+  background: linear-gradient(135deg, var(--theme-primary), var(--theme-primary-hover));
+  color: var(--theme-text-on-color);
   border: none;
-  border-radius: 8px;
+  border-radius: var(--theme-radius);
+  padding: 0.75rem 1.5rem;
   font-size: 1rem;
+  font-weight: 600;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: all 0.2s ease;
+  font-family: "Rubik", sans-serif;
+  box-shadow: 0 2px 8px var(--theme-shadow-primary);
 }
 
 .step-container button:disabled {
-  background: #ccc;
+  opacity: 0.6;
   cursor: not-allowed;
+  background: var(--theme-surface);
+  color: var(--theme-text-secondary);
+  border: 1px solid var(--theme-border);
+  box-shadow: 0 2px 8px var(--theme-shadow);
 }
 
 .step-container button:hover:not(:disabled) {
-  background: #0056b3;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px var(--theme-shadow-primary);
 }
 
 /* Grid layout for personality, interests, and hobbies buttons */
@@ -123,17 +167,29 @@
 
 .grid-button {
   padding: 0.8rem;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  background: white;
+  border: 1px solid var(--theme-border);
+  border-radius: var(--theme-radius);
+  background: var(--theme-surface);
+  color: var(--theme-text-primary);
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.2s ease;
+  font-family: "Rubik", sans-serif;
+  font-weight: 500;
+  box-shadow: 0 2px 4px var(--theme-shadow);
+}
+
+.grid-button:hover {
+  background: var(--theme-surface-elevated);
+  border-color: var(--theme-primary);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px var(--theme-shadow);
 }
 
 .grid-button.selected {
-  background: #007aff;
-  color: white;
-  border-color: #007aff;
+  background: linear-gradient(135deg, var(--theme-primary), var(--theme-primary-hover));
+  color: var(--theme-text-on-color);
+  border-color: var(--theme-primary);
+  box-shadow: 0 4px 16px var(--theme-shadow-primary);
 }
 
 /* Navigation buttons */
@@ -145,6 +201,23 @@
 
 .navigation-buttons button {
   flex: 1;
+  min-height: 48px;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.navigation-buttons button.btn-secondary {
+  background: var(--theme-surface);
+  color: var(--theme-text-primary);
+  border: 1px solid var(--theme-border);
+  box-shadow: 0 2px 8px var(--theme-shadow);
+}
+
+.navigation-buttons button.btn-secondary:hover:not(:disabled) {
+  background: var(--theme-surface-elevated);
+  border-color: var(--theme-primary);
+  color: var(--theme-primary);
+  transform: translateY(-1px);
 }
 
 /* Text area styles */
@@ -152,43 +225,68 @@ textarea {
   width: 100%;
   min-height: 120px;
   padding: 0.8rem;
-  border: 1px solid #ddd;
-  border-radius: 8px;
+  border: 1px solid var(--theme-border);
+  border-radius: var(--theme-radius);
+  background: var(--theme-surface);
+  color: var(--theme-text-primary);
   font-size: 1rem;
+  font-family: "Rubik", sans-serif;
   resize: vertical;
+  transition: all 0.2s ease;
+}
+
+textarea:focus {
+  outline: none;
+  border-color: var(--theme-primary);
+  box-shadow: 0 0 0 3px var(--theme-shadow-primary);
+}
+
+textarea::placeholder {
+  color: var(--theme-text-secondary);
 }
 
 /* Character count */
 .character-count {
-  color: #666;
+  color: var(--theme-text-secondary);
   font-size: 0.9rem;
   text-align: right;
   margin-top: 0.5rem;
+  font-weight: 500;
 }
 
 /* Photo upload area */
 .photo-upload {
-  border: 2px dashed #ddd;
-  border-radius: 8px;
+  border: 2px dashed var(--theme-border);
+  border-radius: var(--theme-radius-large);
+  background: var(--theme-surface);
   padding: 2rem;
   text-align: center;
   cursor: pointer;
-  transition: border-color 0.2s;
+  transition: all 0.2s ease;
+  color: var(--theme-text-secondary);
 }
 
 .photo-upload:hover {
-  border-color: #007aff;
+  border-color: var(--theme-primary);
+  background: var(--theme-surface-elevated);
+  color: var(--theme-text-primary);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px var(--theme-shadow);
 }
 
 .photo-preview {
   max-width: 200px;
   max-height: 200px;
   margin: 1rem auto;
-  border-radius: 8px;
+  border-radius: var(--theme-radius-large);
   object-fit: cover;
+  border: 2px solid var(--theme-border);
+  box-shadow: 0 4px 12px var(--theme-shadow);
 }
 
 .selected-button {
-  background: #5ea08e;
+  background: linear-gradient(135deg, var(--theme-accent), #71B3A1);
   color: white;
+  border-color: var(--theme-accent);
+  box-shadow: 0 4px 16px rgba(137, 195, 173, 0.3);
 }
