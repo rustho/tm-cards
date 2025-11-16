@@ -33,7 +33,7 @@
       "name": {
         "title": "Как тебя зовут?",
         "description": "Введите ваше имя",
-        "placeholder": "Ваше имя",
+        "placeholder": "Твое имя",
         "error": "Имя должно содержать минимум 2 символа"
       },
       "dateOfBirth": {

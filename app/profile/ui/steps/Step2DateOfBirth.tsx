@@ -10,7 +10,7 @@ export interface Step2DateOfBirthProps extends StepProps {
   onUpdate: (dateOfBirth: string) => void;
 }
 
-export function Step2DateOfBirth({ data, onUpdate, onNext, onBack }: Step2DateOfBirthProps) {
+export function Step2DateOfBirth({ data, onUpdate, onNext }: Step2DateOfBirthProps) {
   const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     onUpdate(value);
@@ -35,7 +35,6 @@ export function Step2DateOfBirth({ data, onUpdate, onNext, onBack }: Step2DateOf
     <StepContainer
       title="Когда ты родился?"
       description="Выберите дату вашего рождения (возраст от 18 до 100 лет)"
-      onBack={onBack}
       onNext={onNext}
       nextDisabled={!isValidDate}
     >

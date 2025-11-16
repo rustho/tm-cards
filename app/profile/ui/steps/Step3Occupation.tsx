@@ -12,8 +12,7 @@ export interface Step3OccupationProps extends StepProps {
 export function Step3Occupation({
   data,
   onUpdate,
-  onNext,
-  onBack,
+  onNext
 }: Step3OccupationProps) {
   const handleOccupationChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     onUpdate(e.target.value);
@@ -25,7 +24,6 @@ export function Step3Occupation({
     <StepContainer
       title="Кем ты работаешь?"
       description="Введите вашу профессию"
-      onBack={onBack}
       onNext={onNext}
       nextDisabled={!isValidOccupation}
     >

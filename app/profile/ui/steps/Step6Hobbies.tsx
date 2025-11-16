@@ -12,7 +12,6 @@ export function Step6Hobbies({
   data,
   onUpdate,
   onNext,
-  onBack,
 }: Step6HobbiesProps) {
   const handleToggleHobby = (hobby: string) => {
     if (data.includes(hobby)) {
@@ -26,7 +25,6 @@ export function Step6Hobbies({
     <StepContainer
       title="Твои самые любимые увлечения или чем тебе хочется заняться вместе?"
       description="Выберите максимум 4 увлечения"
-      onBack={onBack}
       onNext={onNext}
       nextDisabled={data.length === 0}
     >

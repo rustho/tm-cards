@@ -99,7 +99,11 @@ body {
 }
 
 body {
-  background: var(--theme-bg-primary) !important;
+  background-image: url('/background.png');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
   color: var(--theme-text-primary) !important;
   transition: all 0.3s ease;
 }

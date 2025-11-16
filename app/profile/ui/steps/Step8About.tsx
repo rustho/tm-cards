@@ -14,13 +14,11 @@ export function Step8About({
   data,
   onUpdate,
   onNext,
-  onBack,
 }: Step8AboutProps) {
   return (
     <StepContainer
       title="Расскажи самое важное и интересное о себе в свободной форме."
       description="❗️Важно уместиться до 284 символов, чтобы текст не обрезался на самом интересном месте."
-      onBack={onBack}
       onNext={onNext}
       nextDisabled={!data.trim()}
     >

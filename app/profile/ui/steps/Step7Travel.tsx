@@ -14,7 +14,6 @@ export function Step7Travel({
   data,
   onUpdate,
   onNext,
-  onBack,
 }: Step7TravelProps) {
   const t = useTranslations('profile.steps.travel');
   
@@ -22,7 +21,6 @@ export function Step7Travel({
     <StepContainer
       title={t('title')}
       description={t('description')}
-      onBack={onBack}
       onNext={onNext}
       nextDisabled={!data.trim()}
     >

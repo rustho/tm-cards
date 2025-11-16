@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { useTranslations } from "next-intl";
-import { Progress } from "@telegram-apps/telegram-ui";
 import { Step1Name } from "./steps/Step1Name";
 import { Step2DateOfBirth } from "./steps/Step2DateOfBirth";
 import { Step3Occupation } from "./steps/Step3Occupation";
@@ -17,6 +16,8 @@ import { Step11Request } from "./steps/Step11Request";
 import { Step12Photo } from "./steps/Step12Photo";
 import { Step13Review } from "./steps/Step13Review";
 import { Profile } from "@/models/types";
+import Image from "next/image";
+
 const TOTAL_STEPS = 13;
 
 export function Wizard() {
@@ -62,7 +63,6 @@ export function Wizard() {
             data={profileData.name}
             onUpdate={(name) => updateProfileData({ name })}
             onNext={handleNext}
-            onBack={handleBack}
           />
         );
       case 2:
@@ -71,7 +71,6 @@ export function Wizard() {
           data={profileData.dateOfBirth}
           onUpdate={(dateOfBirth) => updateProfileData({ dateOfBirth })}
           onNext={handleNext}
-          onBack={handleBack}
         />
       );
       case 3:
@@ -80,7 +79,6 @@ export function Wizard() {
       //     data={profileData.occupation}
       //     onUpdate={(occupation) => updateProfileData({ occupation })}
       //     onNext={handleNext}
-      //     onBack={handleBack}
       //   />
       // );
       case 4:
@@ -89,7 +87,6 @@ export function Wizard() {
       //     data={profileData.personality}
       //     onUpdate={(personality) => updateProfileData({ personality })}
       //     onNext={handleNext}
-      //     onBack={handleBack}
       //   />
       // );
       case 5:
@@ -98,7 +95,6 @@ export function Wizard() {
             data={profileData.interests}
             onUpdate={(interests) => updateProfileData({ interests })}
             onNext={handleNext}
-            onBack={handleBack}
           />
         );
       case 6:
@@ -107,7 +103,6 @@ export function Wizard() {
       //     data={profileData.hobbies}
       //     onUpdate={(hobbies) => updateProfileData({ hobbies })}
       //     onNext={handleNext}
-      //     onBack={handleBack}
       //   />
       // );
       case 7:
@@ -116,7 +111,6 @@ export function Wizard() {
             data={profileData.placesToVisit}
             onUpdate={(placesToVisit) => updateProfileData({ placesToVisit })}
             onNext={handleNext}
-            onBack={handleBack}
           />
         );
       case 8:
@@ -125,7 +119,6 @@ export function Wizard() {
       //     data={profileData.about}
       //     onUpdate={(about) => updateProfileData({ about })}
       //     onNext={handleNext}
-      //     onBack={handleBack}
       //   />
       // );
       case 9:
@@ -134,7 +127,6 @@ export function Wizard() {
             data={profileData.instagram}
             onUpdate={(instagram) => updateProfileData({ instagram })}
             onNext={handleNext}
-            onBack={handleBack}
           />
         );
       case 10:
@@ -148,7 +140,6 @@ export function Wizard() {
               })
             }
             onNext={handleNext}
-            onBack={handleBack}
           />
         );
       case 11:
@@ -157,7 +148,6 @@ export function Wizard() {
             data={profileData.announcement}
             onUpdate={(announcement) => updateProfileData({ announcement })}
             onNext={handleNext}
-            onBack={handleBack}
           />
         );
       case 12:
@@ -166,7 +156,6 @@ export function Wizard() {
             data={profileData.photo}
             onUpdate={(photo) => updateProfileData({ photo })}
             onNext={handleNext}
-            onBack={handleBack}
           />
         );
       case 13:
@@ -175,7 +164,6 @@ export function Wizard() {
             data={profileData}
             onUpdate={updateProfileData}
             onNext={handleNext}
-            onBack={handleBack}
           />
         );
       default:
@@ -184,14 +172,22 @@ export function Wizard() {
   };
 
   return (
-    <div>
-      <div className="wizard-progress">
-        <Progress value={(currentStep * 100) / TOTAL_STEPS} />
-        <div className="step-indicator">
-          {t('step')} {currentStep} {t('of')} {TOTAL_STEPS}
-        </div>
-      </div>
-      <div className="wizard-content">{renderStep()}</div>
-    </div>
+      <>
+          <div className="wizard-progress">
+              <button className="back-button" onClick={handleBack}>
+                  <Image src="/left-arrow.svg" alt="Back" width={16.5} height={16.5}  />
+                  Back
+              </button>
+              <div className="progress-indicator">
+                  {[...new Array(currentStep)].map((_, i) => (
+                      <div className="progress-block" key={i} style={{ width: `${100 / TOTAL_STEPS}%` }} />
+                  ))}
+              </div>
+              <div className="step-indicator">
+                  {currentStep} / {TOTAL_STEPS}
+              </div>
+          </div>
+          <div className="wizard-content">{renderStep()}</div>
+      </>
   );
 }

@@ -14,7 +14,6 @@ export function Step11Request({
   data,
   onUpdate,
   onNext,
-  onBack,
 }: Step11RequestProps) {
   const t = useTranslations('profile.steps.request');
 
@@ -22,7 +21,6 @@ export function Step11Request({
     <StepContainer
       title={t('title')}
       description={t('description')}
-      onBack={onBack}
       onNext={onNext}
       nextDisabled={!data.trim()}
     >
