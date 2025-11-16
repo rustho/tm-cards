@@ -91,7 +91,7 @@ body {
   margin: 0;
   padding: 0;
   height: 100%;
-  font-family: "Rubik", system-ui, sans-serif;
+  font-family: var(--font-handjet);
   font-weight: 400;
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;

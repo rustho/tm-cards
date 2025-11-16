@@ -142,6 +142,7 @@
     border-radius: 0 !important;
     box-shadow: none !important;
     background: transparent !important;
+    font-family: inherit !important;
 }
 
 .step-container h2 {
@@ -177,7 +178,6 @@
   color: var(--theme-text-primary);
   padding: 0.75rem;
   font-size: 1rem;
-  font-family: "Rubik", sans-serif;
   transition: all 0.2s ease;
   width: 100%;
 }
@@ -204,7 +204,6 @@
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;
-  font-family: "Rubik", sans-serif;
   box-shadow: 0 2px 8px var(--theme-shadow-primary);
 }
 
@@ -238,7 +237,6 @@
   color: var(--theme-text-primary);
   cursor: pointer;
   transition: all 0.2s ease;
-  font-family: "Rubik", sans-serif;
   font-weight: 500;
   box-shadow: 0 2px 4px var(--theme-shadow);
 }
@@ -295,7 +293,6 @@ textarea {
   background: var(--theme-surface);
   color: var(--theme-text-primary);
   font-size: 1rem;
-  font-family: "Rubik", sans-serif;
   resize: vertical;
   transition: all 0.2s ease;
 }
