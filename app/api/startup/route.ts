@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { initializeServices } from '@/lib/initializeServices';
 
+
 export const dynamic = 'force-dynamic';
 
 // This endpoint auto-initializes services on first app startup
