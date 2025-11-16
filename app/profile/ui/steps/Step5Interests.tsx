@@ -34,7 +34,6 @@ export function Step5Interests({
   return (
     <StepContainer
       title={t('title')}
-      description={t('description')}
       onNext={onNext}
       nextDisabled={!isValidSelection}
     >

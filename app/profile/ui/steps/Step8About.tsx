@@ -18,7 +18,6 @@ export function Step8About({
   return (
     <StepContainer
       title="Расскажи самое важное и интересное о себе в свободной форме."
-      description="❗️Важно уместиться до 284 символов, чтобы текст не обрезался на самом интересном месте."
       onNext={onNext}
       nextDisabled={!data.trim()}
     >

@@ -25,7 +25,6 @@ export function Step9Instagram({
   return (
     <StepContainer
       title={t('title')}
-      description={t('description')}
       onNext={onNext}
       nextDisabled={!data.trim()}
     >

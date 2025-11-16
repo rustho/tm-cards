@@ -20,7 +20,6 @@ export function Step11Request({
   return (
     <StepContainer
       title={t('title')}
-      description={t('description')}
       onNext={onNext}
       nextDisabled={!data.trim()}
     >

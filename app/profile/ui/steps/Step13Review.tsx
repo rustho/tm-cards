@@ -20,7 +20,6 @@ export function Step13Review({
   return (
     <StepContainer
       title={t('title')}
-      description={t('description')}
       onNext={onNext}
       nextText={tWizard('finish')}
     >

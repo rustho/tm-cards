@@ -24,7 +24,6 @@ export function Step6Hobbies({
   return (
     <StepContainer
       title="Твои самые любимые увлечения или чем тебе хочется заняться вместе?"
-      description="Выберите максимум 4 увлечения"
       onNext={onNext}
       nextDisabled={data.length === 0}
     >

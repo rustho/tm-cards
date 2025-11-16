@@ -36,7 +36,6 @@ export function Step10Location({
   return (
     <StepContainer
       title={t('title')}
-      description={t('description')}
       onNext={handleUpdate}
       nextDisabled={nextDisabled}
     >

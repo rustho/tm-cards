@@ -26,9 +26,6 @@ export function StepContainer({
         <div className="button-container">
             <button
                 className="next-button"
-                size="l"
-                mode="filled"
-                stretched
                 onClick={() => {
                     if (!nextDisabled) onNext();
                 }}

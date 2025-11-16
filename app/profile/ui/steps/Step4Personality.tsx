@@ -31,7 +31,6 @@ export function Step4Personality({
   return (
     <StepContainer
       title="Какие у тебя черты характера?"
-      description="Выберите подходящие черты характера"
       onNext={onNext}
       nextDisabled={!isValidSelection}
     >

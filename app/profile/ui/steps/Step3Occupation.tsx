@@ -23,7 +23,6 @@ export function Step3Occupation({
   return (
     <StepContainer
       title="Кем ты работаешь?"
-      description="Введите вашу профессию"
       onNext={onNext}
       nextDisabled={!isValidOccupation}
     >

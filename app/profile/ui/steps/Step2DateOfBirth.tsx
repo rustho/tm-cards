@@ -34,7 +34,6 @@ export function Step2DateOfBirth({ data, onUpdate, onNext }: Step2DateOfBirthPro
   return (
     <StepContainer
       title="Когда ты родился?"
-      description="Выберите дату вашего рождения (возраст от 18 до 100 лет)"
       onNext={onNext}
       nextDisabled={!isValidDate}
     >
