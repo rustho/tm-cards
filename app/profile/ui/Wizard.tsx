@@ -176,7 +176,7 @@ export function Wizard() {
           <div className="wizard-progress">
               <button className="back-button" onClick={handleBack}>
                   <Image src="/left-arrow.svg" alt="Back" width={16.5} height={16.5}  />
-                  Back
+                  {t('back')}
               </button>
               <div className="progress-indicator">
                   {[...new Array(currentStep)].map((_, i) => (
