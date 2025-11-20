@@ -59,7 +59,7 @@ export default function Home() {
   }
 
   return (
-    <div style={{ background: 'var(--theme-bg-primary)', minHeight: '100vh' }}>
+    <div style={{ minHeight: '100vh' }}>
       <div className="max-w-4xl mx-auto p-6">
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold mb-2" style={{ color: 'var(--theme-text-primary)' }}>

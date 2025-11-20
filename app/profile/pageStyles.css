@@ -36,7 +36,25 @@
   display: flex;
   justify-content: center;
   gap: 1rem;
-  padding: 16px;
+  padding-top: 13px;
+}
+
+.next-button {
+    width: 100%;
+    height: 59px;
+    background: linear-gradient(180deg, #73A3D7 0%, #4187CA 46.63%, #79B0D7 100%);
+    box-shadow:
+            5.32px 5.32px 0px 0px #DBDBDB inset,
+            -5.32px -5.32px 0px 0px #808080 inset,
+            2.66px 2.66px 0px 0px #FFFFFF inset,
+            -2.66px -2.66px 0px 0px #000000 inset;
+
+}
+
+.next-button:disabled {
+    background: #bfbfbf; /* или #ccc если хочешь светлее */
+    cursor: not-allowed;
+    opacity: 0.9;
 }
 
 .profile-page {
@@ -45,6 +63,12 @@
   padding: 2rem;
   background: var(--theme-bg-primary);
   min-height: 100vh;
+}
+
+.wizard-content {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
 }
 
 .wizard-container {
@@ -57,38 +81,80 @@
 }
 
 .wizard-progress {
-  margin-bottom: 2rem;
+  margin-bottom: 12px;
+  display: flex;
+  justify-content: center;
+  gap: 4px;
 }
 
-.progress-bar {
-  height: 4px;
-  background: linear-gradient(135deg, var(--theme-primary), var(--theme-primary-hover));
-  border-radius: var(--theme-radius);
-  transition: width 0.3s ease;
-  box-shadow: 0 2px 8px var(--theme-shadow-primary);
+.progress-indicator {
+  flex-grow: 1;
+  outline: 1px solid #AEAEAE;
+  padding: 2px;
+  border-radius: 2px;
+  height: 20px;
+  display: flex;
+  gap: 4px;
+  background: white;
 }
 
-.step-indicator {
-  margin-top: 0.5rem;
-  color: var(--theme-text-secondary);
-  font-size: 0.9rem;
+.progress-block {
+  height: 16px;
+  background: red;
+  background: linear-gradient(180deg, #E45F3E 0%, #E77157 51.44%, #BB3916 100%);
+}
+
+.step-indicator, .back-button {
+  background: white;
+  width: 55px;
+  height: 20px;
+  outline: 1px solid #AEAEAE;
+  border-radius: 2px;
+  color: #1A1502;
+  font-size: 0.8rem;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+}
+
+.step-content {
+    box-shadow: -1.72px -1.72px 8px 0px #80808080 inset, 0.86px 0.86px 8px 0px #80808080 inset;
+    flex-grow: 1;
+    padding: 10px 14px;
 }
 
 .step-container {
+  flex-grow: 1;
+  background: white;
+  box-shadow: 1.72px 1.72px 0px 0px #DFDFDF inset, -1.72px -1.72px 0px 0px #7F7F7F inset, 0.86px 0.86px 0px 0px #FFFFFF inset;
+
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+}
+
+.input-field, .input-field:focus {
+    height: 68px;
+    padding: 25px 16px !important;
+    outline: none !important;
+    border-style: none none dashed none !important;
+    border-color: rgba(128, 128, 128, 0.5) !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    background: transparent !important;
+    font-family: inherit !important;
 }
 
 .step-container h2 {
+  display: flex;
+  align-items: center;
+  margin: 4px;
+  padding-left: 8px;
+  background: linear-gradient(180deg, #73A3D7 0%, #4187CA 46.63%, #79B0D7 100%);
+  height: 44px;
   font-size: 1.5rem;
-  color: var(--theme-text-primary);
-  margin-bottom: 1rem;
-  background: linear-gradient(135deg, var(--theme-primary), var(--theme-accent));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  font-weight: 600;
+  color: white;
+  font-weight: normal;
 }
 
 .step-container .step-description {
@@ -112,7 +178,6 @@
   color: var(--theme-text-primary);
   padding: 0.75rem;
   font-size: 1rem;
-  font-family: "Rubik", sans-serif;
   transition: all 0.2s ease;
   width: 100%;
 }
@@ -139,7 +204,6 @@
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;
-  font-family: "Rubik", sans-serif;
   box-shadow: 0 2px 8px var(--theme-shadow-primary);
 }
 
@@ -173,7 +237,6 @@
   color: var(--theme-text-primary);
   cursor: pointer;
   transition: all 0.2s ease;
-  font-family: "Rubik", sans-serif;
   font-weight: 500;
   box-shadow: 0 2px 4px var(--theme-shadow);
 }
@@ -230,7 +293,6 @@ textarea {
   background: var(--theme-surface);
   color: var(--theme-text-primary);
   font-size: 1rem;
-  font-family: "Rubik", sans-serif;
   resize: vertical;
   transition: all 0.2s ease;
 }

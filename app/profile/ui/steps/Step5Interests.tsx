@@ -18,7 +18,6 @@ export function Step5Interests({
   data,
   onUpdate,
   onNext,
-  onBack,
 }: Step5InterestsProps) {
   const t = useTranslations('profile.steps.interests');
   
@@ -35,8 +34,6 @@ export function Step5Interests({
   return (
     <StepContainer
       title={t('title')}
-      description={t('description')}
-      onBack={onBack}
       onNext={onNext}
       nextDisabled={!isValidSelection}
     >

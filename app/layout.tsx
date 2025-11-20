@@ -11,6 +11,7 @@ import "@telegram-apps/telegram-ui/dist/styles.css";
 import "normalize.css/normalize.css";
 import "./_assets/globals.css";
 import { useAuth } from "@/hooks/useAuth";
+import {handjet} from "@/app/fonts";
 
 export const metadata: Metadata = APP_METADATA;
 
@@ -18,7 +19,7 @@ export default async function RootLayout({ children }: PropsWithChildren) {
   const locale = await getLocale();
 
   return (
-    <html lang={locale}>
+    <html lang={locale} className={handjet.variable}>
       <body>
         <I18nProvider>
           <Root>{children}</Root>

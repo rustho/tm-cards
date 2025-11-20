@@ -146,7 +146,6 @@ export function FlexibleWizard({
   const renderStep = () => {
     const stepProps = {
       onNext: handleNext,
-      onBack: handleBack,
     };
 
     switch (currentStep) {

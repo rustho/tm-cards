@@ -21,7 +21,6 @@ export interface Step10LocationProps extends StepProps {
 export function Step10Location({
   data,
   onNext,
-  onBack,
   onUpdate,
 }: Step10LocationProps) {
   const t = useTranslations('profile.steps.location');
@@ -37,8 +36,6 @@ export function Step10Location({
   return (
     <StepContainer
       title={t('title')}
-      description={t('description')}
-      onBack={onBack}
       onNext={handleUpdate}
       nextDisabled={nextDisabled}
     >
