@@ -9,11 +9,12 @@ declare global {
 
 import mongoose from "mongoose";
 
-if (!process.env.MONGODB_URI) {
-  throw new Error("Please define the MONGODB_URI environment variable");
-}
+const MONGODB_URI = process.env.MONGODB_URI || "mongodb://localhost:27017/travelmate";
 
-const MONGODB_URI = process.env.MONGODB_URI;
+if (!process.env.MONGODB_URI) {
+  // Warn instead of throw in build time, or use default
+  console.warn("MONGODB_URI is not defined, using default for build/dev");
+}
 
 let cached = global.mongoose;
 

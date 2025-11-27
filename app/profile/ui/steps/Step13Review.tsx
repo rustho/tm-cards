@@ -3,6 +3,8 @@
 import { useTranslations } from "next-intl";
 import { StepContainer } from "@/components";
 import { StepProps, Profile } from "@/models/types";
+import { useState } from "react";
+import { Spinner } from "@telegram-apps/telegram-ui";
 
 export interface Step13ReviewProps extends StepProps {
   data: Profile;
@@ -17,14 +19,42 @@ export function Step13Review({
 }: Step13ReviewProps) {
   const t = useTranslations('profile.steps.review');
   const tWizard = useTranslations('profile.wizard');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleSubmit = async () => {
+    setIsSubmitting(true);
+    setError(null);
+    try {
+      const response = await fetch('/api/profile', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to save profile');
+      }
+
+      onNext();
+    } catch (err) {
+      console.error(err);
+      setError('Something went wrong. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <StepContainer
       title={t('title')}
       description={t('description')}
       onBack={onBack}
-      onNext={onNext}
-      nextText={tWizard('finish')}
+      onNext={handleSubmit}
+      nextText={isSubmitting ? "..." : tWizard('finish')}
+      nextDisabled={isSubmitting}
     >
       <div className="review-container">
         {data.photo && (
@@ -36,27 +66,9 @@ export function Step13Review({
           <div className="review-item">
             <strong>{t('name')}</strong> {data.name}
           </div>
-          {/* <div className="review-item">
-            <strong>{t('age')}</strong> {data.age}
-          </div>
-          <div className="review-item">
-            <strong>{t('occupation')}</strong> {data.occupation}
-          </div>
-          <div className="review-item">
-            <strong>{t('personality')}</strong> {data.personality.join(", ")}
-          </div> */}
           <div className="review-item">
             <strong>{t('interests')}</strong> {data.interests.join(", ")}
           </div>
-          {/* <div className="review-item">
-            <strong>{t('hobbies')}</strong> {data.hobbies.join(", ")}
-          </div>
-          <div className="review-item">
-            <strong>{t('travel')}</strong> {data.travel}
-          </div>
-          <div className="review-item">
-            <strong>{t('about')}</strong> {data.about}
-          </div> */}
           <div className="review-item">
             <strong>{t('instagram')}</strong> {data.instagram}
           </div>
@@ -67,6 +79,7 @@ export function Step13Review({
             <strong>{t('request')}</strong> {data.announcement}
           </div>
         </div>
+        {error && <div style={{ color: 'red', marginTop: '10px' }}>{error}</div>}
       </div>
     </StepContainer>
   );
