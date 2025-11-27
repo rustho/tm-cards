@@ -2,42 +2,7 @@ import connectDB from "./mongodb";
 import mongoose from "mongoose";
 import BotNotificationService from "./botNotificationService";
 import BotLogger from "./botLogger";
-
-// Enhanced User Schema for sophisticated matching
-const MatchingUserSchema = new mongoose.Schema({
-  telegramId: { type: String, required: true, unique: true },
-  username: { type: String },
-  name: { type: String, required: true },
-  age: { type: Number },
-  dateOfBirth: { type: Date },
-  gender: { type: String, enum: ["male", "female", "other"] },
-  country: { type: String, required: true },
-  region: { type: String },
-  interests: [{ type: String }],
-  hobbies: [{ type: String }],
-  personalityTraits: [{ type: String }],
-  placesToVisit: [{ type: String }],
-  isActive: { type: Boolean, default: true },
-  lastMatchTime: { type: Date, default: null },
-  totalMatches: { type: Number, default: 0 },
-  previousMatches: [{ type: String }], // Track previous match IDs
-  skip: { type: Boolean, default: false }, // Allow users to skip matching rounds
-  preferredAgeRange: {
-    min: { type: Number, default: 18 },
-    max: { type: Number, default: 65 },
-  },
-  preferredGender: {
-    type: String,
-    enum: ["male", "female", "any"],
-    default: "any",
-  },
-  createdAt: { type: Date, default: Date.now },
-  updatedAt: { type: Date, default: Date.now },
-});
-
-const MatchingUser =
-  mongoose.models.MatchingUser ||
-  mongoose.model("MatchingUser", MatchingUserSchema);
+import MatchingUser from "@/models/MatchingUser";
 
 // Enhanced Match Result Schema
 const MatchResultSchema = new mongoose.Schema({
@@ -385,7 +350,9 @@ class MatchingService {
       $or: [{ lastMatchTime: { $lt: cooldownTime } }, { lastMatchTime: null }],
     }).lean();
 
-    return users.map((user) => ({
+    // Map Mongoose document to UserData
+    // We need to handle potential type mismatches or missing fields
+    return users.map((user: any) => ({
       telegramId: user.telegramId,
       name: user.name,
       age: user.age,

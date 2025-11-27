@@ -1,10 +1,27 @@
 import { NextResponse } from "next/server";
-import { getCachedSheetData } from "@/lib/googleSheets";
+import connectDB from "@/lib/mongodb";
+import MatchingUser from "@/models/MatchingUser";
 
 export async function GET() {
   try {
-    const users = await getCachedSheetData();
-    return NextResponse.json(users);
+    await connectDB();
+    const users = await MatchingUser.find({ isActive: true });
+
+    const mappedUsers = users.map((user) => ({
+      id: user.telegramId,
+      username: user.username,
+      name: user.name,
+      interests: user.interests,
+      dateOfBirth: user.dateOfBirth,
+      country: user.country,
+      region: user.region,
+      placesToVisit: Array.isArray(user.placesToVisit) ? user.placesToVisit.join(', ') : user.placesToVisit,
+      instagram: user.instagram,
+      photo: user.photo,
+      announcement: user.announcement,
+    }));
+
+    return NextResponse.json(mappedUsers);
   } catch (error) {
     console.error("Error fetching users:", error);
     return NextResponse.json(

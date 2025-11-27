@@ -39,7 +39,6 @@
     "@types/node-cron": "^3.0.11",
     "autoprefixer": "^10.4.20",
     "eruda": "^3.0.1",
-    "googleapis": "^148.0.0",
     "mongodb": "^6.11.0",
     "mongodb-memory-server": "^10.1.2",
     "mongoose": "^8.8.4",

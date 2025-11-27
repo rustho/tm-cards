@@ -1,35 +1,48 @@
 import { NextResponse } from "next/server";
-import { getCachedSheetData } from "@/lib/googleSheets";
+import connectDB from "@/lib/mongodb";
+import MatchingUser from "@/models/MatchingUser";
 
 export async function GET(
   request: Request,
   { params }: { params: { userId: string } }
 ) {
   try {
-    const userId = parseInt(params.userId);
-    console.log(userId);
-    const users = await getCachedSheetData();
+    const userId = params.userId;
+    await connectDB();
     
-    if (!users || users.length === 0) {
-      return NextResponse.json({ error: "No users data available" }, { status: 404 });
-    }
+    const user = await MatchingUser.findOne({ telegramId: userId });
     
-    const profile = users.find((user) => user.id == userId);
-    
-    if (!profile) {
+    if (!user) {
       return NextResponse.json({ error: "User profile not found" }, { status: 404 });
     }
     
-    const previousMatches = profile?.previousMatch;
+    // previousMatches is an array of strings (telegramIds)
+    const previousMatchIds = user.previousMatches || [];
     
-    // Check if previousMatches exists and is an array before filtering
-    const matches = previousMatches && Array.isArray(previousMatches) 
-      ? users.filter((user) => previousMatches.includes(user.id))
-      : [];
+    if (previousMatchIds.length === 0) {
+        return NextResponse.json([]);
+    }
 
-    console.log(matches);
+    const matches = await MatchingUser.find({
+        telegramId: { $in: previousMatchIds }
+    });
 
-    return NextResponse.json(matches);
+    const mappedMatches = matches.map((match) => ({
+      id: match.telegramId,
+      username: match.username,
+      name: match.name,
+      interests: match.interests,
+      dateOfBirth: match.dateOfBirth,
+      country: match.country,
+      region: match.region,
+      placesToVisit: Array.isArray(match.placesToVisit) ? match.placesToVisit.join(', ') : match.placesToVisit,
+      instagram: match.instagram,
+      photo: match.photo,
+      announcement: match.announcement,
+      // Add other fields as needed to match frontend interface
+    }));
+
+    return NextResponse.json(mappedMatches);
   } catch (error) {
     console.error("Error fetching matches:", error);
     return NextResponse.json(
