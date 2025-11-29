@@ -21,6 +21,13 @@ export function Step13Review({ data, onUpdate, onNext }: Step13ReviewProps) {
     setIsSubmitting(true);
     setError(null);
     try {
+      // Validate that we have an ID before submitting
+      if (!data.id || data.id === "") {
+        setError("User ID is missing. Please refresh the page and try again.");
+        setIsSubmitting(false);
+        return;
+      }
+
       const response = await fetch("/api/profile", {
         method: "POST",
         headers: {
@@ -30,13 +37,16 @@ export function Step13Review({ data, onUpdate, onNext }: Step13ReviewProps) {
       });
 
       if (!response.ok) {
-        throw new Error("Failed to save profile");
+        const errorData = await response.json().catch(() => ({}));
+        const errorMessage = errorData.error || `Failed to save profile (${response.status})`;
+        console.error("API Error:", errorMessage, "Response:", errorData);
+        throw new Error(errorMessage);
       }
 
       onNext();
-    } catch (err) {
-      console.error(err);
-      setError("Something went wrong. Please try again.");
+    } catch (err: any) {
+      console.error("Error submitting profile:", err);
+      setError(err.message || "Something went wrong. Please try again.");
     } finally {
       setIsSubmitting(false);
     }

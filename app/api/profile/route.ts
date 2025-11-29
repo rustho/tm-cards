@@ -38,9 +38,10 @@ export async function POST(request: NextRequest) {
 
     // Ensure we have a telegramId.
     const telegramId = data.id || data.telegramId;
-    if (!telegramId) {
+    if (!telegramId || telegramId === "") {
+        console.error("Missing telegramId. Received data:", JSON.stringify(data, null, 2));
         return NextResponse.json(
-            { error: "User ID is missing" },
+            { error: "User ID is missing. Please ensure you are logged in." },
             { status: 400 }
         );
     }
@@ -100,11 +101,33 @@ export async function POST(request: NextRequest) {
     });
 
     return NextResponse.json({ success: true, user });
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error saving profile:", error);
+    
+    // Handle Prisma validation errors
+    if (error?.code === 'P2002') {
+      return NextResponse.json(
+        { error: "A user with this ID already exists" },
+        { status: 400 }
+      );
+    }
+    
+    // Handle Prisma validation errors
+    if (error?.code === 'P2003' || error?.code === 'P2011') {
+      return NextResponse.json(
+        { error: `Validation error: ${error.message || 'Invalid data provided'}` },
+        { status: 400 }
+      );
+    }
+    
+    // Return more detailed error in development
+    const errorMessage = process.env.NODE_ENV === 'development' 
+      ? error?.message || 'Internal Server Error'
+      : 'Internal Server Error';
+    
     return NextResponse.json(
-      { error: "Internal Server Error" },
-      { status: 500 }
+      { error: errorMessage },
+      { status: error?.code?.startsWith('P') ? 400 : 500 }
     );
   }
 }

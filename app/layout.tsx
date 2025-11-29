@@ -4,13 +4,11 @@ import { getLocale } from "next-intl/server";
 
 import { Root } from "@/components/Root/Root";
 import { I18nProvider } from "@/core/i18n/provider";
-import { FooterMenu } from "@/components/FooterMenu";
 import { APP_METADATA } from "@/config/constants";
 
 import "@telegram-apps/telegram-ui/dist/styles.css";
 import "normalize.css/normalize.css";
 import "./_assets/globals.css";
-import { useAuth } from "@/hooks/useAuth";
 import {handjet} from "@/app/fonts";
 
 export const metadata: Metadata = APP_METADATA;

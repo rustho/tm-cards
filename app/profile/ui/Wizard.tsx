@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useTranslations } from "next-intl";
+import { useSignal, initData } from "@telegram-apps/sdk-react";
 import { Step1Name } from "./steps/Step1Name";
 import { Step2DateOfBirth } from "./steps/Step2DateOfBirth";
 // import { Step3Occupation } from "./steps/Step3Occupation";
@@ -23,6 +24,7 @@ const TOTAL_STEPS = 13;
 
 export function Wizard() {
   const t = useTranslations("profile.wizard");
+  const user = useSignal(initData.user);
   const [currentStep, setCurrentStep] = useState(1);
   const [profileData, setProfileData] = useState<Profile>({
     id: "",
@@ -40,22 +42,19 @@ export function Wizard() {
     dateOfBirth: "",
   });
 
-  // Try to get Telegram user info
-  useEffect(() => {
-    if (typeof window !== "undefined" && (window as any).Telegram?.WebApp) {
-      const user = (window as any).Telegram.WebApp.initDataUnsafe?.user;
-      if (user) {
-        setProfileData((prev) => ({
-          ...prev,
-          id: user.id.toString(),
-          username: user.username || "",
-          name: user.first_name + (user.last_name ? " " + user.last_name : ""),
-        }));
-      }
-    }
-  }, []);
-
   useTelegramMock();
+
+  // Get Telegram user info from SDK
+  useEffect(() => {
+    if (user) {
+      setProfileData((prev) => ({
+        ...prev,
+        id: user.id.toString(),
+        username: user.username || "",
+        name: [user.firstName, user.lastName].filter(Boolean).join(" ") || prev.name,
+      }));
+    }
+  }, [user]);
 
   // Function to save profile data to backend
   const saveProfile = async (data: Partial<Profile>) => {
