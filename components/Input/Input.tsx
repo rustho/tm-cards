@@ -1,6 +1,5 @@
 "use client";
 
-import { Input as TelegramInput } from "@telegram-apps/telegram-ui";
 import { InputHTMLAttributes } from "react";
 
 interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
@@ -13,7 +12,7 @@ export function Input({ label, error, helperText, className, ...props }: InputPr
   return (
     <div className="input-container">
       {label && <label className="input-label">{label}</label>}
-      <TelegramInput
+      <input
         className={`input-field theme-input ${error ? "input-error" : ""} ${className || ""}`}
         {...props}
       />

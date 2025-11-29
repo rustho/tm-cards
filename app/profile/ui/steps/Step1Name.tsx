@@ -9,7 +9,7 @@ export interface Step1NameProps extends StepProps {
   onUpdate: (name: string) => void;
 }
 
-export function Step1Name({ data, onUpdate, onNext, onBack }: Step1NameProps) {
+export function Step1Name({ data, onUpdate, onNext }: Step1NameProps) {
   const t = useTranslations('profile.steps.name');
   
   const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -21,8 +21,6 @@ export function Step1Name({ data, onUpdate, onNext, onBack }: Step1NameProps) {
   return (
     <StepContainer
       title={t('title')}
-      description={t('description')}
-      onBack={onBack}
       onNext={onNext}
       nextDisabled={!isValidName}
     >

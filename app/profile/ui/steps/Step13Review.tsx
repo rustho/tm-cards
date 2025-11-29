@@ -13,7 +13,6 @@ export function Step13Review({
   data,
   onUpdate,
   onNext,
-  onBack,
 }: Step13ReviewProps) {
   const t = useTranslations('profile.steps.review');
   const tWizard = useTranslations('profile.wizard');
@@ -21,8 +20,6 @@ export function Step13Review({
   return (
     <StepContainer
       title={t('title')}
-      description={t('description')}
-      onBack={onBack}
       onNext={onNext}
       nextText={tWizard('finish')}
     >

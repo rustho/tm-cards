@@ -14,7 +14,6 @@ export function Step12Photo({
   data,
   onUpdate,
   onNext,
-  onBack,
 }: Step12PhotoProps) {
   const t = useTranslations('profile.steps.photo');
   const [preview, setPreview] = useState<string | null>(data);
@@ -36,8 +35,6 @@ export function Step12Photo({
   return (
     <StepContainer
       title={t('title')}
-      description={t('description')}
-      onBack={onBack}
       onNext={onNext}
       nextDisabled={!data}
     >

@@ -17,7 +17,6 @@ export function Step4Personality({
   data,
   onUpdate,
   onNext,
-  onBack,
 }: Step4PersonalityProps) {
   const handleToggleTrait = (trait: string) => {
     if (data.includes(trait)) {
@@ -32,8 +31,6 @@ export function Step4Personality({
   return (
     <StepContainer
       title="Какие у тебя черты характера?"
-      description="Выберите подходящие черты характера"
-      onBack={onBack}
       onNext={onNext}
       nextDisabled={!isValidSelection}
     >
