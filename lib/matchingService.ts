@@ -1,6 +1,4 @@
 import prisma from "./prisma";
-import BotNotificationService from "./botNotificationService";
-import BotLogger from "./botLogger";
 
 interface MatchingConfig {
   maxMatchesPerRun: number;
@@ -35,8 +33,6 @@ interface CompatibilityResult {
 
 class MatchingService {
   private static instance: MatchingService;
-  private notificationService: BotNotificationService;
-  private logger: BotLogger;
   private config: MatchingConfig;
   private isRunning: boolean = false;
 
@@ -48,13 +44,11 @@ class MatchingService {
   }
 
   constructor() {
-    this.notificationService = BotNotificationService.getInstance();
-    this.logger = BotLogger.getInstance();
     this.config = {
       maxMatchesPerRun: 50,
       minCompatibilityScore: 0.3,
       cooldownHours: 24,
-      enableNotifications: true,
+      enableNotifications: false,
       countriesWithoutRegions: ["Singapore", "Monaco", "Luxembourg"], // Small countries without regions
     };
   }
@@ -318,7 +312,7 @@ class MatchingService {
       }
     });
 
-    return users.map((user) => ({
+    return users.map((user: { telegramId: string; name: string | null; age: number | null; gender: string | null; country: string | null; region: string | null; interests: string[]; hobbies: string[]; personalityTraits: string[]; placesToVisit: string[]; previousMatches: string[]; skip: boolean; preferredAgeMin: number; preferredAgeMax: number; preferredGender: string; isActive: boolean }) => ({
       telegramId: user.telegramId,
       name: user.name || "",
       age: user.age || undefined,
@@ -346,7 +340,6 @@ class MatchingService {
   async runMatching(): Promise<{
     success: boolean;
     matchesCreated: number;
-    notificationsSent: number;
     errors: string[];
   }> {
     if (this.isRunning) {
@@ -354,7 +347,6 @@ class MatchingService {
       return {
         success: false,
         matchesCreated: 0,
-        notificationsSent: 0,
         errors: ["Service already running"],
       };
     }
@@ -365,7 +357,6 @@ class MatchingService {
     const results = {
       success: true,
       matchesCreated: 0,
-      notificationsSent: 0,
       errors: [] as string[],
     };
 
@@ -457,47 +448,6 @@ class MatchingService {
               }
             });
 
-            // Send notifications if enabled
-            if (this.config.enableNotifications) {
-              try {
-                // Notify user1 about user2
-                await this.notificationService.notifyNewMatch(user1Id, {
-                  id: matchResult.id,
-                  name: user2.name,
-                  country: user2.country,
-                  interests: user2.interests,
-                  photo: undefined,
-                });
-
-                // Notify user2 about user1
-                await this.notificationService.notifyNewMatch(user2Id, {
-                  id: matchResult.id,
-                  name: user1.name,
-                  country: user1.country,
-                  interests: user1.interests,
-                  photo: undefined,
-                });
-
-                // Mark notifications as sent
-                await prisma.matchResult.update({
-                  where: { id: matchResult.id },
-                  data: { notificationSent: true }
-                });
-
-                results.notificationsSent += 2;
-                console.log(
-                  `🔔 Notifications sent for match: ${user1.name} ↔ ${user2.name} (Score: ${compatibility.score})`
-                );
-              } catch (notificationError) {
-                console.error(
-                  "Error sending notifications:",
-                  notificationError
-                );
-                results.errors.push(
-                  `Notification error for match ${matchResult.id}: ${notificationError}`
-                );
-              }
-            }
 
             console.log(
               `✅ Created match: ${user1.name} ↔ ${user2.name} (Score: ${compatibility.score})`
@@ -528,7 +478,7 @@ class MatchingService {
       }
 
       console.log(
-        `🎉 Sophisticated matching completed: ${results.matchesCreated} matches created, ${results.notificationsSent} notifications sent`
+        `🎉 Sophisticated matching completed: ${results.matchesCreated} matches created`
       );
     } catch (error) {
       console.error("Error in matching service:", error);

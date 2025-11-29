@@ -10,14 +10,6 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "bot:setup": "node scripts/bot-setup.js",
-    "bot:start": "curl -X POST http://localhost:3000/api/bot/start",
-    "bot:stop": "curl -X DELETE http://localhost:3000/api/bot/start",
-    "bot:status": "curl -X GET http://localhost:3000/api/bot/start",
-    "bot:webhook": "curl -X GET http://localhost:3000/api/bot/webhook",
-    "bot:logs": "curl -X GET 'http://localhost:3000/api/bot/logs?recent=true&limit=20'",
-    "bot:analytics": "curl -X GET 'http://localhost:3000/api/bot/logs?analytics=true&days=7'",
-    "bot:cleanup": "curl -X DELETE 'http://localhost:3000/api/bot/logs?days=30'",
     "matching:status": "curl -X GET 'http://localhost:3000/api/matching'",
     "matching:run": "curl -X POST 'http://localhost:3000/api/matching?action=run'",
     "matching:stats": "curl -X GET 'http://localhost:3000/api/matching?action=stats'",
@@ -48,8 +40,7 @@
     "react": "^18",
     "react-dom": "^18",
     "react-hook-form": "^7.54.0",
-    "react-swipeable": "^7.0.1",
-    "telegraf": "^4.16.3"
+    "react-swipeable": "^7.0.1"
   },
   "devDependencies": {
     "@types/node": "^20.19.0",

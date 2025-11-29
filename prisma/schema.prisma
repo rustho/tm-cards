@@ -74,35 +74,3 @@ model MatchResult {
   @@index([status, createdAt])
   @@index([expiresAt])
 }
-
-model BotLog {
-  id               String   @id @default(uuid())
-  userId           String
-  username         String?
-  firstName        String?
-  lastName         String?
-  chatId           String
-
-  type             String
-  command          String?
-  message          String?
-
-  notificationType String?
-  notificationData Json?
-
-  miniAppOpened    Boolean  @default(false)
-  buttonClicked    String?
-
-  error            String?
-  errorStack       String?
-
-  timestamp        DateTime @default(now())
-  sessionId        String?
-
-  responseTime     Int?
-  success          Boolean  @default(true)
-
-  @@index([userId, timestamp])
-  @@index([type, timestamp])
-  @@index([notificationType, timestamp])
-}
