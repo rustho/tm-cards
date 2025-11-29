@@ -10,7 +10,6 @@ import { APP_METADATA } from "@/config/constants";
 import "@telegram-apps/telegram-ui/dist/styles.css";
 import "normalize.css/normalize.css";
 import "./_assets/globals.css";
-import { useAuth } from "@/hooks/useAuth";
 
 export const metadata: Metadata = APP_METADATA;
 
