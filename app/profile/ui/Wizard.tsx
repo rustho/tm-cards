@@ -1,22 +1,24 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useTranslations } from "next-intl";
 import { Progress } from "@telegram-apps/telegram-ui";
 import { Step1Name } from "./steps/Step1Name";
 import { Step2DateOfBirth } from "./steps/Step2DateOfBirth";
-import { Step3Occupation } from "./steps/Step3Occupation";
-import { Step4Personality } from "./steps/Step4Personality";
+// import { Step3Occupation } from "./steps/Step3Occupation";
+// import { Step4Personality } from "./steps/Step4Personality";
 import { Step5Interests } from "./steps/Step5Interests";
-import { Step6Hobbies } from "./steps/Step6Hobbies";
+// import { Step6Hobbies } from "./steps/Step6Hobbies";
 import { Step7Travel } from "./steps/Step7Travel";
-import { Step8About } from "./steps/Step8About";
+// import { Step8About } from "./steps/Step8About";
 import { Step9Instagram } from "./steps/Step9Instagram";
 import { Step10Location } from "./steps/Step10Location";
 import { Step11Request } from "./steps/Step11Request";
 import { Step12Photo } from "./steps/Step12Photo";
 import { Step13Review } from "./steps/Step13Review";
 import { Profile } from "@/models/types";
+import { useTelegramMock } from "@/hooks/useTelegramMock";
+
 const TOTAL_STEPS = 13;
 
 export function Wizard() {
@@ -38,9 +40,52 @@ export function Wizard() {
     dateOfBirth: "",
   });
 
-  const handleNext = () => {
+  // Try to get Telegram user info
+  useEffect(() => {
+    if (typeof window !== 'undefined' && (window as any).Telegram?.WebApp) {
+        const user = (window as any).Telegram.WebApp.initDataUnsafe?.user;
+        if (user) {
+            setProfileData(prev => ({
+                ...prev,
+                id: user.id.toString(),
+                username: user.username || "",
+                name: user.first_name + (user.last_name ? " " + user.last_name : ""),
+            }));
+        }
+    }
+  }, []);
+
+  useTelegramMock();
+
+  // Function to save profile data to backend
+  const saveProfile = async (data: Partial<Profile>) => {
+      // Don't save if we don't have an ID
+      if (!data.id && !profileData.id) return;
+
+      try {
+          const payload = { ...profileData, ...data };
+          await fetch('/api/profile', {
+              method: 'POST',
+              headers: {
+                  'Content-Type': 'application/json',
+              },
+              body: JSON.stringify(payload),
+          });
+      } catch (error) {
+          console.error("Failed to save profile step:", error);
+      }
+  };
+
+  const handleNext = async () => {
+    // Save current state on every step
+    await saveProfile(profileData);
+
     if (currentStep < TOTAL_STEPS) {
       setCurrentStep(currentStep + 1);
+    } else {
+        if (typeof window !== 'undefined') {
+            window.location.href = '/';
+        }
     }
   };
 
@@ -182,6 +227,14 @@ export function Wizard() {
         return null;
     }
   };
+
+  // Skip logic helper
+  useEffect(() => {
+    const skippedSteps = [3, 4, 6, 8];
+    if (skippedSteps.includes(currentStep)) {
+        setCurrentStep(prev => prev + 1);
+    }
+  }, [currentStep]);
 
   return (
     <div>

@@ -1,0 +1,107 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model MatchingUser {
+  id             String    @id @default(uuid())
+  telegramId     String    @unique
+  username       String?
+  name           String?
+  age            Int?
+  dateOfBirth    String?
+  gender         String?
+  country        String?
+  region         String?
+
+  // Arrays are supported in Postgres as scalar lists
+  interests      String[]
+  hobbies        String[]
+  personalityTraits String[]
+  placesToVisit  String[]
+
+  instagram      String?
+  photo          String?
+  announcement   String?
+
+  isActive       Boolean   @default(true)
+  lastMatchTime  DateTime?
+  totalMatches   Int       @default(0)
+  previousMatches String[]
+  skip           Boolean   @default(false)
+
+  // Matching Preferences
+  preferredAgeMin Int      @default(18)
+  preferredAgeMax Int      @default(65)
+  preferredGender String   @default("any")
+
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  // Relations
+  matchesAsUser1 MatchResult[] @relation("User1Matches")
+  matchesAsUser2 MatchResult[] @relation("User2Matches")
+}
+
+model MatchResult {
+  id                 String    @id @default(uuid())
+  user1Id            String
+  user2Id            String
+  compatibilityScore Float
+
+  // Storing complex objects like matchingFactors as JSON
+  matchingFactors    Json
+
+  matchingRound      Int       @default(1)
+  status             String    @default("pending") // pending, accepted, declined, expired
+  notificationSent   Boolean   @default(false)
+
+  createdAt          DateTime  @default(now())
+  expiresAt          DateTime
+
+  user1              MatchingUser @relation("User1Matches", fields: [user1Id], references: [telegramId])
+  user2              MatchingUser @relation("User2Matches", fields: [user2Id], references: [telegramId])
+
+  @@index([user1Id, user2Id])
+  @@index([status, createdAt])
+  @@index([expiresAt])
+}
+
+model BotLog {
+  id               String   @id @default(uuid())
+  userId           String
+  username         String?
+  firstName        String?
+  lastName         String?
+  chatId           String
+
+  type             String
+  command          String?
+  message          String?
+
+  notificationType String?
+  notificationData Json?
+
+  miniAppOpened    Boolean  @default(false)
+  buttonClicked    String?
+
+  error            String?
+  errorStack       String?
+
+  timestamp        DateTime @default(now())
+  sessionId        String?
+
+  responseTime     Int?
+  success          Boolean  @default(true)
+
+  @@index([userId, timestamp])
+  @@index([type, timestamp])
+  @@index([notificationType, timestamp])
+}

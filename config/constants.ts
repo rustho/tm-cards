@@ -3,7 +3,7 @@ export const ADMIN_TELEGRAM_IDS = [135052006, 648216801, 307925776, 5193126268];
 export const MENU_ITEMS = [
   {
     title: "Карточки с вопросами",
-    href: "/questions",
+    href: "/icebreaker",
   },
   {
     title: "Создание анкеты",

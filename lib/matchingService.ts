@@ -1,76 +1,6 @@
-import connectDB from "./mongodb";
-import mongoose from "mongoose";
+import prisma from "./prisma";
 import BotNotificationService from "./botNotificationService";
 import BotLogger from "./botLogger";
-
-// Enhanced User Schema for sophisticated matching
-const MatchingUserSchema = new mongoose.Schema({
-  telegramId: { type: String, required: true, unique: true },
-  username: { type: String },
-  name: { type: String, required: true },
-  age: { type: Number },
-  dateOfBirth: { type: Date },
-  gender: { type: String, enum: ["male", "female", "other"] },
-  country: { type: String, required: true },
-  region: { type: String },
-  interests: [{ type: String }],
-  hobbies: [{ type: String }],
-  personalityTraits: [{ type: String }],
-  placesToVisit: [{ type: String }],
-  isActive: { type: Boolean, default: true },
-  lastMatchTime: { type: Date, default: null },
-  totalMatches: { type: Number, default: 0 },
-  previousMatches: [{ type: String }], // Track previous match IDs
-  skip: { type: Boolean, default: false }, // Allow users to skip matching rounds
-  preferredAgeRange: {
-    min: { type: Number, default: 18 },
-    max: { type: Number, default: 65 },
-  },
-  preferredGender: {
-    type: String,
-    enum: ["male", "female", "any"],
-    default: "any",
-  },
-  createdAt: { type: Date, default: Date.now },
-  updatedAt: { type: Date, default: Date.now },
-});
-
-const MatchingUser =
-  mongoose.models.MatchingUser ||
-  mongoose.model("MatchingUser", MatchingUserSchema);
-
-// Enhanced Match Result Schema
-const MatchResultSchema = new mongoose.Schema({
-  user1Id: { type: String, required: true },
-  user2Id: { type: String, required: true },
-  compatibilityScore: { type: Number, required: true },
-  matchingFactors: [
-    {
-      factor: { type: String },
-      score: { type: Number },
-    },
-  ],
-  matchingRound: { type: Number, default: 1 }, // Track which round this match was created in
-  status: {
-    type: String,
-    enum: ["pending", "accepted", "declined", "expired"],
-    default: "pending",
-  },
-  notificationSent: { type: Boolean, default: false },
-  createdAt: { type: Date, default: Date.now },
-  expiresAt: {
-    type: Date,
-    default: () => new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-  }, // 7 days
-});
-
-MatchResultSchema.index({ user1Id: 1, user2Id: 1 }, { unique: true });
-MatchResultSchema.index({ status: 1, createdAt: -1 });
-MatchResultSchema.index({ expiresAt: 1 });
-
-const MatchResult =
-  mongoose.models.MatchResult ||
-  mongoose.model("MatchResult", MatchResultSchema);
 
 interface MatchingConfig {
   maxMatchesPerRun: number;
@@ -325,7 +255,7 @@ class MatchingService {
    */
   private groupUsersByCountry(users: UserData[]): Record<string, UserData[]> {
     return users.reduce((groups, user) => {
-      const country = user.country;
+      const country = user.country || 'Unknown';
       if (!groups[country]) {
         groups[country] = [];
       }
@@ -374,32 +304,38 @@ class MatchingService {
    * Get eligible users for matching
    */
   private async getEligibleUsers(): Promise<UserData[]> {
-    await connectDB();
-
     const cooldownTime = new Date(
       Date.now() - this.config.cooldownHours * 60 * 60 * 1000
     );
 
-    const users = await MatchingUser.find({
-      isActive: true,
-      $or: [{ lastMatchTime: { $lt: cooldownTime } }, { lastMatchTime: null }],
-    }).lean();
+    const users = await prisma.matchingUser.findMany({
+      where: {
+        isActive: true,
+        OR: [
+          { lastMatchTime: { lt: cooldownTime } },
+          { lastMatchTime: null }
+        ]
+      }
+    });
 
     return users.map((user) => ({
       telegramId: user.telegramId,
-      name: user.name,
-      age: user.age,
-      gender: user.gender,
-      country: user.country,
-      region: user.region,
-      interests: user.interests || [],
-      hobbies: user.hobbies || [],
-      personalityTraits: user.personalityTraits || [],
-      placesToVisit: user.placesToVisit || [],
-      previousMatches: user.previousMatches || [],
-      skip: user.skip || false,
-      preferredAgeRange: user.preferredAgeRange || { min: 18, max: 65 },
-      preferredGender: user.preferredGender || "any",
+      name: user.name || "",
+      age: user.age || undefined,
+      gender: user.gender || undefined,
+      country: user.country || "",
+      region: user.region || undefined,
+      interests: user.interests,
+      hobbies: user.hobbies,
+      personalityTraits: user.personalityTraits,
+      placesToVisit: user.placesToVisit,
+      previousMatches: user.previousMatches,
+      skip: user.skip,
+      preferredAgeRange: {
+        min: user.preferredAgeMin,
+        max: user.preferredAgeMax
+      },
+      preferredGender: user.preferredGender,
       isActive: user.isActive,
     }));
   }
@@ -434,8 +370,6 @@ class MatchingService {
     };
 
     try {
-      await connectDB();
-
       // Get eligible users
       const users = await this.getEligibleUsers();
       console.log(`👥 Found ${users.length} eligible users for matching`);
@@ -486,32 +420,49 @@ class MatchingService {
             );
 
             // Create match record
-            const matchResult = new MatchResult({
-              user1Id: user1Id,
-              user2Id: user2Id,
-              compatibilityScore: compatibility.score,
-              matchingFactors: compatibility.factors,
+            const matchResult = await prisma.matchResult.create({
+              data: {
+                user1Id: user1Id,
+                user2Id: user2Id,
+                compatibilityScore: compatibility.score,
+                matchingFactors: compatibility.factors, // Prisma handles JSON
+                expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+              }
             });
 
-            await matchResult.save();
             results.matchesCreated++;
 
             // Update user records with new match
-            await MatchingUser.updateMany(
-              { telegramId: { $in: [user1Id, user2Id] } },
-              {
+            // Prisma doesn't support updateMany with different data or complex push operations in the same way Mongoose does easily for multiple docs
+            // But here we are updating fields that are arrays.
+            // PostgreSQL arrays can be updated.
+
+            // We need to update user1
+            await prisma.matchingUser.update({
+              where: { telegramId: user1Id },
+              data: {
                 lastMatchTime: new Date(),
-                $inc: { totalMatches: 1 },
-                $addToSet: { previousMatches: { $each: [user2Id, user1Id] } },
+                totalMatches: { increment: 1 },
+                previousMatches: { push: user2Id }
               }
-            );
+            });
+
+            // We need to update user2
+            await prisma.matchingUser.update({
+              where: { telegramId: user2Id },
+              data: {
+                lastMatchTime: new Date(),
+                totalMatches: { increment: 1 },
+                previousMatches: { push: user1Id }
+              }
+            });
 
             // Send notifications if enabled
             if (this.config.enableNotifications) {
               try {
                 // Notify user1 about user2
                 await this.notificationService.notifyNewMatch(user1Id, {
-                  id: matchResult._id.toString(),
+                  id: matchResult.id,
                   name: user2.name,
                   country: user2.country,
                   interests: user2.interests,
@@ -520,7 +471,7 @@ class MatchingService {
 
                 // Notify user2 about user1
                 await this.notificationService.notifyNewMatch(user2Id, {
-                  id: matchResult._id.toString(),
+                  id: matchResult.id,
                   name: user1.name,
                   country: user1.country,
                   interests: user1.interests,
@@ -528,10 +479,10 @@ class MatchingService {
                 });
 
                 // Mark notifications as sent
-                await MatchResult.updateOne(
-                  { _id: matchResult._id },
-                  { notificationSent: true }
-                );
+                await prisma.matchResult.update({
+                  where: { id: matchResult.id },
+                  data: { notificationSent: true }
+                });
 
                 results.notificationsSent += 2;
                 console.log(
@@ -543,7 +494,7 @@ class MatchingService {
                   notificationError
                 );
                 results.errors.push(
-                  `Notification error for match ${matchResult._id}: ${notificationError}`
+                  `Notification error for match ${matchResult.id}: ${notificationError}`
                 );
               }
             }
@@ -592,9 +543,6 @@ class MatchingService {
 
   // Create mock users for testing
   async createMockUsers(count: number = 10) {
-    await connectDB();
-
-    const mockUsers = [];
     const countries = ["Vietnam", "Thailand", "Indonesia", "Sri Lanka"];
     const regions: Record<string, string[]> = {
       Vietnam: ["Da Nang", "Nha Trang", "Ho Chi Minh City"],
@@ -633,36 +581,36 @@ class MatchingService {
       "Australia",
     ];
 
-    for (let i = 1; i <= count; i++) {
-      const country = countries[Math.floor(Math.random() * countries.length)];
-      const region =
-        regions[country][Math.floor(Math.random() * regions[country].length)];
-
-      mockUsers.push({
-        telegramId: `mock_user_${i}`,
-        username: `traveler${i}`,
-        name: `User ${i}`,
-        age: 20 + Math.floor(Math.random() * 30),
-        gender: ["male", "female"][Math.floor(Math.random() * 2)],
-        country,
-        region,
-        interests: interests.slice(0, 3 + Math.floor(Math.random() * 4)),
-        hobbies: hobbies.slice(0, 2 + Math.floor(Math.random() * 3)),
-        placesToVisit: destinations.slice(0, 2 + Math.floor(Math.random() * 3)),
-        preferredAgeRange: {
-          min: 18 + Math.floor(Math.random() * 10),
-          max: 40 + Math.floor(Math.random() * 20),
-        },
-        preferredGender: ["male", "female", "any"][
-          Math.floor(Math.random() * 3)
-        ],
-        previousMatches: [],
-        skip: false,
-      });
-    }
-
     try {
-      await MatchingUser.insertMany(mockUsers);
+      for (let i = 1; i <= count; i++) {
+        const country = countries[Math.floor(Math.random() * countries.length)];
+        const region =
+          regions[country][Math.floor(Math.random() * regions[country].length)];
+
+        const randomId = Math.random().toString(36).substring(7);
+
+        await prisma.matchingUser.create({
+          data: {
+            telegramId: `mock_user_${randomId}_${i}`,
+            username: `traveler${i}`,
+            name: `User ${i}`,
+            age: 20 + Math.floor(Math.random() * 30),
+            gender: ["male", "female"][Math.floor(Math.random() * 2)],
+            country,
+            region,
+            interests: interests.slice(0, 3 + Math.floor(Math.random() * 4)),
+            hobbies: hobbies.slice(0, 2 + Math.floor(Math.random() * 3)),
+            placesToVisit: destinations.slice(0, 2 + Math.floor(Math.random() * 3)),
+            preferredAgeMin: 18 + Math.floor(Math.random() * 10),
+            preferredAgeMax: 40 + Math.floor(Math.random() * 20),
+            preferredGender: ["male", "female", "any"][
+              Math.floor(Math.random() * 3)
+            ],
+            previousMatches: [],
+            skip: false,
+          }
+        });
+      }
       console.log(`✅ Created ${count} mock users for testing`);
       return { success: true, count };
     } catch (error) {
@@ -674,8 +622,6 @@ class MatchingService {
   // Get matching statistics
   async getMatchingStats() {
     try {
-      await connectDB();
-
       const [
         totalUsers,
         activeUsers,
@@ -683,18 +629,22 @@ class MatchingService {
         pendingMatches,
         matchesToday,
       ] = await Promise.all([
-        MatchingUser.countDocuments({}),
-        MatchingUser.countDocuments({ isActive: true }),
-        MatchResult.countDocuments({}),
-        MatchResult.countDocuments({ status: "pending" }),
-        MatchResult.countDocuments({
-          createdAt: { $gte: new Date(Date.now() - 24 * 60 * 60 * 1000) },
+        prisma.matchingUser.count(),
+        prisma.matchingUser.count({ where: { isActive: true } }),
+        prisma.matchResult.count(),
+        prisma.matchResult.count({ where: { status: "pending" } }),
+        prisma.matchResult.count({
+          where: {
+            createdAt: { gte: new Date(Date.now() - 24 * 60 * 60 * 1000) },
+          },
         }),
       ]);
 
-      const avgCompatibilityScore = await MatchResult.aggregate([
-        { $group: { _id: null, avgScore: { $avg: "$compatibilityScore" } } },
-      ]);
+      const avgCompatibilityScoreAggregate = await prisma.matchResult.aggregate({
+        _avg: {
+          compatibilityScore: true
+        }
+      });
 
       return {
         totalUsers,
@@ -702,7 +652,7 @@ class MatchingService {
         totalMatches,
         pendingMatches,
         matchesToday,
-        avgCompatibilityScore: avgCompatibilityScore[0]?.avgScore || 0,
+        avgCompatibilityScore: avgCompatibilityScoreAggregate._avg.compatibilityScore || 0,
         isRunning: this.isRunning,
         config: this.config,
       };
@@ -715,18 +665,16 @@ class MatchingService {
   // Clean expired matches
   async cleanupExpiredMatches() {
     try {
-      await connectDB();
-
-      const result = await MatchResult.updateMany(
-        {
+      const result = await prisma.matchResult.updateMany({
+        where: {
           status: "pending",
-          expiresAt: { $lt: new Date() },
+          expiresAt: { lt: new Date() },
         },
-        { status: "expired" }
-      );
+        data: { status: "expired" }
+      });
 
-      console.log(`🧹 Marked ${result.modifiedCount} matches as expired`);
-      return result.modifiedCount;
+      console.log(`🧹 Marked ${result.count} matches as expired`);
+      return result.count;
     } catch (error) {
       console.error("Error cleaning expired matches:", error);
       return 0;

@@ -9,7 +9,7 @@ export function AdminMenu() {
   const menuItems = [
     {
       title: t('questions'),
-      href: "/questions",
+      href: "/icebreaker",
       icon: "🎮",
       description: "Play interactive question cards"
     },

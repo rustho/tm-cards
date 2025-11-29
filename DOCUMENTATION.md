@@ -35,7 +35,6 @@ TravelMate is a Telegram Mini App built with Next.js that connects travelers and
 │   ├── DisplayData/       # Data display components
 │   └── ...
 ├── lib/                   # Utility libraries
-│   ├── googleSheets.ts    # Google Sheets integration
 │   ├── mongodb.ts         # Database connection
 │   └── profile.ts         # Profile utilities
 ├── models/                # Data models and types
