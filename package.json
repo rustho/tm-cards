@@ -3,11 +3,12 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "postinstall": "prisma generate",
     "dev": "next dev",
     "dev:full": "npm run dev & sleep 3 && npm run services:start",
     "dev:https": "next dev --experimental-https",
     "services:start": "curl -s \"http://localhost:3000/api/health?action=init\"",
-    "build": "next build",
+    "build": "prisma generate && next build",
     "start": "next start",
     "lint": "next lint",
     "matching:status": "curl -X GET 'http://localhost:3000/api/matching'",
