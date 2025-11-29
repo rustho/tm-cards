@@ -1,7 +1,6 @@
 // Common props interface for all step components
 export interface StepProps {
   onNext: () => void;
-  onBack: () => void;
 }
 
 // Constants

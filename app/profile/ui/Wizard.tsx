@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import { useTranslations } from "next-intl";
-import { Progress } from "@telegram-apps/telegram-ui";
 import { Step1Name } from "./steps/Step1Name";
 import { Step2DateOfBirth } from "./steps/Step2DateOfBirth";
 // import { Step3Occupation } from "./steps/Step3Occupation";
@@ -18,11 +17,12 @@ import { Step12Photo } from "./steps/Step12Photo";
 import { Step13Review } from "./steps/Step13Review";
 import { Profile } from "@/models/types";
 import { useTelegramMock } from "@/hooks/useTelegramMock";
+import Image from "next/image";
 
 const TOTAL_STEPS = 13;
 
 export function Wizard() {
-  const t = useTranslations('profile.wizard');
+  const t = useTranslations("profile.wizard");
   const [currentStep, setCurrentStep] = useState(1);
   const [profileData, setProfileData] = useState<Profile>({
     id: "",
@@ -42,16 +42,16 @@ export function Wizard() {
 
   // Try to get Telegram user info
   useEffect(() => {
-    if (typeof window !== 'undefined' && (window as any).Telegram?.WebApp) {
-        const user = (window as any).Telegram.WebApp.initDataUnsafe?.user;
-        if (user) {
-            setProfileData(prev => ({
-                ...prev,
-                id: user.id.toString(),
-                username: user.username || "",
-                name: user.first_name + (user.last_name ? " " + user.last_name : ""),
-            }));
-        }
+    if (typeof window !== "undefined" && (window as any).Telegram?.WebApp) {
+      const user = (window as any).Telegram.WebApp.initDataUnsafe?.user;
+      if (user) {
+        setProfileData((prev) => ({
+          ...prev,
+          id: user.id.toString(),
+          username: user.username || "",
+          name: user.first_name + (user.last_name ? " " + user.last_name : ""),
+        }));
+      }
     }
   }, []);
 
@@ -59,21 +59,21 @@ export function Wizard() {
 
   // Function to save profile data to backend
   const saveProfile = async (data: Partial<Profile>) => {
-      // Don't save if we don't have an ID
-      if (!data.id && !profileData.id) return;
+    // Don't save if we don't have an ID
+    if (!data.id && !profileData.id) return;
 
-      try {
-          const payload = { ...profileData, ...data };
-          await fetch('/api/profile', {
-              method: 'POST',
-              headers: {
-                  'Content-Type': 'application/json',
-              },
-              body: JSON.stringify(payload),
-          });
-      } catch (error) {
-          console.error("Failed to save profile step:", error);
-      }
+    try {
+      const payload = { ...profileData, ...data };
+      await fetch("/api/profile", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+    } catch (error) {
+      console.error("Failed to save profile step:", error);
+    }
   };
 
   const handleNext = async () => {
@@ -83,9 +83,9 @@ export function Wizard() {
     if (currentStep < TOTAL_STEPS) {
       setCurrentStep(currentStep + 1);
     } else {
-        if (typeof window !== 'undefined') {
-            window.location.href = '/';
-        }
+      if (typeof window !== "undefined") {
+        window.location.href = "/";
+      }
     }
   };
 
@@ -107,25 +107,22 @@ export function Wizard() {
             data={profileData.name}
             onUpdate={(name) => updateProfileData({ name })}
             onNext={handleNext}
-            onBack={handleBack}
           />
         );
       case 2:
-      return (
-        <Step2DateOfBirth
-          data={profileData.dateOfBirth}
-          onUpdate={(dateOfBirth) => updateProfileData({ dateOfBirth })}
-          onNext={handleNext}
-          onBack={handleBack}
-        />
-      );
+        return (
+          <Step2DateOfBirth
+            data={profileData.dateOfBirth}
+            onUpdate={(dateOfBirth) => updateProfileData({ dateOfBirth })}
+            onNext={handleNext}
+          />
+        );
       case 3:
       // return (
       //   <Step3Occupation
       //     data={profileData.occupation}
       //     onUpdate={(occupation) => updateProfileData({ occupation })}
       //     onNext={handleNext}
-      //     onBack={handleBack}
       //   />
       // );
       case 4:
@@ -134,7 +131,6 @@ export function Wizard() {
       //     data={profileData.personality}
       //     onUpdate={(personality) => updateProfileData({ personality })}
       //     onNext={handleNext}
-      //     onBack={handleBack}
       //   />
       // );
       case 5:
@@ -143,7 +139,6 @@ export function Wizard() {
             data={profileData.interests}
             onUpdate={(interests) => updateProfileData({ interests })}
             onNext={handleNext}
-            onBack={handleBack}
           />
         );
       case 6:
@@ -152,7 +147,6 @@ export function Wizard() {
       //     data={profileData.hobbies}
       //     onUpdate={(hobbies) => updateProfileData({ hobbies })}
       //     onNext={handleNext}
-      //     onBack={handleBack}
       //   />
       // );
       case 7:
@@ -161,7 +155,6 @@ export function Wizard() {
             data={profileData.placesToVisit}
             onUpdate={(placesToVisit) => updateProfileData({ placesToVisit })}
             onNext={handleNext}
-            onBack={handleBack}
           />
         );
       case 8:
@@ -170,7 +163,6 @@ export function Wizard() {
       //     data={profileData.about}
       //     onUpdate={(about) => updateProfileData({ about })}
       //     onNext={handleNext}
-      //     onBack={handleBack}
       //   />
       // );
       case 9:
@@ -179,7 +171,6 @@ export function Wizard() {
             data={profileData.instagram}
             onUpdate={(instagram) => updateProfileData({ instagram })}
             onNext={handleNext}
-            onBack={handleBack}
           />
         );
       case 10:
@@ -193,7 +184,6 @@ export function Wizard() {
               })
             }
             onNext={handleNext}
-            onBack={handleBack}
           />
         );
       case 11:
@@ -202,7 +192,6 @@ export function Wizard() {
             data={profileData.announcement}
             onUpdate={(announcement) => updateProfileData({ announcement })}
             onNext={handleNext}
-            onBack={handleBack}
           />
         );
       case 12:
@@ -211,7 +200,6 @@ export function Wizard() {
             data={profileData.photo}
             onUpdate={(photo) => updateProfileData({ photo })}
             onNext={handleNext}
-            onBack={handleBack}
           />
         );
       case 13:
@@ -220,7 +208,6 @@ export function Wizard() {
             data={profileData}
             onUpdate={updateProfileData}
             onNext={handleNext}
-            onBack={handleBack}
           />
         );
       default:
@@ -232,19 +219,31 @@ export function Wizard() {
   useEffect(() => {
     const skippedSteps = [3, 4, 6, 8];
     if (skippedSteps.includes(currentStep)) {
-        setCurrentStep(prev => prev + 1);
+      setCurrentStep((prev) => prev + 1);
     }
   }, [currentStep]);
 
   return (
-    <div>
+    <>
       <div className="wizard-progress">
-        <Progress value={(currentStep * 100) / TOTAL_STEPS} />
+        <button className="back-button" onClick={handleBack}>
+          <Image src="/left-arrow.svg" alt="Back" width={16.5} height={16.5} />
+          {t("back")}
+        </button>
+        <div className="progress-indicator">
+          {[...new Array(currentStep)].map((_, i) => (
+            <div
+              className="progress-block"
+              key={i}
+              style={{ width: `${100 / TOTAL_STEPS}%` }}
+            />
+          ))}
+        </div>
         <div className="step-indicator">
-          {t('step')} {currentStep} {t('of')} {TOTAL_STEPS}
+          {currentStep} / {TOTAL_STEPS}
         </div>
       </div>
       <div className="wizard-content">{renderStep()}</div>
-    </div>
+    </>
   );
 }

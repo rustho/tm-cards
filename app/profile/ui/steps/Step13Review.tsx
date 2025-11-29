@@ -11,14 +11,9 @@ export interface Step13ReviewProps extends StepProps {
   onUpdate: (data: Profile) => void;
 }
 
-export function Step13Review({
-  data,
-  onUpdate,
-  onNext,
-  onBack,
-}: Step13ReviewProps) {
-  const t = useTranslations('profile.steps.review');
-  const tWizard = useTranslations('profile.wizard');
+export function Step13Review({ data, onUpdate, onNext }: Step13ReviewProps) {
+  const t = useTranslations("profile.steps.review");
+  const tWizard = useTranslations("profile.wizard");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -26,22 +21,22 @@ export function Step13Review({
     setIsSubmitting(true);
     setError(null);
     try {
-      const response = await fetch('/api/profile', {
-        method: 'POST',
+      const response = await fetch("/api/profile", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify(data),
       });
 
       if (!response.ok) {
-        throw new Error('Failed to save profile');
+        throw new Error("Failed to save profile");
       }
 
       onNext();
     } catch (err) {
       console.error(err);
-      setError('Something went wrong. Please try again.');
+      setError("Something went wrong. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
@@ -49,11 +44,9 @@ export function Step13Review({
 
   return (
     <StepContainer
-      title={t('title')}
-      description={t('description')}
-      onBack={onBack}
+      title={t("title")}
       onNext={handleSubmit}
-      nextText={isSubmitting ? "..." : tWizard('finish')}
+      nextText={isSubmitting ? "..." : tWizard("finish")}
       nextDisabled={isSubmitting}
     >
       <div className="review-container">
@@ -64,22 +57,24 @@ export function Step13Review({
         )}
         <div className="review-details">
           <div className="review-item">
-            <strong>{t('name')}</strong> {data.name}
+            <strong>{t("name")}</strong> {data.name}
           </div>
           <div className="review-item">
-            <strong>{t('interests')}</strong> {data.interests.join(", ")}
+            <strong>{t("interests")}</strong> {data.interests.join(", ")}
           </div>
           <div className="review-item">
-            <strong>{t('instagram')}</strong> {data.instagram}
+            <strong>{t("instagram")}</strong> {data.instagram}
           </div>
           <div className="review-item">
-            <strong>{t('location')}</strong> {data.country}, {data.region}
+            <strong>{t("location")}</strong> {data.country}, {data.region}
           </div>
           <div className="review-item">
-            <strong>{t('request')}</strong> {data.announcement}
+            <strong>{t("request")}</strong> {data.announcement}
           </div>
         </div>
-        {error && <div style={{ color: 'red', marginTop: '10px' }}>{error}</div>}
+        {error && (
+          <div style={{ color: "red", marginTop: "10px" }}>{error}</div>
+        )}
       </div>
     </StepContainer>
   );
