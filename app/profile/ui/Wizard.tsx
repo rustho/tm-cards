@@ -1,27 +1,30 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useTranslations } from "next-intl";
+import { useSignal, initData } from "@telegram-apps/sdk-react";
 import { Step1Name } from "./steps/Step1Name";
 import { Step2DateOfBirth } from "./steps/Step2DateOfBirth";
-import { Step3Occupation } from "./steps/Step3Occupation";
-import { Step4Personality } from "./steps/Step4Personality";
+// import { Step3Occupation } from "./steps/Step3Occupation";
+// import { Step4Personality } from "./steps/Step4Personality";
 import { Step5Interests } from "./steps/Step5Interests";
-import { Step6Hobbies } from "./steps/Step6Hobbies";
+// import { Step6Hobbies } from "./steps/Step6Hobbies";
 import { Step7Travel } from "./steps/Step7Travel";
-import { Step8About } from "./steps/Step8About";
+// import { Step8About } from "./steps/Step8About";
 import { Step9Instagram } from "./steps/Step9Instagram";
 import { Step10Location } from "./steps/Step10Location";
 import { Step11Request } from "./steps/Step11Request";
 import { Step12Photo } from "./steps/Step12Photo";
 import { Step13Review } from "./steps/Step13Review";
 import { Profile } from "@/models/types";
+import { useTelegramMock } from "@/hooks/useTelegramMock";
 import Image from "next/image";
 
 const TOTAL_STEPS = 13;
 
 export function Wizard() {
-  const t = useTranslations('profile.wizard');
+  const t = useTranslations("profile.wizard");
+  const user = useSignal(initData.user);
   const [currentStep, setCurrentStep] = useState(1);
   const [profileData, setProfileData] = useState<Profile>({
     id: "",
@@ -39,9 +42,49 @@ export function Wizard() {
     dateOfBirth: "",
   });
 
-  const handleNext = () => {
+  useTelegramMock();
+
+  // Get Telegram user info from SDK
+  useEffect(() => {
+    if (user) {
+      setProfileData((prev) => ({
+        ...prev,
+        id: user.id.toString(),
+        username: user.username || "",
+        name: [user.firstName, user.lastName].filter(Boolean).join(" ") || prev.name,
+      }));
+    }
+  }, [user]);
+
+  // Function to save profile data to backend
+  const saveProfile = async (data: Partial<Profile>) => {
+    // Don't save if we don't have an ID
+    if (!data.id && !profileData.id) return;
+
+    try {
+      const payload = { ...profileData, ...data };
+      await fetch("/api/profile", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+    } catch (error) {
+      console.error("Failed to save profile step:", error);
+    }
+  };
+
+  const handleNext = async () => {
+    // Save current state on every step
+    await saveProfile(profileData);
+
     if (currentStep < TOTAL_STEPS) {
       setCurrentStep(currentStep + 1);
+    } else {
+      if (typeof window !== "undefined") {
+        window.location.href = "/";
+      }
     }
   };
 
@@ -66,13 +109,13 @@ export function Wizard() {
           />
         );
       case 2:
-      return (
-        <Step2DateOfBirth
-          data={profileData.dateOfBirth}
-          onUpdate={(dateOfBirth) => updateProfileData({ dateOfBirth })}
-          onNext={handleNext}
-        />
-      );
+        return (
+          <Step2DateOfBirth
+            data={profileData.dateOfBirth}
+            onUpdate={(dateOfBirth) => updateProfileData({ dateOfBirth })}
+            onNext={handleNext}
+          />
+        );
       case 3:
       // return (
       //   <Step3Occupation
@@ -171,23 +214,35 @@ export function Wizard() {
     }
   };
 
+  // Skip logic helper
+  useEffect(() => {
+    const skippedSteps = [3, 4, 6, 8];
+    if (skippedSteps.includes(currentStep)) {
+      setCurrentStep((prev) => prev + 1);
+    }
+  }, [currentStep]);
+
   return (
-      <>
-          <div className="wizard-progress">
-              <button className="back-button" onClick={handleBack}>
-                  <Image src="/left-arrow.svg" alt="Back" width={16.5} height={16.5}  />
-                  {t('back')}
-              </button>
-              <div className="progress-indicator">
-                  {[...new Array(currentStep)].map((_, i) => (
-                      <div className="progress-block" key={i} style={{ width: `${100 / TOTAL_STEPS}%` }} />
-                  ))}
-              </div>
-              <div className="step-indicator">
-                  {currentStep} / {TOTAL_STEPS}
-              </div>
-          </div>
-          <div className="wizard-content">{renderStep()}</div>
-      </>
+    <>
+      <div className="wizard-progress">
+        <button className="back-button" onClick={handleBack}>
+          <Image src="/left-arrow.svg" alt="Back" width={16.5} height={16.5} />
+          {t("back")}
+        </button>
+        <div className="progress-indicator">
+          {[...new Array(currentStep)].map((_, i) => (
+            <div
+              className="progress-block"
+              key={i}
+              style={{ width: `${100 / TOTAL_STEPS}%` }}
+            />
+          ))}
+        </div>
+        <div className="step-indicator">
+          {currentStep} / {TOTAL_STEPS}
+        </div>
+      </div>
+      <div className="wizard-content">{renderStep()}</div>
+    </>
   );
 }

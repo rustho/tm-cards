@@ -1,6 +1,5 @@
 import cron, { ScheduledTask } from 'node-cron';
 import MatchingService from './matchingService';
-import BotLogger from './botLogger';
 
 interface SchedulerConfig {
   enabled: boolean;
@@ -12,7 +11,6 @@ interface SchedulerConfig {
 class MatchingScheduler {
   private static instance: MatchingScheduler;
   private matchingService: MatchingService;
-  private logger: BotLogger;
   private config: SchedulerConfig;
   private cronTask: ScheduledTask | null = null;
   private isSchedulerRunning: boolean = false;
@@ -26,7 +24,6 @@ class MatchingScheduler {
 
   constructor() {
     this.matchingService = MatchingService.getInstance();
-    this.logger = BotLogger.getInstance();
     this.config = {
       enabled: true,
       cronExpression: '0 */4 * * *', // Every 4 hours
@@ -138,16 +135,7 @@ class MatchingScheduler {
       const results = await this.matchingService.runMatching();
       
       const duration = Date.now() - startTime;
-      const logMessage = `Scheduled matching completed: ${results.matchesCreated} matches, ${results.notificationsSent} notifications, ${duration}ms`;
-
-      // Log the matching run (using system user ID for scheduled runs)
-      await this.logger.logUserAction(
-        'system',
-        'system',
-        'scheduled_matching_completed',
-        false,
-        'cron_scheduler'
-      );
+      const logMessage = `Scheduled matching completed: ${results.matchesCreated} matches, ${duration}ms`;
 
       // Log detailed results
       console.log(`✅ ${logMessage}`);
@@ -161,14 +149,6 @@ class MatchingScheduler {
     } catch (error) {
       const duration = Date.now() - startTime;
       console.error('❌ Scheduled matching failed:', error);
-      
-      // Log the error
-      await this.logger.logError(
-        'system',
-        'system',
-        error as Error,
-        'runScheduledMatching'
-      );
 
       throw error;
     }

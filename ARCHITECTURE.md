@@ -108,7 +108,6 @@ tm-cards/
 │   ├── initializeServices.ts        # Service Orchestration (195 lines)
 │   ├── settingsService.ts           # Settings Management (73 lines)
 │   ├── profile.ts                   # Profile Utils (45 lines)
-│   ├── googleSheets.ts              # Google Sheets Integration (74 lines)
 │   └── mongodb.ts                   # Database Connection (49 lines)
 ├── 📁 components/                   # UI Components
 │   ├── 📁 Root/                     # App Root Component
