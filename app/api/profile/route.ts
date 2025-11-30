@@ -67,6 +67,10 @@ export async function POST(request: NextRequest) {
     if (data.country !== undefined) updateData.country = data.country;
     if (data.region !== undefined) updateData.region = data.region;
     if (data.interests !== undefined) updateData.interests = data.interests;
+    if (data.hobbies !== undefined) updateData.hobbies = data.hobbies;
+    if (data.personalityTraits !== undefined) updateData.personalityTraits = data.personalityTraits;
+    if (data.goal !== undefined) updateData.goal = data.goal;
+
     if (data.placesToVisit !== undefined) {
          // Check if it's already an array or needs splitting
          if (Array.isArray(data.placesToVisit)) {
@@ -79,6 +83,10 @@ export async function POST(request: NextRequest) {
     if (data.photo !== undefined) updateData.photo = data.photo;
     if (data.announcement !== undefined) updateData.announcement = data.announcement;
 
+    // Support mapping 'profile' or 'about' to 'profile' field in DB
+    if (data.profile !== undefined) updateData.profile = data.profile;
+    else if (data.about !== undefined) updateData.profile = data.about;
+
     // Set active status if this is an initialization or explicit set
     if (data.isActive !== undefined) updateData.isActive = data.isActive;
 
@@ -89,12 +97,10 @@ export async function POST(request: NextRequest) {
         create: {
             telegramId: telegramId.toString(),
             ...updateData,
-            // Provide defaults for required fields if they are missing in initial creation,
-            // though schema handles defaults for many.
-            // String arrays default to empty in schema? No, we need to provide them if not in updateData.
+            // Provide defaults for required fields if they are missing in initial creation
             interests: updateData.interests || [],
-            hobbies: [],
-            personalityTraits: [],
+            hobbies: updateData.hobbies || [],
+            personalityTraits: updateData.personalityTraits || [],
             placesToVisit: updateData.placesToVisit || [],
             previousMatches: []
         }

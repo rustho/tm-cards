@@ -11,6 +11,9 @@ export default function ProfileSettingsPage() {
     username: "johndoe",
     name: "John Doe",
     interests: ["Travel", "Photography", "Technology"],
+    hobbies: ["Photography", "Hiking"],
+    personalityTraits: ["Open-minded", "Adventurous"],
+    goal: "Networking",
     similarInterests: "",
     announcement: "Looking for travel companions in Southeast Asia!",
     profile: "",
@@ -55,4 +58,4 @@ export default function ProfileSettingsPage() {
       />
     </div>
   );
-} 
+}

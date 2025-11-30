@@ -5,6 +5,7 @@ import { FlexibleWizard } from "../../profile/ui/FlexibleWizard";
 import { Profile } from "@/models/types";
 import { SuccessToast } from "./SuccessToast";
 import { calculateAge } from "@/lib/dateUtils";
+import { ONBOARDING_STEPS } from "../../profile/ui/wizardConfig";
 import "./ProfileSettings.css";
 
 interface ProfileSettingsProps {
@@ -22,6 +23,9 @@ export function ProfileSettings({
       username: "",
       name: "",
       interests: [],
+      hobbies: [],
+      personalityTraits: [],
+      goal: "",
       similarInterests: "",
       announcement: "",
       profile: "",
@@ -34,50 +38,34 @@ export function ProfileSettings({
     }
   );
 
-  const [editingStep, setEditingStep] = useState<number | null>(null);
+  const [editingStepIndex, setEditingStepIndex] = useState<number | null>(null);
   const [showSuccessToast, setShowSuccessToast] = useState(false);
   const [toastMessage, setToastMessage] = useState("");
 
-  const handleEditStep = (stepNumber: number) => {
-    setEditingStep(stepNumber);
+  const handleEditStep = (stepId: string) => {
+    const index = ONBOARDING_STEPS.findIndex(s => s.id === stepId);
+    if (index !== -1) {
+        setEditingStepIndex(index);
+    }
   };
 
-  const handleStepComplete = (step: number, data: Partial<Profile>) => {
+  const handleStepComplete = (stepId: string, data: Partial<Profile>) => {
     const updatedProfile = { ...currentProfile, ...data };
     setCurrentProfile(updatedProfile);
-    setEditingStep(null);
+    setEditingStepIndex(null);
     onProfileUpdate?.(updatedProfile);
     
     // Show success toast
-    const stepName = getStepName(step);
-    setToastMessage(`${stepName} updated successfully!`);
+    setToastMessage(`Updated successfully!`);
     setShowSuccessToast(true);
   };
 
   const handleEditCancel = () => {
-    setEditingStep(null);
+    setEditingStepIndex(null);
   };
 
   const handleHideToast = () => {
     setShowSuccessToast(false);
-  };
-
-  const getStepName = (step: number): string => {
-    const stepNames: { [key: number]: string } = {
-      1: "Name",
-      2: "Date of Birth", 
-      3: "Occupation",
-      4: "Personality",
-      5: "Interests",
-      6: "Hobbies",
-      7: "Travel Plans",
-      8: "About Me",
-      9: "Instagram",
-      10: "Location",
-      11: "Looking For",
-      12: "Photo"
-    };
-    return stepNames[step] || "Profile";
   };
 
   const isFieldComplete = (field: string | string[] | undefined): boolean => {
@@ -86,12 +74,12 @@ export function ProfileSettings({
   };
 
   // If editing a step, show the wizard
-  if (editingStep) {
+  if (editingStepIndex !== null) {
     return (
       <div className="edit-overlay">
         <div className="edit-modal">
           <div className="edit-header">
-            <h3>Edit {getStepName(editingStep)}</h3>
+            <h3>Edit Profile</h3>
             <button 
               className="close-button"
               onClick={handleEditCancel}
@@ -103,7 +91,8 @@ export function ProfileSettings({
           <div className="edit-content">
             <FlexibleWizard
               mode="edit"
-              initialStep={editingStep}
+              steps={ONBOARDING_STEPS}
+              initialStepIndex={editingStepIndex}
               initialData={currentProfile}
               onStepComplete={handleStepComplete}
               onCancel={handleEditCancel}
@@ -138,7 +127,7 @@ export function ProfileSettings({
                 </div>
                 <button 
                   className="edit-button"
-                  onClick={() => handleEditStep(1)}
+                  onClick={() => handleEditStep('name')}
                 >
                   {currentProfile.name ? "Edit" : "Add"}
                 </button>
@@ -163,7 +152,7 @@ export function ProfileSettings({
                 </div>
                 <button 
                   className="edit-button"
-                  onClick={() => handleEditStep(5)}
+                  onClick={() => handleEditStep('interests')}
                 >
                   {currentProfile.interests.length > 0 ? "Edit" : "Add"}
                 </button>
@@ -177,20 +166,7 @@ export function ProfileSettings({
               <h2>✈️ Travel Information</h2>
             </div>
             <div className="setting-items">
-              <div className={`setting-item ${isFieldComplete(currentProfile.placesToVisit) ? 'completed' : 'incomplete'}`}>
-                <div className="setting-info">
-                  <label>Places to Visit</label>
-                  <span className="setting-value">
-                    {currentProfile.placesToVisit || "Where do you want to go?"}
-                  </span>
-                </div>
-                <button 
-                  className="edit-button"
-                  onClick={() => handleEditStep(7)}
-                >
-                  {currentProfile.placesToVisit ? "Edit" : "Add"}
-                </button>
-              </div>
+              {/* Note: placesToVisit (Travel Plans) is not in new wizard steps, so leaving it read-only or removing edit button if there's no step for it. */}
               
               <div className={`setting-item ${isFieldComplete(currentProfile.country) && isFieldComplete(currentProfile.region) ? 'completed' : 'incomplete'}`}>
                 <div className="setting-info">
@@ -203,7 +179,7 @@ export function ProfileSettings({
                 </div>
                 <button 
                   className="edit-button"
-                  onClick={() => handleEditStep(10)}
+                  onClick={() => handleEditStep('country')}
                 >
                   {currentProfile.country && currentProfile.region ? "Edit" : "Add"}
                 </button>
@@ -226,24 +202,9 @@ export function ProfileSettings({
                 </div>
                 <button 
                   className="edit-button"
-                  onClick={() => handleEditStep(9)}
+                  onClick={() => handleEditStep('socials')}
                 >
                   {currentProfile.instagram ? "Edit" : "Add"}
-                </button>
-              </div>
-              
-              <div className={`setting-item ${isFieldComplete(currentProfile.announcement) ? 'completed' : 'incomplete'}`}>
-                <div className="setting-info">
-                  <label>What are you looking for?</label>
-                  <span className="setting-value">
-                    {currentProfile.announcement || "Describe what you're looking for"}
-                  </span>
-                </div>
-                <button 
-                  className="edit-button"
-                  onClick={() => handleEditStep(11)}
-                >
-                  {currentProfile.announcement ? "Edit" : "Add"}
                 </button>
               </div>
             </div>
@@ -264,7 +225,7 @@ export function ProfileSettings({
                 </div>
                 <button 
                   className="edit-button"
-                  onClick={() => handleEditStep(12)}
+                  onClick={() => handleEditStep('photo')}
                 >
                   {currentProfile.photo ? "Change" : "Upload"}
                 </button>
@@ -281,7 +242,7 @@ export function ProfileSettings({
             <div className="optional-grid">
               <button 
                 className="optional-card"
-                onClick={() => handleEditStep(2)}
+                onClick={() => handleEditStep('dateOfBirth')}
               >
                 <div className="card-icon">🎂</div>
                 <div className="card-title">Date of Birth</div>
@@ -295,16 +256,7 @@ export function ProfileSettings({
               
               <button 
                 className="optional-card"
-                onClick={() => handleEditStep(3)}
-              >
-                <div className="card-icon">💼</div>
-                <div className="card-title">Occupation</div>
-                <div className="card-subtitle">What do you do?</div>
-              </button>
-              
-              <button 
-                className="optional-card"
-                onClick={() => handleEditStep(4)}
+                onClick={() => handleEditStep('personality')}
               >
                 <div className="card-icon">✨</div>
                 <div className="card-title">Personality</div>
@@ -313,7 +265,7 @@ export function ProfileSettings({
               
               <button 
                 className="optional-card"
-                onClick={() => handleEditStep(6)}
+                onClick={() => handleEditStep('hobbies')}
               >
                 <div className="card-icon">🎯</div>
                 <div className="card-title">Hobbies</div>
@@ -322,7 +274,7 @@ export function ProfileSettings({
               
               <button 
                 className="optional-card"
-                onClick={() => handleEditStep(8)}
+                onClick={() => handleEditStep('about')}
               >
                 <div className="card-icon">📝</div>
                 <div className="card-title">About Me</div>
@@ -340,4 +292,4 @@ export function ProfileSettings({
       />
     </>
   );
-} 
+}
