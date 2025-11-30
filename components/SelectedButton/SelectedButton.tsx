@@ -2,6 +2,7 @@
 
 import { Button } from "@telegram-apps/telegram-ui";
 import { ButtonHTMLAttributes } from "react";
+import "./SelectedButton.css";
 
 interface SelectedButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   selected?: boolean;

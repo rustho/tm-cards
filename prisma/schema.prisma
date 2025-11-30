@@ -31,6 +31,8 @@ model MatchingUser {
   instagram      String?
   photo          String?
   announcement   String?
+  goal           String?
+  profile        String?   // About/Bio section
 
   isActive       Boolean   @default(true)
   lastMatchTime  DateTime?

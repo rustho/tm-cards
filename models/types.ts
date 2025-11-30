@@ -73,6 +73,14 @@ export const HOBBIES = [
   "Пешие прогулки",
 ] as const;
 
+export const GOALS = [
+    "Найти друзей",
+    "Найти партнера",
+    "Нетворкинг",
+    "Общение",
+    "Путешествия вместе",
+] as const;
+
 export const LOCATIONS: Array<{
   country: string;
   regions: Array<string>;
@@ -98,6 +106,7 @@ export const LOCATIONS: Array<{
 export type PersonalityTrait = (typeof PERSONALITY_TRAITS)[number];
 export type Interest = (typeof INTERESTS)[number];
 export type Hobby = (typeof HOBBIES)[number];
+export type Goal = (typeof GOALS)[number];
 
 export interface User {
   id: string;
@@ -108,9 +117,11 @@ export interface User {
   country: string;
   region: string;
   interests: string[];
+  hobbies: string[];
+  personalityTraits: string[];
   similarInterests: string;
   announcement: string;
-  profile: string;
+  profile: string; // "About"
   placesToVisit: string;
   instagram: string;
   skip: number;
@@ -123,23 +134,19 @@ interface Location {
   region: string;
 }
 
+// Updated Profile to include necessary fields for the wizard
 export type Profile = Omit<
   User,
-  "gender" | "goal" | "nextMatch" | "previousMatch" | "skip"
+  "gender" | "nextMatch" | "previousMatch" | "skip"
 > & {
   photo: string;
   dateOfBirth: string;
 };
 
+// Kept for backward compatibility if used elsewhere, but aligned with Profile
 export type ProfileData = Profile & {
-  about: string;
+  about: string; // Alias for profile
   occupation: string;
-  interests: string[];
-  hobbies: string[];
-  personalityTraits: string[];
-  placesToVisit: string;
-  instagram: string;
-  announcement: string;
 };
 
 // Settings Types

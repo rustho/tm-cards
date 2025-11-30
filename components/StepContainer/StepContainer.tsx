@@ -1,6 +1,8 @@
 "use client";
 
 import { ReactNode } from "react";
+import { NextButton } from "../NextButton";
+import "./StepContainer.css";
 
 interface StepContainerProps {
   title: string;
@@ -18,22 +20,19 @@ export function StepContainer({
   nextText = "Далее",
 }: StepContainerProps) {
   return (
-    <>
-        <div className="step-container">
-          <h2 className="card-text">{title}</h2>
-          <div className="step-content">{children}</div>
-        </div>
-        <div className="button-container">
-            <button
-                className="next-button"
-                onClick={() => {
-                    if (!nextDisabled) onNext();
-                }}
-                disabled={nextDisabled}
-            >
-                {nextText}
-            </button>
-        </div>
-    </>
+    <div className="step-container-wrapper">
+      <div className="step-container">
+        <h2 className="card-text">{title}</h2>
+        <div className="step-content">{children}</div>
+      </div>
+      <NextButton
+        onClick={() => {
+          if (!nextDisabled) onNext();
+        }}
+        disabled={nextDisabled}
+      >
+        {nextText}
+      </NextButton>
+    </div>
   );
-} 
+}

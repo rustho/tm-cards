@@ -1,0 +1,11 @@
+.selected-button {
+  transition: all 0.2s ease;
+}
+
+.selected-button.selected {
+  background: linear-gradient(135deg, var(--theme-accent), #71B3A1);
+  color: white;
+  border-color: var(--theme-accent);
+  box-shadow: 0 4px 16px rgba(137, 195, 173, 0.3);
+}
+
