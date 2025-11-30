@@ -1,45 +1,48 @@
 "use client";
 
-import {
-  SelectedButton,
-  SelectionGrid,
-  StepContainer,
-} from "@/components";
-import { GOALS, StepProps, Profile, Goal } from "@/models/types";
+import { useTranslations } from "next-intl";
+import { StepContainer, SelectionCard } from "@/components";
+import { GOALS, StepProps, Goal } from "@/models/types";
+import { useWizardContext } from "../WizardContext";
+import { Controller } from "react-hook-form";
 
-export interface StepGoalProps extends StepProps {
-  data: Partial<Profile>;
-  onUpdate: (data: Partial<Profile>) => void;
-}
+export interface StepGoalProps extends StepProps {}
 
-export function StepGoal({
-  data,
-  onUpdate,
-  onNext,
-}: StepGoalProps) {
-  const currentGoal = data.goal || "";
-
-  const handleSelectGoal = (goal: Goal) => {
-    onUpdate({ goal });
-  };
+export function StepGoal({ onNext }: StepGoalProps) {
+  const t = useTranslations('profile.steps.goal');
+  const { control, watch } = useWizardContext();
+  
+  const currentGoal = watch("goal") || "";
 
   return (
     <StepContainer
-      title="Для чего ты здесь?"
+      title={t('title')}
       onNext={onNext}
       nextDisabled={!currentGoal}
     >
-      <SelectionGrid maxSelections={1} currentSelections={currentGoal ? 1 : 0}>
-        {GOALS.map((goal) => (
-          <SelectedButton
-            key={goal}
-            selected={currentGoal === goal}
-            onClick={() => handleSelectGoal(goal)}
-          >
-            {goal}
-          </SelectedButton>
-        ))}
-      </SelectionGrid>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', alignItems: 'center' }}>
+        <Controller
+          name="goal"
+          control={control}
+          rules={{ required: true }}
+          render={({ field }) => (
+            <>
+              {GOALS.map((goal) => (
+                <SelectionCard
+                  key={goal}
+                  state={field.value === goal ? "selected" : "default"}
+                  type="big card"
+                  text={goal}
+                  showImage={false}
+                  showEmoji={false}
+                  showDescription={false}
+                  onClick={() => field.onChange(goal)}
+                />
+              ))}
+            </>
+          )}
+        />
+      </div>
     </StepContainer>
   );
 }

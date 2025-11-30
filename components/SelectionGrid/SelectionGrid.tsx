@@ -1,6 +1,7 @@
 "use client";
 
 import { ReactNode } from "react";
+import "./SelectionGrid.css";
 
 interface SelectionGridProps {
   children: ReactNode;

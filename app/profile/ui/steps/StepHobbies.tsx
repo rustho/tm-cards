@@ -1,37 +1,37 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import {
   SelectedButton,
   SelectionGrid,
   StepContainer,
 } from "@/components";
-import { HOBBIES, StepProps, Profile } from "@/models/types";
+import { HOBBIES, StepProps } from "@/models/types";
+import { useWizardContext } from "../WizardContext";
 
-export interface StepHobbiesProps extends StepProps {
-  data: Partial<Profile>;
-  onUpdate: (data: Partial<Profile>) => void;
-}
+export interface StepHobbiesProps extends StepProps {}
 
-export function StepHobbies({
-  data,
-  onUpdate,
-  onNext,
-}: StepHobbiesProps) {
-  const currentHobbies = data.hobbies || [];
+export function StepHobbies({ onNext }: StepHobbiesProps) {
+  const t = useTranslations('profile.steps.hobbies');
+  const { watch, setValue } = useWizardContext();
+  
+  const currentHobbies = watch("hobbies") || [];
 
   const handleToggleHobby = (hobby: string) => {
     if (currentHobbies.includes(hobby)) {
-      onUpdate({ hobbies: currentHobbies.filter((h) => h !== hobby) });
+      setValue("hobbies", currentHobbies.filter((h) => h !== hobby), { shouldValidate: true });
     } else if (currentHobbies.length < 4) {
-      onUpdate({ hobbies: [...currentHobbies, hobby] });
+      setValue("hobbies", [...currentHobbies, hobby], { shouldValidate: true });
     }
   };
 
+  const isValidSelection = currentHobbies.length > 0;
+
   return (
     <StepContainer
-      title="Чем заняться?"
+      title={t('title')}
       onNext={onNext}
-      nextDisabled={currentHobbies.length === 0}
+      nextDisabled={!isValidSelection}
     >
       <SelectionGrid maxSelections={4} currentSelections={currentHobbies.length}>
         {HOBBIES.map((hobby) => (
@@ -45,6 +45,11 @@ export function StepHobbies({
           </SelectedButton>
         ))}
       </SelectionGrid>
+      {!isValidSelection && (
+        <div className="input-error-text">
+          {t('error')}
+        </div>
+      )}
     </StepContainer>
   );
 }

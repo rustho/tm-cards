@@ -1,30 +1,28 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import {
   SelectedButton,
   SelectionGrid,
   StepContainer,
 } from "@/components";
-import { PERSONALITY_TRAITS, StepProps, Profile } from "@/models/types";
+import { PERSONALITY_TRAITS, StepProps } from "@/models/types";
+import { useWizardContext } from "../WizardContext";
 
-export interface StepPersonalityProps extends StepProps {
-  data: Partial<Profile>;
-  onUpdate: (data: Partial<Profile>) => void;
-}
+export interface StepPersonalityProps extends StepProps {}
 
-export function StepPersonality({
-  data,
-  onUpdate,
-  onNext,
-}: StepPersonalityProps) {
-  const currentTraits = data.personalityTraits || [];
+export function StepPersonality({ onNext }: StepPersonalityProps) {
+  const t = useTranslations('profile.steps.personality');
+  const { watch, setValue } = useWizardContext();
+  
+  const currentTraits = watch("personalityTraits") || [];
 
   const handleToggleTrait = (trait: string) => {
     if (currentTraits.includes(trait)) {
-      onUpdate({ personalityTraits: currentTraits.filter((t) => t !== trait) });
+      setValue("personalityTraits", currentTraits.filter((t) => t !== trait), { shouldValidate: true });
     } else {
       if (currentTraits.length < 4) {
-          onUpdate({ personalityTraits: [...currentTraits, trait] });
+        setValue("personalityTraits", [...currentTraits, trait], { shouldValidate: true });
       }
     }
   };
@@ -33,7 +31,7 @@ export function StepPersonality({
 
   return (
     <StepContainer
-      title="Какой ты человек?"
+      title={t('title')}
       onNext={onNext}
       nextDisabled={!isValidSelection}
     >
@@ -51,7 +49,7 @@ export function StepPersonality({
       </SelectionGrid>
       {!isValidSelection && (
         <div className="input-error-text">
-          Выберите хотя бы одну черту характера
+          {t('error')}
         </div>
       )}
     </StepContainer>

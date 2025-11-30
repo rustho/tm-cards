@@ -1,0 +1,127 @@
+.selection-card {
+  width: 100%;
+  height: 79px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-radius: 4px;
+  padding: 12px;
+  border: none;
+  border-bottom-width: 1px;
+  border-bottom-style: solid;
+  border-bottom-color: rgba(0, 0, 0, 0.1);
+  background-color: #FFFFFF;
+  color: #000000;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+  opacity: 1;
+  transform: rotate(0deg);
+  
+  /* Multiple box shadows for the inset effect */
+  box-shadow: 
+    1.72px 1.72px 0px 0px #DFDFDF inset,
+    -1.72px -1.72px 0px 0px #7F7F7F inset,
+    0.86px 0.86px 0px 0px #FFFFFF inset;
+}
+
+.selection-card:hover:not(:disabled) {
+  opacity: 0.9;
+}
+
+.selection-card:active:not(:disabled) {
+  box-shadow: 
+    1.72px 1.72px 0px 0px #7F7F7F inset,
+    -1.72px -1.72px 0px 0px #DFDFDF inset,
+    0.86px 0.86px 0px 0px #CCCCCC inset;
+}
+
+.selection-card:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.selection-card--selected {
+  background-color: var(--tg-theme-button-color, #2481cc);
+  color: var(--tg-theme-button-text-color, #ffffff);
+  box-shadow: 
+    1.72px 1.72px 0px 0px rgba(255, 255, 255, 0.3) inset,
+    -1.72px -1.72px 0px 0px rgba(0, 0, 0, 0.2) inset,
+    0.86px 0.86px 0px 0px rgba(255, 255, 255, 0.1) inset;
+}
+
+.selection-card--disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.selection-card__content {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.selection-card__text-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  text-align: left;
+}
+
+.selection-card__emoji {
+  font-size: 24px;
+  line-height: 1;
+}
+
+.selection-card__text-primary {
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.2;
+  color: inherit;
+}
+
+.selection-card__text-secondary {
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.2;
+  color: inherit;
+  opacity: 0.8;
+}
+
+.selection-card__image-container {
+  width: 60px;
+  height: 60px;
+  flex-shrink: 0;
+  border-radius: 4px;
+  overflow: hidden;
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+.selection-card__image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.selection-card--small-card {
+  height: 60px;
+  padding: 8px;
+}
+
+.selection-card--small-card .selection-card__text-primary {
+  font-size: 14px;
+}
+
+.selection-card--small-card .selection-card__text-secondary {
+  font-size: 11px;
+}
+
+.selection-card--small-card .selection-card__image-container {
+  width: 45px;
+  height: 45px;
+}
+

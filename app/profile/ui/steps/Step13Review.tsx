@@ -4,16 +4,15 @@ import { useTranslations } from "next-intl";
 import { StepContainer } from "@/components";
 import { StepProps, Profile } from "@/models/types";
 import { useState } from "react";
-import { Spinner } from "@telegram-apps/telegram-ui";
+import { useWizardContext } from "../WizardContext";
+import "./Step13Review.css";
 
-export interface Step13ReviewProps extends StepProps {
-  data: Profile;
-  onUpdate: (data: Profile) => void;
-}
+export interface Step13ReviewProps extends StepProps {}
 
-export function Step13Review({ data, onUpdate, onNext }: Step13ReviewProps) {
+export function Step13Review({ onNext }: Step13ReviewProps) {
   const t = useTranslations("profile.steps.review");
   const tWizard = useTranslations("profile.wizard");
+  const { getValues } = useWizardContext();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -21,6 +20,8 @@ export function Step13Review({ data, onUpdate, onNext }: Step13ReviewProps) {
     setIsSubmitting(true);
     setError(null);
     try {
+      const data = getValues() as Profile;
+      
       // Validate that we have an ID before submitting
       if (!data.id || data.id === "") {
         setError("User ID is missing. Please refresh the page and try again.");
@@ -52,6 +53,8 @@ export function Step13Review({ data, onUpdate, onNext }: Step13ReviewProps) {
     }
   };
 
+  const data = getValues() as Profile;
+
   return (
     <StepContainer
       title={t("title")}
@@ -70,7 +73,7 @@ export function Step13Review({ data, onUpdate, onNext }: Step13ReviewProps) {
             <strong>{t("name")}</strong> {data.name}
           </div>
           <div className="review-item">
-            <strong>{t("interests")}</strong> {data.interests.join(", ")}
+            <strong>{t("interests")}</strong> {data.interests?.join(", ") || ""}
           </div>
           <div className="review-item">
             <strong>{t("instagram")}</strong> {data.instagram}

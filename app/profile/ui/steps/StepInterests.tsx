@@ -6,28 +6,24 @@ import {
   SelectionGrid,
   StepContainer,
 } from "@/components";
-import { INTERESTS, StepProps, Profile } from "@/models/types";
+import { INTERESTS, StepProps } from "@/models/types";
+import { useWizardContext } from "../WizardContext";
 
-export interface StepInterestsProps extends StepProps {
-  data: Partial<Profile>;
-  onUpdate: (data: Partial<Profile>) => void;
-}
+export interface StepInterestsProps extends StepProps {}
 
-export function StepInterests({
-  data,
-  onUpdate,
-  onNext,
-}: StepInterestsProps) {
+export function StepInterests({ onNext }: StepInterestsProps) {
   const t = useTranslations('profile.steps.interests');
-  const currentInterests = data.interests || [];
+  const { watch, setValue } = useWizardContext();
+  
+  const currentInterests = watch("interests") || [];
 
   const handleToggleInterest = (interest: string) => {
     if (currentInterests.includes(interest)) {
-      onUpdate({ interests: currentInterests.filter((i) => i !== interest) });
+      setValue("interests", currentInterests.filter((i) => i !== interest), { shouldValidate: true });
     } else {
-       if (currentInterests.length < 4) {
-          onUpdate({ interests: [...currentInterests, interest] });
-       }
+      if (currentInterests.length < 4) {
+        setValue("interests", [...currentInterests, interest], { shouldValidate: true });
+      }
     }
   };
 
@@ -35,7 +31,7 @@ export function StepInterests({
 
   return (
     <StepContainer
-      title="О чем говорить?"
+      title={t('title')}
       onNext={onNext}
       nextDisabled={!isValidSelection}
     >

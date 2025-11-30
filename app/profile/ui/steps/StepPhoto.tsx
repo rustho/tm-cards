@@ -1,39 +1,31 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useTranslations } from "next-intl";
-import { StepContainer } from "@/components";
-import { Profile, StepProps } from "@/models/types";
+import { StepContainer, PhotoUpload } from "@/components";
+import { StepProps } from "@/models/types";
+import { useWizardContext } from "../WizardContext";
 
-export interface StepPhotoProps extends StepProps {
-  data: Partial<Profile>;
-  onUpdate: (data: Partial<Profile>) => void;
-}
+export interface StepPhotoProps extends StepProps {}
 
-export function StepPhoto({
-  data,
-  onUpdate,
-  onNext,
-}: StepPhotoProps) {
+export function StepPhoto({ onNext }: StepPhotoProps) {
   const t = useTranslations('profile.steps.photo');
-  const [preview, setPreview] = useState<string | null>(data.photo || null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const { watch, setValue } = useWizardContext();
+  const photo = watch("photo");
+  const [preview, setPreview] = useState<string | null>(photo || null);
 
   useEffect(() => {
-    setPreview(data.photo || null);
-  }, [data.photo]);
+    setPreview(photo || null);
+  }, [photo]);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const base64String = reader.result as string;
-        setPreview(base64String);
-        onUpdate({ photo: base64String });
-      };
-      reader.readAsDataURL(file);
-    }
+  const handleFileSelect = (file: File) => {
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const base64String = reader.result as string;
+      setPreview(base64String);
+      setValue("photo", base64String, { shouldValidate: true });
+    };
+    reader.readAsDataURL(file);
   };
 
   return (
@@ -42,26 +34,11 @@ export function StepPhoto({
       onNext={onNext}
       nextDisabled={!preview}
     >
-      <div
-        className="photo-upload"
-        onClick={() => fileInputRef.current?.click()}
-      >
-        {preview ? (
-          <img src={preview} alt="Preview" className="photo-preview" />
-        ) : (
-          <div>
-            <p>{t('upload')}</p>
-          </div>
-        )}
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="image/*"
-          onChange={handleFileChange}
-          style={{ display: "none" }}
-          required
-        />
-      </div>
+      <PhotoUpload preview={preview} onFileSelect={handleFileSelect}>
+        <div>
+          <p>{t('upload')}</p>
+        </div>
+      </PhotoUpload>
     </StepContainer>
   );
 }

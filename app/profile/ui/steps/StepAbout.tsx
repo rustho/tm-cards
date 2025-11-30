@@ -1,38 +1,44 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { Input, StepContainer } from "@/components";
-import { Profile, StepProps } from "@/models/types";
+import { StepProps } from "@/models/types";
+import { useWizardContext } from "../WizardContext";
+import { Controller } from "react-hook-form";
 
-export interface StepAboutProps extends StepProps {
-  data: Partial<Profile>;
-  onUpdate: (data: Partial<Profile>) => void;
-}
 const MAX_CHARS = 284;
 
-export function StepAbout({
-  data,
-  onUpdate,
-  onNext,
-}: StepAboutProps) {
-  const about = data.profile || ""; // Assuming 'profile' field maps to About/Bio as per earlier finding. Or use 'about' alias if we set it.
+export interface StepAboutProps extends StepProps {}
 
-  // Note: Model has `profile` as the string field for bio/about.
-  // And `ProfileData` type aliases it as `about`.
-  // Let's use `profile` key for updates to be consistent with Profile type.
+export function StepAbout({ onNext }: StepAboutProps) {
+  const t = useTranslations('profile.steps.about');
+  const { control, watch } = useWizardContext();
+  
+  const about = watch("profile") || "";
 
   return (
     <StepContainer
-      title="Расскажи самое важное и интересное о себе в свободной форме."
+      title={t('title')}
       onNext={onNext}
       nextDisabled={!about.trim()}
     >
-      <Input
-        type="text" // Or textarea if supported, but Input usually implies text input
-        value={about}
-        onChange={(e) => onUpdate({ profile: e.target.value.slice(0, MAX_CHARS) })}
-        placeholder="Расскажите о себе..."
-        maxLength={MAX_CHARS}
-        required
+      <Controller
+        name="profile"
+        control={control}
+        rules={{ required: true }}
+        render={({ field }) => (
+          <Input
+            {...field}
+            type="text"
+            onChange={(e) => {
+              const value = e.target.value.slice(0, MAX_CHARS);
+              field.onChange(value);
+            }}
+            placeholder={t('placeholder')}
+            maxLength={MAX_CHARS}
+            required
+          />
+        )}
       />
       <div className="character-count">
         {about.length}/{MAX_CHARS}

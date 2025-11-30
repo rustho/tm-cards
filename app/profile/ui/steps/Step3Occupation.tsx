@@ -1,42 +1,41 @@
 "use client";
 
-import { Input, StepContainer } from "../../../../components";
-import { StepProps, ProfileData } from "@/models/types";
+import { useTranslations } from "next-intl";
+import { Input, StepContainer } from "@/components";
+import { StepProps } from "@/models/types";
+import { useWizardContext } from "../WizardContext";
 
-// Step 3: Occupation
-export interface Step3OccupationProps extends StepProps {
-  data: ProfileData["occupation"];
-  onUpdate: (occupation: string) => void;
-}
+export interface Step3OccupationProps extends StepProps {}
 
-export function Step3Occupation({
-  data,
-  onUpdate,
-  onNext
-}: Step3OccupationProps) {
-  const handleOccupationChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    onUpdate(e.target.value);
-  };
-
-  const isValidOccupation = data.trim().length >= 2;
+export function Step3Occupation({ onNext }: Step3OccupationProps) {
+  const t = useTranslations('profile.steps.occupation');
+  const { register, watch, formState: { errors } } = useWizardContext();
+  
+  const occupation = watch("occupation") || "";
+  const isValidOccupation = occupation.trim().length >= 2;
 
   return (
     <StepContainer
-      title="Кем ты работаешь?"
+      title={t('title')}
       onNext={onNext}
       nextDisabled={!isValidOccupation}
     >
       <Input
+        {...register("occupation", {
+          required: true,
+          minLength: {
+            value: 2,
+            message: t('error')
+          }
+        })}
         type="text"
-        value={data}
-        onChange={handleOccupationChange}
-        placeholder="Ваша профессия"
+        placeholder={t('placeholder')}
         maxLength={50}
         required
       />
-      {data && !isValidOccupation && (
+      {errors.occupation && (
         <div className="input-error-text">
-          Профессия должна содержать минимум 2 символа
+          {errors.occupation.message || t('error')}
         </div>
       )}
     </StepContainer>

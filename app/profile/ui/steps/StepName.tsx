@@ -2,39 +2,41 @@
 
 import { useTranslations } from "next-intl";
 import { Input, StepContainer } from "@/components";
-import { StepProps, Profile } from "@/models/types";
+import { StepProps } from "@/models/types";
+import { useWizardContext } from "../WizardContext";
 
-export interface StepNameProps extends StepProps {
-  data: Partial<Profile>;
-  onUpdate: (data: Partial<Profile>) => void;
-}
+export interface StepNameProps extends StepProps {}
 
-export function StepName({
-  data,
-  onNext,
-  onUpdate,
-}: StepNameProps) {
+export function StepName({ onNext }: StepNameProps) {
   const t = useTranslations('profile.steps.name');
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    onUpdate({ name: e.target.value });
-  };
-
-  const name = data.name || "";
+  const { register, watch, formState: { errors } } = useWizardContext();
+  
+  const name = watch("name") || "";
 
   return (
     <StepContainer
       title={t('title')}
       onNext={onNext}
-      nextDisabled={!name.trim()}
+      nextDisabled={!name || name.trim().length < 2}
     >
       <Input
         type="text"
-        value={name}
-        onChange={handleChange}
+        {...register("name", {
+          required: true,
+          minLength: {
+            value: 2,
+            message: t('error')
+          }
+        })}
         placeholder={t('placeholder')}
+        maxLength={50}
         required
       />
+      {errors.name && (
+        <div className="input-error-text">
+          {errors.name.message || t('error')}
+        </div>
+      )}
     </StepContainer>
   );
 }

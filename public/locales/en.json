@@ -39,7 +39,13 @@
       "dateOfBirth": {
         "title": "When were you born?",
         "description": "Select your date of birth",
-        "placeholder": "Date of birth"
+        "placeholder": "Date of birth",
+        "ageDisplay": "Your age: {age} years",
+        "error": {
+          "minAge": "You must be at least 18 years old",
+          "maxAge": "Age cannot exceed 100 years",
+          "invalid": "Invalid date format"
+        }
       },
       "occupation": {
         "title": "What do you do for work?",
@@ -77,8 +83,16 @@
         "placeholder": "@username"
       },
       "location": {
-        "title": "In which city do you want to find a travel companion?",
-        "description": "Specify the city where you plan to look for a travel companion"
+        "title": "Where are you from?",
+        "titleCity": "And where exactly?",
+        "description": "Description some text",
+        "descriptionText": "Specify the city where you plan to look for a travel companion",
+        "selectCountry": "Select country",
+        "selectRegion": "Select region",
+        "selectCountryFirst": "Select country first"
+      },
+      "goal": {
+        "title": "What are you here for?"
       },
       "request": {
         "title": "What are you looking for in a travel companion?",

@@ -3,31 +3,35 @@
 import { useTranslations } from "next-intl";
 import { Textarea } from "@telegram-apps/telegram-ui";
 import { StepContainer } from "@/components";
-import { Profile, StepProps } from "@/models/types";
+import { StepProps } from "@/models/types";
+import { useWizardContext } from "../WizardContext";
+import { Controller } from "react-hook-form";
 
-interface Step11RequestProps extends StepProps {
-  data: Profile["announcement"];
-  onUpdate: (announcement: Profile["announcement"]) => void;
-}
+export interface Step11RequestProps extends StepProps {}
 
-export function Step11Request({
-  data,
-  onUpdate,
-  onNext,
-}: Step11RequestProps) {
+export function Step11Request({ onNext }: Step11RequestProps) {
   const t = useTranslations('profile.steps.request');
+  const { control, watch } = useWizardContext();
+  
+  const announcement = watch("announcement") || "";
 
   return (
     <StepContainer
       title={t('title')}
       onNext={onNext}
-      nextDisabled={!data.trim()}
+      nextDisabled={!announcement.trim()}
     >
-      <Textarea
-        value={data}
-        onChange={(e) => onUpdate(e.target.value)}
-        placeholder={t('placeholder')}
-        required
+      <Controller
+        name="announcement"
+        control={control}
+        rules={{ required: true }}
+        render={({ field }) => (
+          <Textarea
+            {...field}
+            placeholder={t('placeholder')}
+            required
+          />
+        )}
       />
     </StepContainer>
   );

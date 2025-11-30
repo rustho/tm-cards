@@ -9,7 +9,7 @@ import { APP_METADATA } from "@/config/constants";
 import "@telegram-apps/telegram-ui/dist/styles.css";
 import "normalize.css/normalize.css";
 import "./_assets/globals.css";
-import {handjet} from "@/app/fonts";
+import { handjet } from "@/app/fonts";
 
 export const metadata: Metadata = APP_METADATA;
 

@@ -1,57 +1,92 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { StepContainer } from "@/components";
-import { Select } from "@telegram-apps/telegram-ui";
-import { useState, useEffect } from "react";
+import { StepContainer, SelectionCard } from "@/components";
+import { useEffect } from "react";
 import { Profile, StepProps, LOCATIONS } from "@/models/types";
+import { useWizardContext } from "../WizardContext";
+import { Controller } from "react-hook-form";
 
-export interface StepCityProps extends StepProps {
-  data: Partial<Profile>;
-  onUpdate: (data: Partial<Profile>) => void;
-}
+export interface StepCityProps extends StepProps {}
 
-export function StepCity({
-  data,
-  onNext,
-  onUpdate,
-}: StepCityProps) {
-  const t = useTranslations('profile.steps.location');
-  const [selectedRegion, setSelectedRegion] = useState<string>(data.region || "");
-  const country = data.country;
+export function StepCity({ onNext }: StepCityProps) {
+  const t = useTranslations("profile.steps.location");
+  const { control, watch, setValue } = useWizardContext();
 
+  // Watch both country and region fields - react-hook-form handles reactivity!
+  const country = watch("country");
+  const region = watch("region") || "";
+
+  // Reset region when country changes
   useEffect(() => {
-    setSelectedRegion(data.region || "");
-  }, [data.region]);
+    if (country && region) {
+      // Check if current region is valid for the new country
+      const validRegions =
+        LOCATIONS.find((location) => location.country === country)?.regions ||
+        [];
+      if (!validRegions.includes(region)) {
+        setValue("region", "", { shouldValidate: true });
+      }
+    } else if (!country) {
+      setValue("region", "", { shouldValidate: true });
+    }
+  }, [country, region, setValue]);
 
-  const handleNext = () => {
-    onUpdate({ region: selectedRegion });
-    onNext();
-  };
+  const regions =
+    LOCATIONS.find((location) => location.country === country)?.regions || [];
 
-  const regions = LOCATIONS.find(
-    (location) => location.country === country
-  )?.regions || [];
+  if (!country) {
+    return (
+      <StepContainer title={t("titleCity")} onNext={onNext} nextDisabled={true}>
+        <div
+          style={{
+            textAlign: "center",
+            padding: "20px",
+            color: "var(--tg-theme-hint-color, #999)",
+          }}
+        >
+          {t("selectCountryFirst")}
+        </div>
+      </StepContainer>
+    );
+  }
 
   return (
     <StepContainer
-      title="А где именно?" // "And where exactly?"
-      onNext={handleNext}
-      nextDisabled={!selectedRegion}
+      title={t("titleCity")}
+      onNext={onNext}
+      nextDisabled={!region}
     >
-      <Select
-        value={selectedRegion}
-        onChange={(e) => setSelectedRegion(e.target.value)}
-        required
-        disabled={!country}
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          gap: "12px",
+          alignItems: "center",
+        }}
       >
-        <option value="" disabled>{country ? "Выберите регион" : "Сначала выберите страну"}</option>
-        {regions.map((region) => (
-          <option key={region} value={region}>
-            {region}
-          </option>
-        ))}
-      </Select>
+        <Controller
+          name="region"
+          control={control}
+          rules={{ required: true }}
+          render={({ field }) => (
+            <>
+              {regions.map((regionOption) => (
+                <SelectionCard
+                  key={regionOption}
+                  state={field.value === regionOption ? "selected" : "default"}
+                  type="big card"
+                  text={regionOption}
+                  showImage={false}
+                  showEmoji={false}
+                  showDescription={false}
+                  onClick={() => field.onChange(regionOption)}
+                />
+              ))}
+            </>
+          )}
+        />
+      </div>
     </StepContainer>
   );
 }
