@@ -6,6 +6,28 @@
 
 /* Brand-First Theme System - Override All Telegram Colors */
 :root {
+  /* shadcn/ui semantic tokens (HSL triplets) derived from the brand palette */
+  --background: 205 39% 88%;
+  --foreground: 0 0% 12%;
+  --card: 0 0% 100%;
+  --card-foreground: 0 0% 12%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 0 0% 12%;
+  --primary: 209 44% 56%;
+  --primary-foreground: 210 20% 98%;
+  --secondary: 207 37% 77%;
+  --secondary-foreground: 0 0% 12%;
+  --muted: 206 33% 94%;
+  --muted-foreground: 202 19% 45%;
+  --accent: 157 33% 65%;
+  --accent-foreground: 0 0% 12%;
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 210 20% 98%;
+  --border: 207 37% 77%;
+  --input: 207 37% 77%;
+  --ring: 209 44% 56%;
+  --radius: 0.5rem;
+
   /* Core Brand Colors */
   --brand-primary: #5D90C0;
   --brand-secondary: #AFC7DA;
@@ -55,6 +77,26 @@
 [data-theme="dark"],
 .dark,
 body.dark {
+  --background: 206 32% 15%;
+  --foreground: 0 0% 96%;
+  --card: 206 30% 19%;
+  --card-foreground: 0 0% 96%;
+  --popover: 206 30% 19%;
+  --popover-foreground: 0 0% 96%;
+  --primary: 209 48% 66%;
+  --primary-foreground: 206 32% 15%;
+  --secondary: 206 28% 24%;
+  --secondary-foreground: 0 0% 96%;
+  --muted: 206 28% 24%;
+  --muted-foreground: 202 25% 77%;
+  --accent: 157 33% 72%;
+  --accent-foreground: 206 32% 15%;
+  --destructive: 0 72% 51%;
+  --destructive-foreground: 0 0% 98%;
+  --border: 206 20% 30%;
+  --input: 206 20% 30%;
+  --ring: 209 48% 66%;
+
   --theme-bg-primary: #1A2833;
   --theme-bg-secondary: #213039;
   --theme-bg-tertiary: #2A3842;
@@ -79,11 +121,12 @@ body.dark {
   --theme-shadow-primary: rgba(127, 167, 209, 0.3);
 }
 
-/* Base Styles - Override Telegram */
+/* Base Styles */
 *,
 *::before,
 *::after {
   box-sizing: border-box;
+  border-color: hsl(var(--border));
 }
 
 html,

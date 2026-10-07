@@ -1,223 +1,174 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { useSignal, initData } from "@telegram-apps/sdk-react";
-import { Button, Cell, List, Section } from "@telegram-apps/telegram-ui";
+import { ChevronLeft } from "lucide-react";
 import { settingsService } from "@/lib/settingsService";
 import type { MatchingScheduleSettings } from "@/models/types";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
 
-export default function MatchingSchedule() {
+type Option = MatchingScheduleSettings["option"];
+
+export default function MatchingSchedulePage() {
   const router = useRouter();
-  const t = useTranslations('settings.matchingSchedule');
-  const tCommon = useTranslations('settings.common');
-  const user = useSignal(initData.user);
-  const [selectedOption, setSelectedOption] = useState("active");
+  const t = useTranslations("settings.matchingSchedule");
+  const tCommon = useTranslations("settings.common");
+  const [selectedOption, setSelectedOption] = useState<Option>("active");
   const [customDate, setCustomDate] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const scheduleOptions = [
-    {
-      value: "active",
-      label: t('options.active'),
-      description: t('options.activeDesc'),
-      icon: "✅"
-    },
-    {
-      value: "pause_week",
-      label: t('options.pauseWeek'),
-      description: t('options.pauseWeekDesc'),
-      icon: "⏸️"
-    },
-    {
-      value: "pause_month",
-      label: t('options.pauseMonth'),
-      description: t('options.pauseMonthDesc'),
-      icon: "⏸️"
-    },
-    {
-      value: "pause_custom",
-      label: t('options.pauseCustom'),
-      description: t('options.pauseCustomDesc'),
-      icon: "📅"
-    },
-    {
-      value: "pause_indefinite",
-      label: t('options.pauseIndefinite'),
-      description: t('options.pauseIndefiniteDesc'),
-      icon: "⏹️"
-    }
+  const scheduleOptions: Array<{ value: Option; label: string; description: string; icon: string }> = [
+    { value: "active", label: t("options.active"), description: t("options.activeDesc"), icon: "✅" },
+    { value: "pause_week", label: t("options.pauseWeek"), description: t("options.pauseWeekDesc"), icon: "⏸️" },
+    { value: "pause_month", label: t("options.pauseMonth"), description: t("options.pauseMonthDesc"), icon: "⏸️" },
+    { value: "pause_custom", label: t("options.pauseCustom"), description: t("options.pauseCustomDesc"), icon: "📅" },
+    { value: "pause_indefinite", label: t("options.pauseIndefinite"), description: t("options.pauseIndefiniteDesc"), icon: "⏹️" },
   ];
 
   useEffect(() => {
-    const fetchMatchingSchedule = async () => {
-      try {
-        const settings = await settingsService.getMatchingSchedule(user?.id?.toString());
+    let cancelled = false;
+    settingsService
+      .getMatchingSchedule()
+      .then((settings) => {
+        if (cancelled) return;
         setSelectedOption(settings.option);
-        if (settings.customDate) {
-          // Convert ISO date to input format (YYYY-MM-DD)
-          setCustomDate(settings.customDate.split('T')[0]);
-        }
-      } catch (error) {
-        console.error("Error fetching matching schedule:", error);
-        // Keep default settings if API fails
-      } finally {
-        setLoading(false);
-      }
+        if (settings.customDate) setCustomDate(settings.customDate.split("T")[0]);
+      })
+      .catch((err) => console.error("Error fetching matching schedule:", err))
+      .finally(() => !cancelled && setLoading(false));
+    return () => {
+      cancelled = true;
     };
-
-    fetchMatchingSchedule();
-  }, [user?.id]);
+  }, []);
 
   const handleSave = async () => {
     setSaving(true);
+    setError(null);
     try {
-      const result = await settingsService.updateMatchingSchedule(
-        {
-          option: selectedOption,
-          customDate: selectedOption === "pause_custom" ? customDate : undefined
-        },
-        user?.id?.toString()
-      );
-      
-      if (result.success) {
-        alert(t('savedSuccessfully'));
-        router.back();
-      }
-    } catch (error) {
-      console.error("Error saving matching schedule:", error);
-      alert(t('saveFailed'));
+      const result = await settingsService.updateMatchingSchedule({
+        option: selectedOption,
+        customDate: selectedOption === "pause_custom" ? customDate : undefined,
+      });
+      if (result.success) router.back();
+    } catch (err) {
+      console.error("Error saving matching schedule:", err);
+      setError(t("saveFailed"));
     } finally {
       setSaving(false);
     }
   };
 
-  const getResumeDate = () => {
+  const resumeDate = (() => {
     const now = new Date();
     switch (selectedOption) {
       case "pause_week":
-        const nextWeek = new Date(now);
-        nextWeek.setDate(now.getDate() + 7);
-        return nextWeek.toLocaleDateString();
+        return new Date(now.setDate(now.getDate() + 7)).toLocaleDateString();
       case "pause_month":
-        const nextMonth = new Date(now);
-        nextMonth.setMonth(now.getMonth() + 1);
-        return nextMonth.toLocaleDateString();
+        return new Date(now.setMonth(now.getMonth() + 1)).toLocaleDateString();
       case "pause_custom":
-        return customDate ? new Date(customDate).toLocaleDateString() : "Not set";
+        return customDate ? new Date(customDate).toLocaleDateString() : null;
       default:
         return null;
     }
-  };
+  })();
 
   if (loading) {
-    return (
-      <div className="container mx-auto p-4">
-        <div className="text-center">{tCommon('loading')}</div>
-      </div>
-    );
+    return <div className="container p-4 text-center">{tCommon("loading")}</div>;
   }
 
   return (
-    <div className="container mx-auto p-4">
-      <div className="flex items-center mb-6">
-        <Button
-          mode="plain"
-          onClick={() => router.back()}
-          className="mr-4"
-        >
-          {tCommon('back')}
+    <div className="container p-4 pb-24">
+      <div className="mb-6 flex items-center gap-2">
+        <Button variant="ghost" size="sm" onClick={() => router.back()}>
+          <ChevronLeft /> {tCommon("back")}
         </Button>
-        <h1 className="text-2xl font-bold">{t('title')}</h1>
+        <h1 className="text-2xl font-bold">{t("title")}</h1>
       </div>
 
-      <Section>
-        <div className="mb-6 p-4 bg-blue-50 rounded-lg">
-          <h3 className="font-semibold mb-2">💡 {t('aboutTitle')}</h3>
-          <p className="text-sm text-gray-600">
-            {t('aboutDesc')}
-          </p>
-        </div>
+      <Card className="mb-4 bg-primary/10">
+        <CardContent className="p-4">
+          <h3 className="mb-1 font-semibold">💡 {t("aboutTitle")}</h3>
+          <p className="text-sm text-muted-foreground">{t("aboutDesc")}</p>
+        </CardContent>
+      </Card>
 
-        <List>
-          {scheduleOptions.map((option) => (
-            <Cell
+      <Card className="divide-y" role="radiogroup">
+        {scheduleOptions.map((option) => {
+          const checked = selectedOption === option.value;
+          return (
+            <button
               key={option.value}
-              before={<span className="text-xl">{option.icon}</span>}
-              subtitle={option.description}
-              after={
-                <input
-                  type="radio"
-                  name="schedule"
-                  value={option.value}
-                  checked={selectedOption === option.value}
-                  onChange={(e) => setSelectedOption(e.target.value)}
-                  className="w-5 h-5"
-                />
-              }
+              type="button"
+              role="radio"
+              aria-checked={checked}
               onClick={() => setSelectedOption(option.value)}
-              style={{ cursor: 'pointer' }}
+              className={cn(
+                "flex w-full items-center gap-4 p-4 text-left transition-colors hover:bg-muted/60",
+                checked && "bg-primary/10"
+              )}
             >
-              {option.label}
-            </Cell>
-          ))}
-        </List>
+              <span className="text-xl">{option.icon}</span>
+              <div className="min-w-0 flex-1">
+                <div className="font-medium">{option.label}</div>
+                <div className="text-sm text-muted-foreground">{option.description}</div>
+              </div>
+              <span
+                className={cn(
+                  "h-5 w-5 shrink-0 rounded-full border-2",
+                  checked ? "border-primary bg-primary" : "border-muted-foreground/40"
+                )}
+              />
+            </button>
+          );
+        })}
+      </Card>
 
-        {selectedOption === "pause_custom" && (
-          <div className="mt-4 p-4 bg-gray-50 rounded-lg">
-            <label className="block text-sm font-medium mb-2">
-              {t('selectResumeDate')}
-            </label>
+      {selectedOption === "pause_custom" && (
+        <Card className="mt-4">
+          <CardContent className="p-4">
+            <label className="mb-2 block text-sm font-medium">{t("selectResumeDate")}</label>
             <input
               type="date"
               value={customDate}
               onChange={(e) => setCustomDate(e.target.value)}
-              min={new Date().toISOString().split('T')[0]}
-              className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+              min={new Date().toISOString().split("T")[0]}
+              className="w-full rounded-md border border-input bg-background p-2"
             />
-          </div>
-        )}
+          </CardContent>
+        </Card>
+      )}
 
-        {selectedOption !== "active" && getResumeDate() && (
-          <div className="mt-4 p-4 bg-yellow-50 rounded-lg">
-            <p className="text-sm">
-              <strong>{t('matchingWillResume')}</strong> {getResumeDate()}
-            </p>
-          </div>
-        )}
+      {selectedOption !== "active" && resumeDate && (
+        <Card className="mt-4 bg-warning/10">
+          <CardContent className="p-4 text-sm">
+            <strong>{t("matchingWillResume")}</strong> {resumeDate}
+          </CardContent>
+        </Card>
+      )}
 
-        {selectedOption === "pause_indefinite" && (
-          <div className="mt-4 p-4 bg-orange-50 rounded-lg">
-            <p className="text-sm text-orange-700">
-              <strong>{t('indefiniteNote')}</strong>
-            </p>
-          </div>
-        )}
-      </Section>
+      {selectedOption === "pause_indefinite" && (
+        <Card className="mt-4 bg-warning/10">
+          <CardContent className="p-4 text-sm font-medium">{t("indefiniteNote")}</CardContent>
+        </Card>
+      )}
+
+      {error && <p className="mt-4 text-sm text-destructive">{error}</p>}
 
       <div className="mt-6 space-y-3">
-        <Button
-          onClick={handleSave}
-          size="l"
-          stretched
-          loading={saving}
-        >
-          {saving ? t('saving') : t('saveSchedule')}
+        <Button className="w-full" size="lg" onClick={handleSave} disabled={saving}>
+          {saving ? t("saving") : t("saveSchedule")}
         </Button>
-        
         {selectedOption !== "active" && (
-          <Button
-            onClick={() => setSelectedOption("active")}
-            mode="outline"
-            size="l"
-            stretched
-          >
-            {t('resumeNow')}
+          <Button className="w-full" size="lg" variant="outline" onClick={() => setSelectedOption("active")}>
+            {t("resumeNow")}
           </Button>
         )}
       </div>
     </div>
   );
-} 
+}

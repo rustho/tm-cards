@@ -1,10 +1,26 @@
+import type { Prisma } from "@prisma/client";
 import prisma from "./prisma";
+import { notifyUser } from "./bot";
+import { HOBBIES, INTERESTS, LOCATIONS } from "@/models/types";
 
-interface MatchingConfig {
+/**
+ * Matching engine. Pairs active users within the same country/region by a
+ * compatibility score and records the result in MatchResult.
+ *
+ * Triggered by POST /api/matching?action=run (admin) or GET /api/cron/matching
+ * (Vercel Cron). There is no in-process scheduler.
+ */
+
+export interface MatchingConfig {
+  /** Upper bound on pairs created in one run. */
   maxMatchesPerRun: number;
+  /** Pairs below this score are not created. */
   minCompatibilityScore: number;
+  /** A user is eligible again this many hours after their last match. */
   cooldownHours: number;
+  /** Send a Telegram message to both users when a pair is created. */
   enableNotifications: boolean;
+  /** Countries matched as a single pool instead of per region. */
   countriesWithoutRegions: string[];
 }
 
@@ -23,18 +39,37 @@ interface UserData {
   skip: boolean;
   preferredAgeRange: { min: number; max: number };
   preferredGender: string;
-  isActive: boolean;
 }
 
-interface CompatibilityResult {
+export interface CompatibilityResult {
   score: number;
   factors: Array<{ factor: string; score: number }>;
 }
 
+interface ScoredPair {
+  user1Id: string;
+  user2Id: string;
+  score: number;
+}
+
+export interface RunResult {
+  success: boolean;
+  matchesCreated: number;
+  notificationsSent: number;
+  eligibleUsers: number;
+  unmatched: number;
+  errors: string[];
+  startedAt: string;
+  finishedAt: string;
+}
+
+const MATCH_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+
 class MatchingService {
   private static instance: MatchingService;
   private config: MatchingConfig;
-  private isRunning: boolean = false;
+  private isRunning = false;
+  private lastRun: RunResult | null = null;
 
   static getInstance(): MatchingService {
     if (!MatchingService.instance) {
@@ -48,607 +83,358 @@ class MatchingService {
       maxMatchesPerRun: 50,
       minCompatibilityScore: 0.3,
       cooldownHours: 24,
-      enableNotifications: false,
-      countriesWithoutRegions: ["Singapore", "Monaco", "Luxembourg"], // Small countries without regions
+      enableNotifications: process.env.MATCHING_NOTIFICATIONS === "true",
+      countriesWithoutRegions: ["Singapore", "Monaco", "Luxembourg"],
     };
   }
 
-  /**
-   * Normalize ID by removing leading apostrophe if present
-   */
+  /** Normalize ids coming from spreadsheet-era data ("'123" → "123"). */
   private normalizeId(id: string): string {
     return id ? id.toString().replace(/^'/, "") : id;
   }
 
-  /**
-   * Enhanced compatibility scoring based on the SheetsScheduler algorithm
-   */
-  private calculateCompatibilityScore(
-    user1: UserData,
-    user2: UserData
-  ): CompatibilityResult {
+  calculateCompatibilityScore(user1: UserData, user2: UserData): CompatibilityResult {
     const factors: Array<{ factor: string; score: number }> = [];
-    let totalScore = 0;
+    let total = 0;
 
-    // Region compatibility (high weight: 4 points for same region)
-    let regionScore = 0;
+    // Region: 4 same region, 2 same country, 0.5 otherwise
+    let regionScore = 0.5;
     if (user1.region && user2.region && user1.region === user2.region) {
       regionScore = 4;
     } else if (user1.country === user2.country) {
-      regionScore = 2; // Same country but different region
-    } else {
-      regionScore = 0.5; // Different countries
+      regionScore = 2;
     }
     factors.push({ factor: "region_compatibility", score: regionScore });
-    totalScore += regionScore;
+    total += regionScore;
 
-    // Common interests (1 point per common interest)
-    const interests1 = Array.isArray(user1.interests) ? user1.interests : [];
-    const interests2 = Array.isArray(user2.interests) ? user2.interests : [];
-    const commonInterests = interests1.filter((interest) =>
-      interests2.includes(interest)
-    );
-    const interestScore = commonInterests.length;
+    const common = (a: string[], b: string[]) => a.filter((x) => b.includes(x)).length;
+
+    const interestScore = common(user1.interests, user2.interests);
     factors.push({ factor: "common_interests", score: interestScore });
-    totalScore += interestScore;
+    total += interestScore;
 
-    // Common hobbies (0.5 points per common hobby)
-    const hobbies1 = Array.isArray(user1.hobbies) ? user1.hobbies : [];
-    const hobbies2 = Array.isArray(user2.hobbies) ? user2.hobbies : [];
-    const commonHobbies = hobbies1.filter((hobby) => hobbies2.includes(hobby));
-    const hobbyScore = commonHobbies.length * 0.5;
+    const hobbyScore = common(user1.hobbies, user2.hobbies) * 0.5;
     factors.push({ factor: "common_hobbies", score: hobbyScore });
-    totalScore += hobbyScore;
+    total += hobbyScore;
 
-    // Travel destinations compatibility (0.5 points per common destination)
-    const destinations1 = Array.isArray(user1.placesToVisit)
-      ? user1.placesToVisit
-      : [];
-    const destinations2 = Array.isArray(user2.placesToVisit)
-      ? user2.placesToVisit
-      : [];
-    const commonDestinations = destinations1.filter((place) =>
-      destinations2.includes(place)
-    );
-    const destinationScore = commonDestinations.length * 0.5;
+    const destinationScore = common(user1.placesToVisit, user2.placesToVisit) * 0.5;
     factors.push({ factor: "travel_destinations", score: destinationScore });
-    totalScore += destinationScore;
+    total += destinationScore;
 
-    // Age compatibility (bonus for similar ages)
     if (user1.age && user2.age) {
-      const ageDiff = Math.abs(user1.age - user2.age);
-      const ageScore = Math.max(0, 2 - ageDiff / 5); // 2 points max, decreasing with age difference
+      const ageScore = Math.max(0, 2 - Math.abs(user1.age - user2.age) / 5);
       factors.push({ factor: "age_compatibility", score: ageScore });
-      totalScore += ageScore;
+      total += ageScore;
     }
 
+    const round = (n: number) => Math.round(n * 100) / 100;
     return {
-      score: Math.round(totalScore * 100) / 100,
-      factors: factors.map((f) => ({
-        ...f,
-        score: Math.round(f.score * 100) / 100,
-      })),
+      score: round(total),
+      factors: factors.map((f) => ({ ...f, score: round(f.score) })),
     };
   }
 
-  /**
-   * Check if users meet basic compatibility preferences
-   */
+  /** Mutual age-range and gender preferences. */
   private areUsersCompatible(user1: UserData, user2: UserData): boolean {
-    // Age preference check
     if (user1.age && user2.age) {
-      if (
-        user1.age < user2.preferredAgeRange.min ||
-        user1.age > user2.preferredAgeRange.max
-      ) {
-        return false;
-      }
-      if (
-        user2.age < user1.preferredAgeRange.min ||
-        user2.age > user1.preferredAgeRange.max
-      ) {
-        return false;
-      }
+      if (user1.age < user2.preferredAgeRange.min || user1.age > user2.preferredAgeRange.max) return false;
+      if (user2.age < user1.preferredAgeRange.min || user2.age > user1.preferredAgeRange.max) return false;
     }
-
-    // Gender preference check
-    if (
-      user1.preferredGender !== "any" &&
-      user1.preferredGender !== user2.gender
-    ) {
-      return false;
-    }
-    if (
-      user2.preferredGender !== "any" &&
-      user2.preferredGender !== user1.gender
-    ) {
-      return false;
-    }
-
+    if (user1.preferredGender !== "any" && user1.preferredGender !== user2.gender) return false;
+    if (user2.preferredGender !== "any" && user2.preferredGender !== user1.gender) return false;
     return true;
   }
 
-  /**
-   * Find matches within a group using optimal pairing algorithm
-   */
-  private findMatchesInGroup(groupUsers: UserData[]): Map<string, string> {
-    const matches = new Map<string, string>();
-
-    // Filter out users who want to skip
-    const activeUsers = groupUsers.filter((user) => !user.skip);
-
-    if (activeUsers.length < 2) {
-      return matches;
-    }
-
-    // Create compatibility matrix
-    const compatibilityScores = new Map<string, number>();
-
-    // Calculate compatibility scores for all possible pairs
-    for (let i = 0; i < activeUsers.length; i++) {
-      for (let j = i + 1; j < activeUsers.length; j++) {
-        const user1 = activeUsers[i];
-        const user2 = activeUsers[j];
-
-        // Check if users were previously matched
-        const previouslyMatched =
-          user1.previousMatches.some(
-            (id) => this.normalizeId(id) === this.normalizeId(user2.telegramId)
-          ) ||
-          user2.previousMatches.some(
-            (id) => this.normalizeId(id) === this.normalizeId(user1.telegramId)
-          );
-
-        if (previouslyMatched) {
-          continue;
-        }
-
-        // Check basic compatibility
-        if (!this.areUsersCompatible(user1, user2)) {
-          continue;
-        }
-
-        const compatibility = this.calculateCompatibilityScore(user1, user2);
-        const pairKey = `${user1.telegramId}-${user2.telegramId}`;
-        compatibilityScores.set(pairKey, compatibility.score);
-      }
-    }
-
-    // Sort pairs by score in descending order
-    const sortedPairs = Array.from(compatibilityScores.entries()).sort(
-      ([, score1], [, score2]) => score2 - score1
+  private wereMatchedBefore(user1: UserData, user2: UserData): boolean {
+    const id1 = this.normalizeId(user1.telegramId);
+    const id2 = this.normalizeId(user2.telegramId);
+    return (
+      user1.previousMatches.some((id) => this.normalizeId(id) === id2) ||
+      user2.previousMatches.some((id) => this.normalizeId(id) === id1)
     );
-
-    const matchedUsers = new Set<string>();
-
-    // Match users starting from highest compatibility scores
-    for (const [pairKey, score] of sortedPairs) {
-      if (score < this.config.minCompatibilityScore) {
-        break; // Stop if score is too low
-      }
-
-      const [user1Id, user2Id] = pairKey.split("-");
-
-      // Skip if either user is already matched
-      if (matchedUsers.has(user1Id) || matchedUsers.has(user2Id)) {
-        continue;
-      }
-
-      // Record the match
-      matches.set(user1Id, user2Id);
-      matches.set(user2Id, user1Id);
-      matchedUsers.add(user1Id);
-      matchedUsers.add(user2Id);
-    }
-
-    return matches;
   }
 
   /**
-   * Group users by country
+   * Greedy pairing inside one pool: score every valid pair, sort desc, take
+   * pairs whose users are still free. Returns each pair exactly once.
    */
-  private groupUsersByCountry(users: UserData[]): Record<string, UserData[]> {
-    return users.reduce((groups, user) => {
-      const country = user.country || 'Unknown';
-      if (!groups[country]) {
-        groups[country] = [];
-      }
-      groups[country].push(user);
-      return groups;
-    }, {} as Record<string, UserData[]>);
-  }
+  private findPairsInGroup(group: UserData[]): ScoredPair[] {
+    const active = group.filter((u) => !u.skip);
+    if (active.length < 2) return [];
 
-  /**
-   * Group users by region within a country
-   */
-  private groupUsersByRegion(users: UserData[]): Record<string, UserData[]> {
-    return users.reduce((groups, user) => {
-      const region = user.region || "no_region";
-      if (!groups[region]) {
-        groups[region] = [];
-      }
-      groups[region].push(user);
-      return groups;
-    }, {} as Record<string, UserData[]>);
-  }
-
-  /**
-   * Match users within regions of a country
-   */
-  private matchUsersWithinRegions(
-    countryUsers: UserData[]
-  ): Map<string, string> {
-    const usersByRegion = this.groupUsersByRegion(countryUsers);
-    const allMatches = new Map<string, string>();
-
-    // Process each region
-    for (const region in usersByRegion) {
-      const regionMatches = this.findMatchesInGroup(usersByRegion[region]);
-
-      // Merge region matches into all matches
-      for (const [userId, matchId] of Array.from(regionMatches.entries())) {
-        allMatches.set(userId, matchId);
+    const candidates: ScoredPair[] = [];
+    for (let i = 0; i < active.length; i++) {
+      for (let j = i + 1; j < active.length; j++) {
+        const a = active[i];
+        const b = active[j];
+        if (this.wereMatchedBefore(a, b)) continue;
+        if (!this.areUsersCompatible(a, b)) continue;
+        const { score } = this.calculateCompatibilityScore(a, b);
+        if (score < this.config.minCompatibilityScore) continue;
+        candidates.push({ user1Id: a.telegramId, user2Id: b.telegramId, score });
       }
     }
 
-    return allMatches;
+    candidates.sort((x, y) => y.score - x.score);
+
+    const taken = new Set<string>();
+    const pairs: ScoredPair[] = [];
+    for (const pair of candidates) {
+      if (taken.has(pair.user1Id) || taken.has(pair.user2Id)) continue;
+      taken.add(pair.user1Id);
+      taken.add(pair.user2Id);
+      pairs.push(pair);
+    }
+    return pairs;
+  }
+
+  private groupBy(users: UserData[], key: (u: UserData) => string): Record<string, UserData[]> {
+    return users.reduce<Record<string, UserData[]>>((acc, user) => {
+      const k = key(user);
+      (acc[k] ||= []).push(user);
+      return acc;
+    }, {});
   }
 
   /**
-   * Get eligible users for matching
+   * Users who can be matched right now: active, past cooldown, and not
+   * paused through their matching-schedule setting.
    */
   private async getEligibleUsers(): Promise<UserData[]> {
-    const cooldownTime = new Date(
-      Date.now() - this.config.cooldownHours * 60 * 60 * 1000
-    );
+    const now = new Date();
 
-    const users = await prisma.matchingUser.findMany({
-      where: {
-        isActive: true,
-        OR: [
-          { lastMatchTime: { lt: cooldownTime } },
-          { lastMatchTime: null }
-        ]
-      }
+    // Auto-resume schedules whose pause has expired.
+    await prisma.userSettings.updateMany({
+      where: { matchingOption: { not: "active" }, matchingResumeDate: { lte: now } },
+      data: { matchingOption: "active", matchingResumeDate: null, matchingCustomDate: null },
     });
 
-    return users.map((user: { telegramId: string; name: string | null; age: number | null; gender: string | null; country: string | null; region: string | null; interests: string[]; hobbies: string[]; personalityTraits: string[]; placesToVisit: string[]; previousMatches: string[]; skip: boolean; preferredAgeMin: number; preferredAgeMax: number; preferredGender: string; isActive: boolean }) => ({
-      telegramId: user.telegramId,
-      name: user.name || "",
-      age: user.age || undefined,
-      gender: user.gender || undefined,
-      country: user.country || "",
-      region: user.region || undefined,
-      interests: user.interests,
-      hobbies: user.hobbies,
-      personalityTraits: user.personalityTraits,
-      placesToVisit: user.placesToVisit,
-      previousMatches: user.previousMatches,
-      skip: user.skip,
-      preferredAgeRange: {
-        min: user.preferredAgeMin,
-        max: user.preferredAgeMax
+    const cooldown = new Date(now.getTime() - this.config.cooldownHours * 60 * 60 * 1000);
+    const rows = await prisma.matchingUser.findMany({
+      where: {
+        isActive: true,
+        country: { not: null },
+        OR: [{ lastMatchTime: { lt: cooldown } }, { lastMatchTime: null }],
       },
-      preferredGender: user.preferredGender,
-      isActive: user.isActive,
-    }));
+      include: { settings: true },
+    });
+
+    return rows
+      .filter((row) => !row.settings || row.settings.matchingOption === "active")
+      .map((row) => ({
+        telegramId: row.telegramId,
+        name: row.name || "",
+        age: row.age ?? undefined,
+        gender: row.gender ?? undefined,
+        country: row.country || "",
+        region: row.region ?? undefined,
+        interests: row.interests,
+        hobbies: row.hobbies,
+        personalityTraits: row.personalityTraits,
+        placesToVisit: row.placesToVisit,
+        previousMatches: row.previousMatches,
+        skip: row.skip,
+        preferredAgeRange: { min: row.preferredAgeMin, max: row.preferredAgeMax },
+        preferredGender: row.preferredGender,
+      }));
   }
 
-  /**
-   * Main matching algorithm using sophisticated pairing logic
-   */
-  async runMatching(): Promise<{
-    success: boolean;
-    matchesCreated: number;
-    errors: string[];
-  }> {
-    if (this.isRunning) {
-      console.log("⏳ Matching service is already running");
-      return {
-        success: false,
-        matchesCreated: 0,
-        errors: ["Service already running"],
-      };
-    }
-
-    this.isRunning = true;
-    console.log("🚀 Starting sophisticated matching service...");
-
-    const results = {
+  async runMatching(): Promise<RunResult> {
+    const startedAt = new Date().toISOString();
+    const result: RunResult = {
       success: true,
       matchesCreated: 0,
-      errors: [] as string[],
+      notificationsSent: 0,
+      eligibleUsers: 0,
+      unmatched: 0,
+      errors: [],
+      startedAt,
+      finishedAt: startedAt,
     };
 
+    if (this.isRunning) {
+      return { ...result, success: false, errors: ["Matching is already running"] };
+    }
+    this.isRunning = true;
+    console.log("🚀 Matching run started");
+
     try {
-      // Get eligible users
       const users = await this.getEligibleUsers();
-      console.log(`👥 Found ${users.length} eligible users for matching`);
+      result.eligibleUsers = users.length;
+      console.log(`👥 ${users.length} eligible users`);
 
       if (users.length < 2) {
-        console.log("ℹ️ Not enough users for matching");
-        return results;
+        result.unmatched = users.length;
+        return result;
       }
 
-      // Group users by country
-      const usersByCountry = this.groupUsersByCountry(users);
+      const byId = new Map(users.map((u) => [u.telegramId, u]));
+      const allPairs: ScoredPair[] = [];
 
-      // Process each country
-      for (const country in usersByCountry) {
-        console.log(`\n=== Processing ${country} ===`);
-        let countryMatches: Map<string, string>;
-
-        if (!this.config.countriesWithoutRegions.includes(country)) {
-          // Use region-based matching for larger countries
-          countryMatches = this.matchUsersWithinRegions(
-            usersByCountry[country]
-          );
+      const byCountry = this.groupBy(users, (u) => u.country || "Unknown");
+      for (const [country, countryUsers] of Object.entries(byCountry)) {
+        if (this.config.countriesWithoutRegions.includes(country)) {
+          allPairs.push(...this.findPairsInGroup(countryUsers));
         } else {
-          // Use simple group matching for smaller countries
-          countryMatches = this.findMatchesInGroup(usersByCountry[country]);
-        }
-
-        // Create match records and send notifications
-        for (const [user1Id, user2Id] of Array.from(countryMatches.entries())) {
-          // Skip if this pair has already been processed (since we store bidirectional matches)
-          if (
-            results.matchesCreated > 0 &&
-            countryMatches.get(user2Id) === user1Id
-          ) {
-            continue;
+          const byRegion = this.groupBy(countryUsers, (u) => u.region || "no_region");
+          for (const regionUsers of Object.values(byRegion)) {
+            allPairs.push(...this.findPairsInGroup(regionUsers));
           }
-
-          try {
-            const user1 = users.find((u) => u.telegramId === user1Id);
-            const user2 = users.find((u) => u.telegramId === user2Id);
-
-            if (!user1 || !user2) continue;
-
-            // Calculate final compatibility score
-            const compatibility = this.calculateCompatibilityScore(
-              user1,
-              user2
-            );
-
-            // Create match record
-            const matchResult = await prisma.matchResult.create({
-              data: {
-                user1Id: user1Id,
-                user2Id: user2Id,
-                compatibilityScore: compatibility.score,
-                matchingFactors: compatibility.factors, // Prisma handles JSON
-                expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
-              }
-            });
-
-            results.matchesCreated++;
-
-            // Update user records with new match
-            // Prisma doesn't support updateMany with different data or complex push operations in the same way Mongoose does easily for multiple docs
-            // But here we are updating fields that are arrays.
-            // PostgreSQL arrays can be updated.
-
-            // We need to update user1
-            await prisma.matchingUser.update({
-              where: { telegramId: user1Id },
-              data: {
-                lastMatchTime: new Date(),
-                totalMatches: { increment: 1 },
-                previousMatches: { push: user2Id }
-              }
-            });
-
-            // We need to update user2
-            await prisma.matchingUser.update({
-              where: { telegramId: user2Id },
-              data: {
-                lastMatchTime: new Date(),
-                totalMatches: { increment: 1 },
-                previousMatches: { push: user1Id }
-              }
-            });
-
-
-            console.log(
-              `✅ Created match: ${user1.name} ↔ ${user2.name} (Score: ${compatibility.score})`
-            );
-          } catch (matchError) {
-            console.error("Error creating match:", matchError);
-            results.errors.push(`Match creation error: ${matchError}`);
-          }
-        }
-
-        // Report unmatched users
-        const unmatchedUsers = usersByCountry[country].filter(
-          (user) => !countryMatches.has(user.telegramId) && !user.skip
-        );
-
-        if (unmatchedUsers.length > 0) {
-          console.log(
-            `\nUnmatched users in ${country}: ${unmatchedUsers.length}`
-          );
-          unmatchedUsers.forEach((user) => {
-            console.log(
-              `  - ${user.name} (${user.telegramId}) in ${
-                user.region || "no region"
-              }`
-            );
-          });
         }
       }
 
-      console.log(
-        `🎉 Sophisticated matching completed: ${results.matchesCreated} matches created`
-      );
+      allPairs.sort((a, b) => b.score - a.score);
+      const pairs = allPairs.slice(0, this.config.maxMatchesPerRun);
+
+      for (const pair of pairs) {
+        const user1 = byId.get(pair.user1Id);
+        const user2 = byId.get(pair.user2Id);
+        if (!user1 || !user2) continue;
+
+        // Store each pair once with a stable ordering (unique index on the pair).
+        const [firstId, secondId] = [pair.user1Id, pair.user2Id].sort();
+        const compatibility = this.calculateCompatibilityScore(user1, user2);
+
+        try {
+          await prisma.$transaction([
+            prisma.matchResult.create({
+              data: {
+                user1Id: firstId,
+                user2Id: secondId,
+                compatibilityScore: compatibility.score,
+                matchingFactors: compatibility.factors as unknown as Prisma.InputJsonValue,
+                expiresAt: new Date(Date.now() + MATCH_TTL_MS),
+              },
+            }),
+            prisma.matchingUser.update({
+              where: { telegramId: pair.user1Id },
+              data: { lastMatchTime: new Date(), totalMatches: { increment: 1 }, previousMatches: { push: pair.user2Id } },
+            }),
+            prisma.matchingUser.update({
+              where: { telegramId: pair.user2Id },
+              data: { lastMatchTime: new Date(), totalMatches: { increment: 1 }, previousMatches: { push: pair.user1Id } },
+            }),
+          ]);
+          result.matchesCreated++;
+          console.log(`✅ Match: ${user1.name} ↔ ${user2.name} (${compatibility.score})`);
+
+          if (this.config.enableNotifications) {
+            const sent = await Promise.all([
+              notifyUser(user1.telegramId, this.matchMessage(user2)),
+              notifyUser(user2.telegramId, this.matchMessage(user1)),
+            ]);
+            result.notificationsSent += sent.filter(Boolean).length;
+          }
+        } catch (error) {
+          const message = error instanceof Error ? error.message : String(error);
+          console.error("❌ Failed to create match:", message);
+          result.errors.push(`Pair ${firstId}-${secondId}: ${message}`);
+        }
+      }
+
+      const matched = new Set(pairs.flatMap((p) => [p.user1Id, p.user2Id]));
+      result.unmatched = users.filter((u) => !u.skip && !matched.has(u.telegramId)).length;
+      console.log(`🎉 Matching finished: ${result.matchesCreated} matches, ${result.unmatched} unmatched`);
     } catch (error) {
-      console.error("Error in matching service:", error);
-      results.success = false;
-      results.errors.push(`General error: ${error}`);
+      const message = error instanceof Error ? error.message : String(error);
+      console.error("❌ Matching run failed:", message);
+      result.success = false;
+      result.errors.push(message);
     } finally {
       this.isRunning = false;
+      result.finishedAt = new Date().toISOString();
+      this.lastRun = result;
     }
 
-    return results;
+    return result;
   }
 
-  // Create mock users for testing
-  async createMockUsers(count: number = 10) {
-    const countries = ["Vietnam", "Thailand", "Indonesia", "Sri Lanka"];
-    const regions: Record<string, string[]> = {
-      Vietnam: ["Da Nang", "Nha Trang", "Ho Chi Minh City"],
-      Thailand: ["Bangkok", "Phuket", "Chiang Mai"],
-      Indonesia: ["Bali", "Jakarta", "Yogyakarta"],
-      "Sri Lanka": ["Colombo", "Kandy", "Galle"],
-    };
-    const interests = [
-      "Photography",
-      "Hiking",
-      "Food",
-      "Art",
-      "Music",
-      "Sports",
-      "Reading",
-      "Travel",
-      "Dancing",
-      "Cooking",
-    ];
-    const hobbies = [
-      "Swimming",
-      "Running",
-      "Yoga",
-      "Cycling",
-      "Painting",
-      "Gaming",
-      "Writing",
-      "Meditation",
-    ];
-    const destinations = [
-      "Bali",
-      "Thailand",
-      "Vietnam",
-      "Japan",
-      "Europe",
-      "Australia",
-    ];
+  private matchMessage(other: UserData): string {
+    const where = [other.region, other.country].filter(Boolean).join(", ");
+    const interests = other.interests.slice(0, 3).join(", ");
+    return (
+      `🎯 <b>Новое совпадение!</b>\n\n` +
+      `<b>${other.name || "Путешественник"}</b>${where ? ` · ${where}` : ""}\n` +
+      (interests ? `Интересы: ${interests}\n` : "") +
+      `\nОткрой TravelMate, чтобы посмотреть профиль.`
+    );
+  }
 
+  /** Inserts fake users that share the real option lists so they can be matched with real profiles. */
+  async createMockUsers(count = 10) {
+    const pick = <T,>(arr: readonly T[], n: number) =>
+      [...arr].sort(() => Math.random() - 0.5).slice(0, n);
     try {
       for (let i = 1; i <= count; i++) {
-        const country = countries[Math.floor(Math.random() * countries.length)];
-        const region =
-          regions[country][Math.floor(Math.random() * regions[country].length)];
-
-        const randomId = Math.random().toString(36).substring(7);
-
+        const location = LOCATIONS[Math.floor(Math.random() * LOCATIONS.length)];
+        const region = location.regions[Math.floor(Math.random() * location.regions.length)];
         await prisma.matchingUser.create({
           data: {
-            telegramId: `mock_user_${randomId}_${i}`,
+            telegramId: `mock_${Date.now().toString(36)}_${i}`,
             username: `traveler${i}`,
-            name: `User ${i}`,
+            name: `Mock User ${i}`,
             age: 20 + Math.floor(Math.random() * 30),
             gender: ["male", "female"][Math.floor(Math.random() * 2)],
-            country,
+            country: location.country,
             region,
-            interests: interests.slice(0, 3 + Math.floor(Math.random() * 4)),
-            hobbies: hobbies.slice(0, 2 + Math.floor(Math.random() * 3)),
-            placesToVisit: destinations.slice(0, 2 + Math.floor(Math.random() * 3)),
-            preferredAgeMin: 18 + Math.floor(Math.random() * 10),
-            preferredAgeMax: 40 + Math.floor(Math.random() * 20),
-            preferredGender: ["male", "female", "any"][
-              Math.floor(Math.random() * 3)
-            ],
+            interests: pick(INTERESTS, 3 + Math.floor(Math.random() * 2)),
+            hobbies: pick(HOBBIES, 2 + Math.floor(Math.random() * 2)),
+            placesToVisit: pick(LOCATIONS.map((l) => l.country), 2),
             previousMatches: [],
-            skip: false,
-          }
+          },
         });
       }
-      console.log(`✅ Created ${count} mock users for testing`);
+      console.log(`✅ Created ${count} mock users`);
       return { success: true, count };
     } catch (error) {
-      console.error("Error creating mock users:", error);
-      return { success: false, error };
+      console.error("❌ Error creating mock users:", error);
+      return { success: false, error: error instanceof Error ? error.message : String(error) };
     }
   }
 
-  // Get matching statistics
   async getMatchingStats() {
-    try {
-      const [
-        totalUsers,
-        activeUsers,
-        totalMatches,
-        pendingMatches,
-        matchesToday,
-      ] = await Promise.all([
-        prisma.matchingUser.count(),
-        prisma.matchingUser.count({ where: { isActive: true } }),
-        prisma.matchResult.count(),
-        prisma.matchResult.count({ where: { status: "pending" } }),
-        prisma.matchResult.count({
-          where: {
-            createdAt: { gte: new Date(Date.now() - 24 * 60 * 60 * 1000) },
-          },
-        }),
-      ]);
-
-      const avgCompatibilityScoreAggregate = await prisma.matchResult.aggregate({
-        _avg: {
-          compatibilityScore: true
-        }
-      });
-
-      return {
-        totalUsers,
-        activeUsers,
-        totalMatches,
-        pendingMatches,
-        matchesToday,
-        avgCompatibilityScore: avgCompatibilityScoreAggregate._avg.compatibilityScore || 0,
-        isRunning: this.isRunning,
-        config: this.config,
-      };
-    } catch (error) {
-      console.error("Error getting matching stats:", error);
-      return null;
-    }
+    const dayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    const [totalUsers, activeUsers, totalMatches, pendingMatches, matchesToday, avg] = await Promise.all([
+      prisma.matchingUser.count(),
+      prisma.matchingUser.count({ where: { isActive: true } }),
+      prisma.matchResult.count(),
+      prisma.matchResult.count({ where: { status: "pending" } }),
+      prisma.matchResult.count({ where: { createdAt: { gte: dayAgo } } }),
+      prisma.matchResult.aggregate({ _avg: { compatibilityScore: true } }),
+    ]);
+    return {
+      totalUsers,
+      activeUsers,
+      totalMatches,
+      pendingMatches,
+      matchesToday,
+      avgCompatibilityScore: avg._avg.compatibilityScore ?? 0,
+      isRunning: this.isRunning,
+      lastRun: this.lastRun,
+      config: this.config,
+    };
   }
 
-  // Clean expired matches
-  async cleanupExpiredMatches() {
-    try {
-      const result = await prisma.matchResult.updateMany({
-        where: {
-          status: "pending",
-          expiresAt: { lt: new Date() },
-        },
-        data: { status: "expired" }
-      });
-
-      console.log(`🧹 Marked ${result.count} matches as expired`);
-      return result.count;
-    } catch (error) {
-      console.error("Error cleaning expired matches:", error);
-      return 0;
-    }
+  async cleanupExpiredMatches(): Promise<number> {
+    const result = await prisma.matchResult.updateMany({
+      where: { status: "pending", expiresAt: { lt: new Date() } },
+      data: { status: "expired" },
+    });
+    if (result.count > 0) console.log(`🧹 Expired ${result.count} matches`);
+    return result.count;
   }
 
-  // Update matching configuration
   updateConfig(newConfig: Partial<MatchingConfig>) {
     this.config = { ...this.config, ...newConfig };
     console.log("⚙️ Matching configuration updated:", this.config);
   }
 
-  // Get configuration
-  getConfig() {
+  getConfig(): MatchingConfig {
     return { ...this.config };
   }
 
-  // Get service status
   getStatus() {
-    return {
-      isRunning: this.isRunning,
-      config: this.config,
-      lastRun: null, // You can implement this if needed
-    };
+    return { isRunning: this.isRunning, lastRun: this.lastRun, config: this.config };
   }
 }
 

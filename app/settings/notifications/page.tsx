@@ -1,18 +1,21 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { useSignal, initData } from "@telegram-apps/sdk-react";
-import { Button, Cell, List, Section, Switch } from "@telegram-apps/telegram-ui";
+import { ChevronLeft } from "lucide-react";
 import { settingsService } from "@/lib/settingsService";
 import type { NotificationSettings } from "@/models/types";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Switch } from "@/components/ui/switch";
 
-export default function NotificationSettings() {
+const KEYS: Array<keyof NotificationSettings> = ["newMatches", "messages", "profileViews", "gameInvites", "weeklyDigest"];
+
+export default function NotificationSettingsPage() {
   const router = useRouter();
-  const t = useTranslations('settings.notifications');
-  const tCommon = useTranslations('settings.common');
-  const user = useSignal(initData.user);
+  const t = useTranslations("settings.notifications");
+  const tCommon = useTranslations("settings.common");
   const [notifications, setNotifications] = useState<NotificationSettings>({
     newMatches: true,
     messages: true,
@@ -22,145 +25,72 @@ export default function NotificationSettings() {
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [message, setMessage] = useState<{ kind: "ok" | "error"; text: string } | null>(null);
 
   useEffect(() => {
-    const fetchNotificationSettings = async () => {
-      try {
-        const settings = await settingsService.getNotificationSettings(user?.id?.toString());
-        setNotifications(settings);
-      } catch (error) {
-        console.error("Error fetching notification settings:", error);
-        // Keep default settings if API fails
-      } finally {
-        setLoading(false);
-      }
+    let cancelled = false;
+    settingsService
+      .getNotificationSettings()
+      .then((settings) => !cancelled && setNotifications(settings))
+      .catch((error) => console.error("Error fetching notification settings:", error))
+      .finally(() => !cancelled && setLoading(false));
+    return () => {
+      cancelled = true;
     };
+  }, []);
 
-    fetchNotificationSettings();
-  }, [user?.id]);
-
-  const handleToggle = (key: keyof NotificationSettings) => {
-    setNotifications(prev => ({
-      ...prev,
-      [key]: !prev[key]
-    }));
-  };
+  const handleToggle = (key: keyof NotificationSettings) =>
+    setNotifications((prev) => ({ ...prev, [key]: !prev[key] }));
 
   const handleSave = async () => {
     setSaving(true);
+    setMessage(null);
     try {
-      const result = await settingsService.updateNotificationSettings(
-        notifications,
-        user?.id?.toString()
-      );
-      
+      const result = await settingsService.updateNotificationSettings(notifications);
       if (result.success) {
-        alert(t('savedSuccessfully'));
+        setMessage({ kind: "ok", text: t("savedSuccessfully") });
         router.back();
       }
     } catch (error) {
       console.error("Error saving notification settings:", error);
-      alert(t('saveFailed'));
+      setMessage({ kind: "error", text: t("saveFailed") });
     } finally {
       setSaving(false);
     }
   };
 
   if (loading) {
-    return (
-      <div className="container mx-auto p-4">
-        <div className="text-center">{t('loading')}</div>
-      </div>
-    );
+    return <div className="container p-4 text-center">{t("loading")}</div>;
   }
 
   return (
-    <div className="container mx-auto p-4">
-      <div className="flex items-center mb-6">
-        <Button
-          mode="plain"
-          onClick={() => router.back()}
-          className="mr-4"
-        >
-          {tCommon('back')}
+    <div className="container p-4 pb-24">
+      <div className="mb-6 flex items-center gap-2">
+        <Button variant="ghost" size="sm" onClick={() => router.back()}>
+          <ChevronLeft /> {tCommon("back")}
         </Button>
-        <h1 className="text-2xl font-bold">{t('title')}</h1>
+        <h1 className="text-2xl font-bold">{t("title")}</h1>
       </div>
 
-      <Section>
-        <List>
-          <Cell
-            after={
-              <Switch
-                checked={notifications.newMatches}
-                onChange={() => handleToggle('newMatches')}
-              />
-            }
-            subtitle={t('newMatchesDesc')}
-          >
-            {t('newMatches')}
-          </Cell>
-          
-          <Cell
-            after={
-              <Switch
-                checked={notifications.messages}
-                onChange={() => handleToggle('messages')}
-              />
-            }
-            subtitle={t('messagesDesc')}
-          >
-            {t('messages')}
-          </Cell>
-          
-          <Cell
-            after={
-              <Switch
-                checked={notifications.profileViews}
-                onChange={() => handleToggle('profileViews')}
-              />
-            }
-            subtitle={t('profileViewsDesc')}
-          >
-            {t('profileViews')}
-          </Cell>
-          
-          <Cell
-            after={
-              <Switch
-                checked={notifications.gameInvites}
-                onChange={() => handleToggle('gameInvites')}
-              />
-            }
-            subtitle={t('gameInvitesDesc')}
-          >
-            {t('gameInvites')}
-          </Cell>
-          
-          <Cell
-            after={
-              <Switch
-                checked={notifications.weeklyDigest}
-                onChange={() => handleToggle('weeklyDigest')}
-              />
-            }
-            subtitle={t('weeklyDigestDesc')}
-          >
-            {t('weeklyDigest')}
-          </Cell>
-        </List>
-      </Section>
+      <Card className="divide-y">
+        {KEYS.map((key) => (
+          <label key={key} className="flex cursor-pointer items-center justify-between gap-4 p-4">
+            <div>
+              <div className="font-medium">{t(key)}</div>
+              <div className="text-sm text-muted-foreground">{t(`${key}Desc`)}</div>
+            </div>
+            <Switch checked={notifications[key]} onCheckedChange={() => handleToggle(key)} />
+          </label>
+        ))}
+      </Card>
 
-      <div className="mt-6">
-        <Button
-          onClick={handleSave}
-          size="l"
-          stretched
-          loading={saving}
-        >
-          {saving ? t('saving') : t('saveChanges')}
-        </Button>
-      </div>
+      {message && (
+        <p className={`mt-4 text-sm ${message.kind === "error" ? "text-destructive" : "text-success"}`}>{message.text}</p>
+      )}
+
+      <Button className="mt-6 w-full" size="lg" onClick={handleSave} disabled={saving}>
+        {saving ? t("saving") : t("saveChanges")}
+      </Button>
     </div>
   );
-} 
+}

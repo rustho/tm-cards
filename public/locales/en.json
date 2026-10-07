@@ -9,7 +9,7 @@
   },
   "menu": {
     "questions": "Question Cards",
-    "profile": "Create Profile", 
+    "profile": "Create Profile",
     "home": "Home",
     "settings": "Settings"
   },
@@ -17,7 +17,11 @@
     "title": "Your Matches",
     "loading": "Loading...",
     "matchNumber": "Match #",
-    "noMatches": "No matches found. Complete your profile to get started!"
+    "noMatches": "No matches found. Complete your profile to get started!",
+    "subtitle": "Your travel companions await",
+    "clickToExplore": "Tap to open the profile",
+    "noMatchesTitle": "No matches yet",
+    "completeProfile": "Complete your profile"
   },
   "profile": {
     "title": "Profile",
@@ -27,7 +31,9 @@
       "stepIndicator": "Step {current} of {total}",
       "finish": "Finish",
       "next": "Next",
-      "back": "Back"
+      "back": "Back",
+      "loading": "Loading...",
+      "saveFailed": "Could not save. Please try again."
     },
     "steps": {
       "name": {
@@ -131,7 +137,9 @@
       "travelStyle": "Travel Style",
       "instagram": "Instagram",
       "lookingFor": "Looking for",
-      "writeToMatch": "Write to Match"
+      "writeToMatch": "Write to Match",
+      "goal": "Goal",
+      "about": "About"
     }
   },
   "questions": {
@@ -173,7 +181,10 @@
     "title": "Settings",
     "editProfile": {
       "title": "Edit Profile",
-      "description": "Update your profile information"
+      "description": "Update your profile information",
+      "loading": "Loading profile...",
+      "loadFailed": "Could not load the profile.",
+      "saveFailed": "Could not save changes."
     },
     "notifications": {
       "title": "Notification Settings",

@@ -1,61 +1,84 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import { ProfileSettings } from "./ProfileSettings";
 import { Profile } from "@/models/types";
+import { api, ApiError } from "@/lib/api";
+import { FooterMenu } from "@/components/FooterMenu";
 
+const EMPTY_PROFILE: Profile = {
+  id: "",
+  username: "",
+  name: "",
+  goal: "",
+  country: "",
+  region: "",
+  interests: [],
+  hobbies: [],
+  personalityTraits: [],
+  similarInterests: "",
+  announcement: "",
+  profile: "",
+  placesToVisit: "",
+  instagram: "",
+  photo: "",
+  dateOfBirth: "",
+};
+
+/** Loads the current user's profile and persists edits through POST /api/profile. */
 export default function ProfileSettingsPage() {
-  // Example initial profile data - this would come from your API/database
-  const [profile, setProfile] = useState<Profile>({
-    id: "user123",
-    username: "johndoe",
-    name: "John Doe",
-    interests: ["Travel", "Photography", "Technology"],
-    hobbies: ["Photography", "Hiking"],
-    personalityTraits: ["Open-minded", "Adventurous"],
-    goal: "Networking",
-    similarInterests: "",
-    announcement: "Looking for travel companions in Southeast Asia!",
-    profile: "",
-    placesToVisit: "Japan, Thailand, Vietnam",
-    instagram: "@johndoe_travel",
-    photo: "",
-    country: "USA",
-    region: "California",
-    dateOfBirth: "1995-03-15",
-  });
+  const t = useTranslations("settings.editProfile");
+  const [profile, setProfile] = useState<Profile | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleProfileUpdate = (updatedProfile: Profile) => {
-    setProfile(updatedProfile);
-    
-    // Here you would save to your API
-    console.log("✅ Profile updated successfully!", updatedProfile);
-    
-    // Example API call:
-    // try {
-    //   await fetch('/api/user/profile', {
-    //     method: 'PUT',
-    //     headers: { 
-    //       'Content-Type': 'application/json',
-    //       'Authorization': `Bearer ${userToken}`
-    //     },
-    //     body: JSON.stringify(updatedProfile)
-    //   });
-    //   
-    //   // Show success toast/notification
-    //   showSuccessMessage('Profile updated successfully!');
-    // } catch (error) {
-    //   console.error('Failed to save profile:', error);
-    //   showErrorMessage('Failed to save changes. Please try again.');
-    // }
+  useEffect(() => {
+    let cancelled = false;
+    api
+      .get<Profile>("/api/profile")
+      .then((data) => !cancelled && setProfile(data))
+      .catch((err) => {
+        if (cancelled) return;
+        if (err instanceof ApiError && err.status === 404) {
+          setProfile(EMPTY_PROFILE);
+        } else {
+          console.error("Failed to load profile:", err);
+          setError(t("loadFailed"));
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [t]);
+
+  const handleProfileUpdate = async (updated: Profile) => {
+    setProfile(updated);
+    try {
+      const result = await api.post<{ success: boolean; profile: Profile }>("/api/profile", updated);
+      setProfile(result.profile);
+    } catch (err) {
+      console.error("Failed to save profile:", err);
+      setError(t("saveFailed"));
+    }
   };
 
+  if (error) {
+    return (
+      <div className="container p-8 text-center text-destructive">
+        {error}
+        <FooterMenu />
+      </div>
+    );
+  }
+
+  if (!profile) {
+    return <div className="container p-8 text-center">{t("loading")}</div>;
+  }
+
   return (
-    <div className="settings-page">
-      <ProfileSettings 
-        initialProfile={profile}
-        onProfileUpdate={handleProfileUpdate}
-      />
+    <div className="settings-page pb-24">
+      <ProfileSettings key={profile.id} initialProfile={profile} onProfileUpdate={handleProfileUpdate} />
+      <FooterMenu />
     </div>
   );
 }

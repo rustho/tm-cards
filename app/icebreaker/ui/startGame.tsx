@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
-import { Button } from "@telegram-apps/telegram-ui";
+import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 
 interface StartGameProps {
@@ -44,7 +44,7 @@ export default function StartGame({ onStartGame }: StartGameProps) {
           </div>
         </div>
         <div className="button-container">
-          <Button size="l" mode="outline" stretched onClick={onStartGame}>
+          <Button size="lg" variant="outline" className="w-full" onClick={onStartGame}>
             {t('startGame')}
           </Button>
         </div>

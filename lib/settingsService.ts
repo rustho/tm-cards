@@ -1,73 +1,31 @@
-import { NotificationSettings, MatchingScheduleSettings } from "@/models/types";
+import { api } from "@/lib/api";
+import type { MatchingScheduleSettings, NotificationSettings } from "@/models/types";
 
+/** Client wrapper for /api/settings/*. The user is derived from init data server-side. */
 class SettingsService {
-  private baseUrl = '/api/settings';
+  private baseUrl = "/api/settings";
 
-  // Notification Settings
-  async getNotificationSettings(userId?: string): Promise<NotificationSettings> {
-    const params = userId ? `?userId=${userId}` : '';
-    const response = await fetch(`${this.baseUrl}/notifications${params}`);
-    
-    if (!response.ok) {
-      throw new Error('Failed to fetch notification settings');
-    }
-    
-    return response.json();
+  getNotificationSettings() {
+    return api.get<NotificationSettings>(`${this.baseUrl}/notifications`);
   }
 
-  async updateNotificationSettings(
-    settings: NotificationSettings, 
-    userId?: string
-  ): Promise<{ success: boolean; message: string; settings: NotificationSettings }> {
-    const params = userId ? `?userId=${userId}` : '';
-    const response = await fetch(`${this.baseUrl}/notifications${params}`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(settings),
-    });
-    
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || 'Failed to update notification settings');
-    }
-    
-    return response.json();
+  updateNotificationSettings(settings: NotificationSettings) {
+    return api.put<{ success: boolean; message: string; settings: NotificationSettings }>(
+      `${this.baseUrl}/notifications`,
+      settings
+    );
   }
 
-  // Matching Schedule Settings
-  async getMatchingSchedule(userId?: string): Promise<MatchingScheduleSettings> {
-    const params = userId ? `?userId=${userId}` : '';
-    const response = await fetch(`${this.baseUrl}/matching-schedule${params}`);
-    
-    if (!response.ok) {
-      throw new Error('Failed to fetch matching schedule');
-    }
-    
-    return response.json();
+  getMatchingSchedule() {
+    return api.get<MatchingScheduleSettings>(`${this.baseUrl}/matching-schedule`);
   }
 
-  async updateMatchingSchedule(
-    scheduleData: { option: string; customDate?: string }, 
-    userId?: string
-  ): Promise<{ success: boolean; message: string; settings: MatchingScheduleSettings }> {
-    const params = userId ? `?userId=${userId}` : '';
-    const response = await fetch(`${this.baseUrl}/matching-schedule${params}`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(scheduleData),
-    });
-    
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || 'Failed to update matching schedule');
-    }
-    
-    return response.json();
+  updateMatchingSchedule(scheduleData: { option: string; customDate?: string }) {
+    return api.put<{ success: boolean; message: string; settings: MatchingScheduleSettings }>(
+      `${this.baseUrl}/matching-schedule`,
+      scheduleData
+    );
   }
 }
 
-export const settingsService = new SettingsService(); 
+export const settingsService = new SettingsService();

@@ -1,7 +1,8 @@
 "use client";
 
-import { Button } from "@telegram-apps/telegram-ui";
 import { ButtonHTMLAttributes } from "react";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import "./SelectedButton.css";
 
 interface SelectedButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
@@ -10,22 +11,19 @@ interface SelectedButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   children: React.ReactNode;
 }
 
-export function SelectedButton({ 
-  selected, 
-  disabled, 
-  children, 
-  className,
-  ...props 
-}: SelectedButtonProps) {
+/** Toggle chip used by multi-select wizard steps. */
+export function SelectedButton({ selected, disabled, children, className, ...props }: SelectedButtonProps) {
   return (
     <Button
-      size="m"
-      mode={selected ? "filled" : "outline"}
+      type="button"
+      size="sm"
+      variant={selected ? "default" : "outline"}
       disabled={disabled}
-      className={`selected-button ${selected ? "selected" : ""} ${className || ""}`}
+      aria-pressed={selected}
+      className={cn("selected-button h-auto whitespace-normal py-2", selected && "selected", className)}
       {...props}
     >
       {children}
     </Button>
   );
-} 
+}

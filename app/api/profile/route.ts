@@ -1,139 +1,151 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { authenticate, authErrorResponse } from "@/lib/auth";
+import { toProfile } from "@/lib/profileDto";
 
-// Helper to calculate age from date string (DD.MM.YYYY or YYYY-MM-DD)
+export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
+
+/** Age from "YYYY-MM-DD" or "DD.MM.YYYY"; null when unparsable. */
 function calculateAge(dateString: string): number | null {
   if (!dateString) return null;
-
   let birthDate: Date;
-
-  // Check format
-  if (dateString.includes('.')) {
-      const parts = dateString.split('.');
-      if (parts.length === 3) {
-          // DD.MM.YYYY
-          birthDate = new Date(`${parts[2]}-${parts[1]}-${parts[0]}`);
-      } else {
-          return null;
-      }
+  if (dateString.includes(".")) {
+    const parts = dateString.split(".");
+    if (parts.length !== 3) return null;
+    birthDate = new Date(`${parts[2]}-${parts[1]}-${parts[0]}`);
   } else {
-      // Assume ISO or standard format
-      birthDate = new Date(dateString);
+    birthDate = new Date(dateString);
   }
-
   if (isNaN(birthDate.getTime())) return null;
-
   const today = new Date();
   let age = today.getFullYear() - birthDate.getFullYear();
   const m = today.getMonth() - birthDate.getMonth();
-  if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
-      age--;
-  }
+  if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) age--;
   return age;
 }
 
-export async function POST(request: NextRequest) {
+const MAX_PHOTO_LENGTH = 2_000_000; // ~1.5 MB base64
+
+/** GET /api/profile — the authenticated user's own profile (404 if not created yet). */
+export async function GET(request: NextRequest) {
   try {
-    const data = await request.json();
-
-    // Ensure we have a telegramId.
-    const telegramId = data.id || data.telegramId;
-    if (!telegramId || telegramId === "") {
-        console.error("Missing telegramId. Received data:", JSON.stringify(data, null, 2));
-        return NextResponse.json(
-            { error: "User ID is missing. Please ensure you are logged in." },
-            { status: 400 }
-        );
+    const user = await authenticate(request);
+    const row = await prisma.matchingUser.findUnique({ where: { telegramId: user.id } });
+    if (!row) {
+      return NextResponse.json({ error: "Profile not found" }, { status: 404 });
     }
-
-    // Construct update data dynamically to support partial updates
-    const updateData: any = {
-        updatedAt: new Date()
-    };
-
-    // Only add fields that are present in the request
-    if (data.username !== undefined) updateData.username = data.username;
-    if (data.name !== undefined) updateData.name = data.name;
-
-    if (data.dateOfBirth !== undefined) {
-        updateData.dateOfBirth = data.dateOfBirth;
-        // Calculate and save age
-        const age = calculateAge(data.dateOfBirth);
-        if (age !== null) {
-            updateData.age = age;
-        }
-    }
-
-    if (data.country !== undefined) updateData.country = data.country;
-    if (data.region !== undefined) updateData.region = data.region;
-    if (data.interests !== undefined) updateData.interests = data.interests;
-    if (data.hobbies !== undefined) updateData.hobbies = data.hobbies;
-    if (data.personalityTraits !== undefined) updateData.personalityTraits = data.personalityTraits;
-    if (data.goal !== undefined) updateData.goal = data.goal;
-
-    if (data.placesToVisit !== undefined) {
-         // Check if it's already an array or needs splitting
-         if (Array.isArray(data.placesToVisit)) {
-             updateData.placesToVisit = data.placesToVisit;
-         } else if (typeof data.placesToVisit === 'string') {
-             updateData.placesToVisit = data.placesToVisit.split(',').map((s: string) => s.trim()).filter((s: string) => s.length > 0);
-         }
-    }
-    if (data.instagram !== undefined) updateData.instagram = data.instagram;
-    if (data.photo !== undefined) updateData.photo = data.photo;
-    if (data.announcement !== undefined) updateData.announcement = data.announcement;
-
-    // Support mapping 'profile' or 'about' to 'profile' field in DB
-    if (data.profile !== undefined) updateData.profile = data.profile;
-    else if (data.about !== undefined) updateData.profile = data.about;
-
-    // Set active status if this is an initialization or explicit set
-    if (data.isActive !== undefined) updateData.isActive = data.isActive;
-
-    // Upsert user (PATCH behavior) using Prisma
-    const user = await prisma.matchingUser.upsert({
-        where: { telegramId: telegramId.toString() },
-        update: updateData,
-        create: {
-            telegramId: telegramId.toString(),
-            ...updateData,
-            // Provide defaults for required fields if they are missing in initial creation
-            interests: updateData.interests || [],
-            hobbies: updateData.hobbies || [],
-            personalityTraits: updateData.personalityTraits || [],
-            placesToVisit: updateData.placesToVisit || [],
-            previousMatches: []
-        }
-    });
-
-    return NextResponse.json({ success: true, user });
-  } catch (error: any) {
-    console.error("Error saving profile:", error);
-    
-    // Handle Prisma validation errors
-    if (error?.code === 'P2002') {
-      return NextResponse.json(
-        { error: "A user with this ID already exists" },
-        { status: 400 }
-      );
-    }
-    
-    // Handle Prisma validation errors
-    if (error?.code === 'P2003' || error?.code === 'P2011') {
-      return NextResponse.json(
-        { error: `Validation error: ${error.message || 'Invalid data provided'}` },
-        { status: 400 }
-      );
-    }
-    
-    // Return more detailed error in development
-    const errorMessage = process.env.NODE_ENV === 'development' 
-      ? error?.message || 'Internal Server Error'
-      : 'Internal Server Error';
-    
-    return NextResponse.json(
-      { error: errorMessage },
-      { status: error?.code?.startsWith('P') ? 400 : 500 }
-    );
+    return NextResponse.json(toProfile(row));
+  } catch (error) {
+    const auth = authErrorResponse(error);
+    if (auth) return auth;
+    console.error("Error fetching own profile:", error);
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }
+
+/**
+ * POST /api/profile — partial upsert of the authenticated user's profile.
+ * The user id comes from the validated init data; any `id` in the body is ignored.
+ */
+export async function POST(request: NextRequest) {
+  try {
+    const user = await authenticate(request);
+    const data = await request.json().catch(() => null);
+    if (!data || typeof data !== "object") {
+      return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+    }
+
+    const update: Record<string, unknown> = {};
+    const str = (key: string, max = 1000) => {
+      if (data[key] === undefined) return;
+      if (data[key] !== null && typeof data[key] !== "string") {
+        throw new ValidationError(`${key} must be a string`);
+      }
+      update[key] = data[key] === null ? null : String(data[key]).slice(0, max);
+    };
+    const strArray = (key: string, max = 20) => {
+      if (data[key] === undefined) return;
+      if (!Array.isArray(data[key]) || !data[key].every((v: unknown) => typeof v === "string")) {
+        throw new ValidationError(`${key} must be an array of strings`);
+      }
+      update[key] = data[key].slice(0, max);
+    };
+
+    str("username", 100);
+    str("name", 100);
+    str("country", 100);
+    str("region", 100);
+    str("goal", 100);
+    str("instagram", 100);
+    str("announcement", 1000);
+    str("gender", 20);
+    strArray("interests");
+    strArray("hobbies");
+    strArray("personalityTraits");
+
+    if (data.dateOfBirth !== undefined) {
+      str("dateOfBirth", 20);
+      const age = calculateAge(String(data.dateOfBirth ?? ""));
+      if (age !== null) update.age = age;
+    }
+
+    if (data.placesToVisit !== undefined) {
+      if (Array.isArray(data.placesToVisit)) {
+        update.placesToVisit = data.placesToVisit.map(String).slice(0, 20);
+      } else if (typeof data.placesToVisit === "string") {
+        update.placesToVisit = data.placesToVisit
+          .split(",")
+          .map((s: string) => s.trim())
+          .filter((s: string) => s.length > 0)
+          .slice(0, 20);
+      } else {
+        throw new ValidationError("placesToVisit must be a string or array");
+      }
+    }
+
+    if (data.photo !== undefined) {
+      if (typeof data.photo === "string" && data.photo.length > MAX_PHOTO_LENGTH) {
+        return NextResponse.json({ error: "Photo is too large" }, { status: 413 });
+      }
+      str("photo", MAX_PHOTO_LENGTH);
+    }
+
+    // "about" is stored in the `profile` column
+    if (data.profile !== undefined) str("profile", 1000);
+    else if (data.about !== undefined) {
+      data.profile = data.about;
+      str("profile", 1000);
+    }
+
+    if (typeof data.isActive === "boolean") update.isActive = data.isActive;
+
+    const row = await prisma.matchingUser.upsert({
+      where: { telegramId: user.id },
+      update,
+      create: {
+        telegramId: user.id,
+        username: user.username ?? null,
+        name: [user.firstName, user.lastName].filter(Boolean).join(" ") || null,
+        ...update,
+        interests: (update.interests as string[]) ?? [],
+        hobbies: (update.hobbies as string[]) ?? [],
+        personalityTraits: (update.personalityTraits as string[]) ?? [],
+        placesToVisit: (update.placesToVisit as string[]) ?? [],
+        previousMatches: [],
+      },
+    });
+
+    return NextResponse.json({ success: true, profile: toProfile(row) });
+  } catch (error) {
+    const auth = authErrorResponse(error);
+    if (auth) return auth;
+    if (error instanceof ValidationError) {
+      return NextResponse.json({ error: error.message }, { status: 400 });
+    }
+    console.error("Error saving profile:", error);
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+  }
+}
+
+class ValidationError extends Error {}
