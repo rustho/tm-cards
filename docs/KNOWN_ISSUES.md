@@ -1,15 +1,12 @@
 # Known issues and tech debt
 
-State after the `feature/platform-upgrade` branch. Remove entries when fixed.
+State after the `feature/relational-schema` branch. Remove entries when fixed.
 
 ## Needs action before production
 
-1. **Migration not applied.** `prisma/migrations/20261007120000_user_settings_unique_matches`
-   was written by hand because the Supabase direct port (5432, `DIRECT_URL`)
-   was unreachable from the development machine; the pooled port (6543)
-   answered intermittently. Run `pnpm db:deploy` from a network that can
-   reach 5432 and check `prisma migrate status`. Until then `UserSettings`
-   queries fail at runtime (the settings pages fall back to defaults).
+1. **Two migrations not applied** (`20261007120000_user_settings_unique_matches`,
+   `20261008090000_relational_model`). The second drops the legacy tables
+   after backfilling. Back up, run `pnpm db:deploy`, then `pnpm db:seed`.
 2. **Rotate the old credentials in `.env`** (Supabase password, Google key)
    before the repo or the DB becomes production-facing. The owner has
    deferred this knowingly.
@@ -23,8 +20,11 @@ State after the `feature/platform-upgrade` branch. Remove entries when fixed.
 
 5. Matching config changed via `PUT /api/matching` is in-memory and resets
    on redeploy. Persist it in a table if admins need to tune it.
-6. `preferredAgeMin/Max`, `preferredGender`, `gender` and `skip` exist in
-   the schema and in the algorithm but no UI sets them.
+6. `preferredAgeMin/Max`, `preferredGender`, `skipNextRound` (in
+   `user_settings`) and `profiles.gender` exist and are used by the engine,
+   but no UI sets them yet. `plans`/`subscriptions`/`payments` and
+   `match_feedback` have no UI either; nothing calls
+   `POST /api/matches/[id]/feedback` yet.
 7. Notification preferences are stored but only `newMatches` has a sender
    (`MATCHING_NOTIFICATIONS`); messages, profile views, game invites and the
    weekly digest have no producer.
@@ -36,11 +36,13 @@ State after the `feature/platform-upgrade` branch. Remove entries when fixed.
    `StepContainer`/`SelectionGrid` labels are hardcoded too.
 10. `en.json` is never served (`locales = ["ru"]`), yet `Root` calls the
     `setLocale` server action on every load.
-11. `Profile.placesToVisit` is a comma string in the UI type but `String[]`
-    in the DB; `models/types.ts` `User` still carries spreadsheet-era fields
-    (`similarInterests`, `previousMatch`, `nextMatch`, `skip: number`).
-12. No step collects `placesToVisit`, `announcement` or `occupation`
-    anymore; the DB columns stay empty for new users.
+11. The UI `Profile` type (`models/types.ts`) is still the flat
+    spreadsheet-era shape (`placesToVisit` as a comma string,
+    `similarInterests`, `profile` meaning "about"); `lib/profileDto.ts`
+    bridges it. The wizard reads tags/locations from the constants instead
+    of `GET /api/reference`.
+12. No step collects `placesToVisit` or `announcement` anymore; the columns
+    stay empty for new users.
 13. Pages wait for their first API call with no timeout. When the DB is
     unreachable Prisma takes several seconds to fail, so `/profile` shows
     "Загрузка..." until `GET /api/profile` errors out (it then opens an

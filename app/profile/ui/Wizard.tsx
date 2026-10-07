@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { initData, useSignal } from "@tma.js/sdk-react";
+import { initData, useLaunchParams, useSignal } from "@tma.js/sdk-react";
 import { Profile } from "@/models/types";
 import { api, ApiError } from "@/lib/api";
 import { FlexibleWizard } from "./FlexibleWizard";
@@ -36,6 +36,10 @@ export function Wizard() {
   const router = useRouter();
   const t = useTranslations("profile.wizard");
   const user = useSignal(initData.user);
+  const launchParams = useLaunchParams();
+  // Deep links look like t.me/<bot>/<app>?startapp=ref_<code>
+  const startParam = launchParams.tgWebAppStartParam ?? "";
+  const referralCode = startParam.startsWith("ref_") ? startParam.slice(4) : undefined;
   const [initialData, setInitialData] = useState<Partial<Profile> | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
 
@@ -69,7 +73,7 @@ export function Wizard() {
   const saveProfile = async (data: Partial<Profile>) => {
     setSaveError(null);
     try {
-      await api.post("/api/profile", data);
+      await api.post("/api/profile", referralCode ? { ...data, referralCode } : data);
       return true;
     } catch (error) {
       console.error("Failed to save profile:", error);
@@ -83,7 +87,7 @@ export function Wizard() {
   };
 
   const handleComplete = async (finalData: Profile) => {
-    const ok = await saveProfile({ ...finalData, isActive: true } as Partial<Profile>);
+    const ok = await saveProfile({ ...finalData, isComplete: true } as Partial<Profile>);
     if (ok) router.push("/home");
   };
 

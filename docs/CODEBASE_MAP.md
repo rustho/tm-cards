@@ -1,6 +1,6 @@
 # Codebase map
 
-Branch `feature/platform-upgrade`. Status tags: **LIVE** = user-facing path ·
+Branch `feature/relational-schema`. Status tags: **LIVE** = user-facing path ·
 **OPS** = admin/cron/bot backend · **DEV** = development only · **DEMO** =
 example code.
 
@@ -15,7 +15,8 @@ example code.
 | `tailwind.config.ts` | LIVE | `darkMode: ["class"]`, shadcn HSL tokens + brand palette, `tailwindcss-animate` |
 | `postcss.config.js` | LIVE | tailwind + autoprefixer |
 | `vercel.json` | OPS | cron `0 */4 * * *` → `/api/cron/matching` |
-| `prisma/schema.prisma`, `prisma/migrations/` | LIVE | `MatchingUser`, `MatchResult`, `UserSettings`; 5 migrations |
+| `prisma/schema.prisma`, `prisma/migrations/` | LIVE | relational model (users, profiles, locations, tags, profile_tags, user_settings, match_rounds, matches, match_feedback, plans, subscriptions, payments); 6 migrations, the last one backfills from the legacy tables |
+| `prisma/seed.ts` | DEV | idempotent tags + locations seed (`pnpm db:seed`) |
 | `.env.example` | DEV | documents every variable |
 | `.env` | ⚠️ | tracked with old credentials; untouched on purpose |
 | `.claude/launch.json` | DEV | dev-server config for the Claude browser pane |
@@ -31,7 +32,7 @@ example code.
 | `error.tsx`, `not-found.tsx` | LIVE | |
 | `_assets/globals.css` | LIVE | shadcn tokens (`:root`, `.dark`), brand vars, body background, `.theme-*` utilities, input/age/character-count helpers |
 | `/icebreaker` (`page.tsx`, `ui/{startGame,game,endGame}.tsx`, `constants/questions.ts`, `pageStyles.css`) | LIVE | card game; `questions.md` is the source text; easter egg: 5 taps → `/profile` |
-| `/profile` → `ui/Wizard.tsx` | LIVE | loads `GET /api/profile`, seeds Telegram name/username, autosaves steps via `POST /api/profile`, finishes with `isActive: true` and `router.push("/home")` |
+| `/profile` → `ui/Wizard.tsx` | LIVE | loads `GET /api/profile`, seeds Telegram name/username, forwards `startapp=ref_<code>` as `referralCode`, autosaves steps via `POST /api/profile`, finishes with `isComplete: true` and `router.push("/home")` |
 | `ui/FlexibleWizard.tsx` | LIVE | step engine (`steps`, `mode full\|edit`, progress bar, back button) |
 | `ui/WizardContext.tsx` | LIVE | `WizardProvider` = `useForm<Partial<Profile>>` + step index; `useWizardContext()` |
 | `ui/wizardConfig.ts` | LIVE | `ONBOARDING_STEPS`: country, region, name, dateOfBirth, personality, interests, hobbies, goal, photo, socials, about |
@@ -52,7 +53,9 @@ example code.
 | `GET/POST /api/profile` | user | LIVE |
 | `GET /api/profile/[userId]` | user | LIVE |
 | `GET /api/users` | admin | OPS |
-| `GET /api/matches/[userId]` | owner/admin | LIVE |
+| `GET /api/matches/[id]` (Telegram id) | owner/admin | LIVE |
+| `POST /api/matches/[id]/feedback` (match id) | participant | LIVE |
+| `GET /api/reference` | user | LIVE |
 | `GET/PUT /api/settings/notifications`, `/matching-schedule` | user | LIVE |
 | `GET/POST/PUT /api/matching` | admin | OPS |
 | `GET /api/cron/matching` | `CRON_SECRET` | OPS |
@@ -89,10 +92,11 @@ example code.
 |---|---|---|
 | `lib/auth.ts` | LIVE | `authenticate`, `requireAdmin`, `authErrorResponse`, `ensureUser`, `AuthError` |
 | `lib/api.ts` | LIVE | `apiFetch`, `apiJson`, `api.get/post/put`, `ApiError`, `getInitDataRaw` |
-| `lib/profileDto.ts` | LIVE | `toProfile(MatchingUser)` |
+| `lib/profileDto.ts` | LIVE | `userWithProfileInclude`, `toProfile(UserWithProfile)`, `TAG_CATEGORIES` |
+| `lib/profileService.ts` | LIVE | `saveProfile` (validation, location upsert, tag replacement, referral), `getOwnProfile`, `getProfileByTelegramId` |
 | `lib/prisma.ts` | LIVE | singleton; no-op proxy during build without `DATABASE_URL` |
 | `lib/bot.ts` | OPS | grammY bot, `BOT_COMMANDS`, `notifyUser`, `isBotConfigured` |
-| `lib/matchingService.ts` | OPS | engine; see DATA_AND_API |
+| `lib/matchingService.ts` | OPS | engine over users/profiles/tags with weekly `match_rounds`; see DATA_AND_API |
 | `lib/settingsService.ts` | LIVE | client wrapper for settings routes |
 | `lib/dateUtils.ts` | LIVE | `calculateAge`, `validateDateOfBirth`, `formatDateForInput` |
 | `lib/utils.ts` | LIVE | `cn()` |

@@ -1,101 +1,256 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
+// TravelMate data model. Tables are snake_case via @@map; Prisma models stay PascalCase.
+// External identifiers (API paths) use User.telegramId; internal FKs use User.id.
 
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
   directUrl = env("DIRECT_URL")
 }
 
-model MatchingUser {
-  id             String    @id @default(uuid())
-  telegramId     String    @unique
-  username       String?
-  name           String?
-  age            Int?
-  dateOfBirth    String?
-  gender         String?
-  country        String?
-  region         String?
+/// Telegram account. Created on the first authenticated request (lib/auth.ts ensureUser).
+model User {
+  id           String  @id @default(uuid())
+  telegramId   String  @unique
+  username     String?
+  firstName    String?
+  lastName     String?
+  languageCode String?
 
-  // Arrays are supported in Postgres as scalar lists
-  interests      String[]
-  hobbies        String[]
-  personalityTraits String[]
-  placesToVisit  String[]
+  /// Code this user shares; arrives in `startapp=ref_<code>` of invitees.
+  referralCode String  @unique @default(cuid())
+  referrerId   String?
+  referrer     User?   @relation("Referrals", fields: [referrerId], references: [id], onDelete: SetNull)
+  referrals    User[]  @relation("Referrals")
 
-  instagram      String?
-  photo          String?
-  announcement   String?
-  goal           String?
-  profile        String?   // About/Bio section
+  /// active | hidden | banned
+  status        String    @default("active")
+  lastMatchedAt DateTime?
 
-  isActive       Boolean   @default(true)
-  lastMatchTime  DateTime?
-  totalMatches   Int       @default(0)
-  previousMatches String[]
-  skip           Boolean   @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  // Matching Preferences
-  preferredAgeMin Int      @default(18)
-  preferredAgeMax Int      @default(65)
-  preferredGender String   @default("any")
-
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
-
-  // Relations
-  matchesAsUser1 MatchResult[] @relation("User1Matches")
-  matchesAsUser2 MatchResult[] @relation("User2Matches")
+  profile        Profile?
   settings       UserSettings?
+  subscriptions  Subscription[]
+  matchesAsUser1 Match[]         @relation("MatchUser1")
+  matchesAsUser2 Match[]         @relation("MatchUser2")
+  feedback       MatchFeedback[]
+
+  @@map("users")
 }
 
-/// Per-user preferences. Created lazily on first settings write.
-model UserSettings {
-  telegramId String       @id
-  user       MatchingUser @relation(fields: [telegramId], references: [telegramId], onDelete: Cascade)
+/// Public questionnaire (анкета). 1:1 with User.
+model Profile {
+  userId String @id
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  // Notification preferences
+  name        String?
+  dateOfBirth DateTime? @db.Date
+  gender      String?
+
+  locationId String?
+  location   Location? @relation(fields: [locationId], references: [id], onDelete: SetNull)
+
+  goal          String?
+  about         String?
+  announcement  String?
+  placesToVisit String[]
+  /// Base64 data URL for now; move to object storage later.
+  photo         String?
+  /// e.g. { "instagram": "handle" }
+  socials       Json?
+  /// Visual template of the card.
+  theme         String   @default("default")
+  /// Set when the onboarding wizard finishes; only complete profiles are matched or listed.
+  isComplete    Boolean  @default(false)
+
+  tags ProfileTag[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([locationId])
+  @@map("profiles")
+}
+
+/// Reference list of places users can pick. Region may be empty for countries without regions.
+model Location {
+  id        String  @id @default(uuid())
+  country   String
+  region    String  @default("")
+  isActive  Boolean @default(true)
+  sortOrder Int     @default(0)
+
+  profiles Profile[]
+
+  @@unique([country, region])
+  @@map("locations")
+}
+
+/// Reference list of selectable tags. category: interest | hobby | trait
+model Tag {
+  id        String  @id @default(uuid())
+  category  String
+  label     String
+  isActive  Boolean @default(true)
+  sortOrder Int     @default(0)
+
+  profiles ProfileTag[]
+
+  @@unique([category, label])
+  @@index([category])
+  @@map("tags")
+}
+
+model ProfileTag {
+  profileId String
+  tagId     String
+  profile   Profile @relation(fields: [profileId], references: [userId], onDelete: Cascade)
+  tag       Tag     @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([profileId, tagId])
+  @@index([tagId])
+  @@map("profile_tags")
+}
+
+/// Per-user preferences. Created lazily on first write.
+model UserSettings {
+  userId String @id
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   notifyNewMatches   Boolean @default(true)
   notifyMessages     Boolean @default(true)
   notifyProfileViews Boolean @default(false)
   notifyGameInvites  Boolean @default(true)
   notifyWeeklyDigest Boolean @default(true)
 
-  // Matching schedule: active | pause_week | pause_month | pause_custom | pause_indefinite
+  /// active | pause_week | pause_month | pause_custom | pause_indefinite
   matchingOption     String    @default("active")
   matchingCustomDate DateTime?
   matchingResumeDate DateTime?
 
+  preferredAgeMin Int     @default(18)
+  preferredAgeMax Int     @default(65)
+  /// male | female | any
+  preferredGender String  @default("any")
+  /// Skip exactly one upcoming round; reset by the matching run.
+  skipNextRound   Boolean @default(false)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@map("user_settings")
 }
 
-model MatchResult {
-  id                 String    @id @default(uuid())
-  user1Id            String
-  user2Id            String
-  compatibilityScore Float
+/// One matching cycle (a week). Created by the matching run for the current week.
+model MatchRound {
+  id        String   @id @default(uuid())
+  weekStart DateTime @unique @db.Date
+  /// open | closed
+  status    String   @default("open")
+  createdAt DateTime @default(now())
 
-  // Storing complex objects like matchingFactors as JSON
-  matchingFactors    Json
+  matches Match[]
 
-  matchingRound      Int       @default(1)
-  status             String    @default("pending") // pending, accepted, declined, expired
-  notificationSent   Boolean   @default(false)
+  @@map("match_rounds")
+}
 
-  createdAt          DateTime  @default(now())
-  expiresAt          DateTime
+/// A pair produced in a round. user1Id < user2Id (by User.id) so a pair is stored once per round.
+model Match {
+  id      String     @id @default(uuid())
+  roundId String
+  round   MatchRound @relation(fields: [roundId], references: [id])
 
-  user1              MatchingUser @relation("User1Matches", fields: [user1Id], references: [telegramId])
-  user2              MatchingUser @relation("User2Matches", fields: [user2Id], references: [telegramId])
+  user1Id String
+  user1   User   @relation("MatchUser1", fields: [user1Id], references: [id])
+  user2Id String
+  user2   User   @relation("MatchUser2", fields: [user2Id], references: [id])
 
-  // user1Id < user2Id is enforced by the matching service so a pair is stored once
-  @@unique([user1Id, user2Id])
-  @@index([status, createdAt])
-  @@index([expiresAt])
+  score   Float
+  /// Snapshot of what the two profiles had in common at match time: [{ factor, score }]
+  factors Json
+
+  /// pending | met | not_met | expired
+  status     String    @default("pending")
+  notifiedAt DateTime?
+  expiresAt  DateTime
+  createdAt  DateTime  @default(now())
+
+  feedback MatchFeedback[]
+
+  @@unique([roundId, user1Id, user2Id])
+  @@index([user1Id])
+  @@index([user2Id])
+  @@index([status, expiresAt])
+  @@map("matches")
+}
+
+/// Each participant leaves at most one feedback per match.
+model MatchFeedback {
+  id       String @id @default(uuid())
+  matchId  String
+  match    Match  @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  authorId String
+  author   User   @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  met       Boolean
+  rating    Int?
+  text      String?
+  createdAt DateTime @default(now())
+
+  @@unique([matchId, authorId])
+  @@map("match_feedback")
+}
+
+/// Tariff. Prices are in Telegram Stars (XTR).
+model Plan {
+  id          String  @id @default(uuid())
+  code        String  @unique
+  title       String
+  priceStars  Int
+  periodWeeks Int
+  isActive    Boolean @default(true)
+
+  subscriptions Subscription[]
+
+  @@map("plans")
+}
+
+model Subscription {
+  id     String @id @default(uuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  planId String
+  plan   Plan   @relation(fields: [planId], references: [id])
+
+  startedAt DateTime
+  weeks     Int
+  endsAt    DateTime
+  /// active | expired | cancelled
+  status    String   @default("active")
+  createdAt DateTime @default(now())
+
+  payments Payment[]
+
+  @@index([userId, status])
+  @@map("subscriptions")
+}
+
+model Payment {
+  id             String       @id @default(uuid())
+  subscriptionId String
+  subscription   Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+
+  amountStars      Int
+  currency         String   @default("XTR")
+  telegramChargeId String   @unique
+  providerChargeId String?
+  payload          Json?
+  paidAt           DateTime @default(now())
+
+  @@map("payments")
 }

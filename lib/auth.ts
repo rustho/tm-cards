@@ -123,23 +123,20 @@ export function authErrorResponse(error: unknown): NextResponse | null {
 }
 
 /**
- * Makes sure a MatchingUser row exists for the authenticated user so that
- * dependent rows (UserSettings) can reference it. Only fills Telegram-derived
- * fields on creation; never overwrites profile data.
+ * Returns the User row for the authenticated Telegram account, creating it on
+ * first contact. Telegram-derived fields are refreshed on every call; profile
+ * data is never touched here.
  */
 export async function ensureUser(user: AuthUser) {
-  return prisma.matchingUser.upsert({
+  const telegramFields = {
+    username: user.username ?? null,
+    firstName: user.firstName,
+    lastName: user.lastName ?? null,
+    languageCode: user.languageCode ?? null,
+  };
+  return prisma.user.upsert({
     where: { telegramId: user.id },
-    update: {},
-    create: {
-      telegramId: user.id,
-      username: user.username ?? null,
-      name: [user.firstName, user.lastName].filter(Boolean).join(" ") || null,
-      interests: [],
-      hobbies: [],
-      personalityTraits: [],
-      placesToVisit: [],
-      previousMatches: [],
-    },
+    update: telegramFields,
+    create: { telegramId: user.id, ...telegramFields },
   });
 }
