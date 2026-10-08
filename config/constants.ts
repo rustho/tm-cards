@@ -29,3 +29,7 @@ export const TRIAL_DAYS = 30;
 
 /** Meetings shown in «История встреч» on the home tab; the rest live in the full log. */
 export const HOME_HISTORY_LIMIT = 4;
+
+/** Referral rewards shown on the «Приглашения» tab (billing is not wired yet). */
+export const REFERRAL_BONUS_WEEKS = 2;
+export const REFERRAL_FRIEND_DISCOUNT_PERCENT = 20;

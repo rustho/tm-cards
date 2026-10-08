@@ -150,6 +150,7 @@ anything new there.
 | `TELEGRAM_BOT_TOKEN` | init-data validation **and** the bot. Required in production; optional in dev (unsigned data accepted) |
 | `TELEGRAM_WEBHOOK_SECRET` | checked by grammY on every webhook update |
 | `APP_URL`, `MINI_APP_URL` | https URL of the deployment; webhook target and bot buttons |
+| `TELEGRAM_MINI_APP_LINK` | `t.me/<bot>/<app>` base of referral links (`?startapp=ref_<code>`); optional, defaults to `t.me/<bot>` (main Mini App) |
 | `CRON_SECRET` | `Authorization: Bearer` expected by `/api/cron/matching`; also a GitHub repo secret together with `APP_URL` |
 | `MATCHING_NOTIFICATIONS` | `"true"` to message both users when a match is created |
 

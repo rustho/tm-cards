@@ -346,3 +346,12 @@ export interface HomeSummary {
   /** Meetings waiting for my impression; drives the hint banner. */
   awaitingFeedback: number;
 }
+
+/** `GET /api/invitations`: the «Приглашения» tab. */
+export interface InvitationsSummary {
+  /** Paid subscription: only then can the user invite (the trial does not count). */
+  canInvite: boolean;
+  /** `t.me/…?startapp=ref_<code>`; null without a subscription or when the bot is not configured. */
+  inviteLink: string | null;
+  invited: (PersonPreview & { occupation: string })[];
+}

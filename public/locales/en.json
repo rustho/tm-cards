@@ -377,6 +377,20 @@
   },
   "invitations": {
     "title": "Invitations",
-    "comingSoon": "Invitations from travel companions are coming soon."
+    "loading": "Loading...",
+    "loadFailed": "Could not load invitations. Please try again.",
+    "rewardMe": "+{weeks} weeks",
+    "rewardMeCaption": "for you",
+    "rewardFriend": "−{discount}%",
+    "rewardFriendCaption": "for a friend",
+    "lockedText": "Get your first subscription to invite friends: two free weeks for you and a {discount}% discount for them.",
+    "chooseSubscription": "Choose a subscription",
+    "cardTitle": "Invite a friend — get {weeks} weeks free",
+    "cardText": "Your friend gets {discount}% off their first subscription. Each friend can be invited only once.",
+    "invitedTitle": "Invited friends",
+    "invitedEmpty": "No one yet. Send the link — invited friends will appear here.",
+    "invite": "Invite",
+    "shareText": "Join TravelMate — find companions to meet in South-East Asia!",
+    "copied": "Link copied"
   }
 }
