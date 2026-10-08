@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { initData, useLaunchParams, useSignal } from "@tma.js/sdk-react";
@@ -14,8 +14,8 @@ const EMPTY_PROFILE: Partial<Profile> = {
   username: "",
   name: "",
   interests: [],
-  hobbies: [],
-  personalityTraits: [],
+  values: [],
+  meetingFormats: [],
   similarInterests: "",
   announcement: "",
   profile: "",
@@ -25,8 +25,25 @@ const EMPTY_PROFILE: Partial<Profile> = {
   country: "",
   region: "",
   dateOfBirth: "",
-  goal: "",
+  occupation: "",
+  theme: "",
+  goals: [],
 };
+
+/** Empty values (undefined, null, "", []) compare equal; everything else by JSON. */
+function normalize(value: unknown): string {
+  if (value == null || value === "" || (Array.isArray(value) && value.length === 0)) return "";
+  return JSON.stringify(value);
+}
+
+/** Fields of `data` that differ from what the server already has. */
+function changedFields(data: Partial<Profile>, saved: Partial<Profile>): Partial<Profile> {
+  const changed: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(data)) {
+    if (normalize(value) !== normalize(saved[key as keyof Profile])) changed[key] = value;
+  }
+  return changed as Partial<Profile>;
+}
 
 /**
  * Onboarding entry point. Loads the existing profile (if any), seeds name and
@@ -42,6 +59,8 @@ export function Wizard() {
   const referralCode = startParam.startsWith("ref_") ? startParam.slice(4) : undefined;
   const [initialData, setInitialData] = useState<Partial<Profile> | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
+  // What the server has, to send only changed fields (each DB round trip is slow).
+  const savedRef = useRef<Partial<Profile>>({});
 
   useEffect(() => {
     let cancelled = false;
@@ -55,6 +74,7 @@ export function Wizard() {
         }
       }
       if (cancelled) return;
+      savedRef.current = existing;
       setInitialData({
         ...EMPTY_PROFILE,
         ...existing,
@@ -70,16 +90,28 @@ export function Wizard() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id]);
 
-  const saveProfile = async (data: Partial<Profile>) => {
-    setSaveError(null);
-    try {
-      await api.post("/api/profile", referralCode ? { ...data, referralCode } : data);
-      return true;
-    } catch (error) {
-      console.error("Failed to save profile:", error);
-      setSaveError(error instanceof Error ? error.message : t("saveFailed"));
-      return false;
-    }
+  // Saves are chained so they reach the server in order: otherwise a slow older
+  // save can finish last and overwrite newer data. Each sends only changed fields.
+  const saveQueue = useRef<Promise<unknown>>(Promise.resolve());
+
+  const saveProfile = (data: Partial<Profile>, { force = false } = {}): Promise<boolean> => {
+    const run = async () => {
+      const changes = changedFields(data, savedRef.current);
+      if (!force && Object.keys(changes).length === 0) return true;
+      setSaveError(null);
+      try {
+        await api.post("/api/profile", referralCode ? { ...changes, referralCode } : changes);
+        savedRef.current = { ...savedRef.current, ...changes };
+        return true;
+      } catch (error) {
+        console.error("Failed to save profile:", error);
+        setSaveError(error instanceof Error ? error.message : t("saveFailed"));
+        return false;
+      }
+    };
+    const result = saveQueue.current.then(run);
+    saveQueue.current = result;
+    return result;
   };
 
   const handleStepComplete = (_stepId: string, data: Partial<Profile>) => {
@@ -87,7 +119,7 @@ export function Wizard() {
   };
 
   const handleComplete = async (finalData: Profile) => {
-    const ok = await saveProfile({ ...finalData, isComplete: true } as Partial<Profile>);
+    const ok = await saveProfile({ ...finalData, isComplete: true } as Partial<Profile>, { force: true });
     if (ok) router.push("/home");
   };
 

@@ -51,11 +51,16 @@ model Profile {
   name        String?
   dateOfBirth DateTime? @db.Date
   gender      String?
+  /// "What do you do now": work, study or own project (wizard step 4).
+  occupation  String?   @db.VarChar(80)
 
   locationId String?
   location   Location? @relation(fields: [locationId], references: [id], onDelete: SetNull)
 
+  /// Deprecated: single free-text goal from the old wizard; replaced by `goals`.
   goal          String?
+  /// Meeting goals (wizard step 7), 1–2 ids from GOAL_OPTIONS. Private: not shown on the profile.
+  goals         String[] @default([])
   about         String?
   announcement  String?
   placesToVisit String[]

@@ -1,55 +1,38 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import {
-  SelectedButton,
-  SelectionGrid,
-  StepContainer,
-} from "@/components";
-import { INTERESTS, StepProps } from "@/models/types";
-import { useWizardContext } from "../WizardContext";
+import { CategoryHeader, InterestChip, SelectionGuidance } from "@/components/ui";
+import { INTEREST_GROUPS, MAX_INTERESTS, MIN_INTERESTS, StepProps } from "@/models/types";
+import { StepWindow } from "../StepWindow";
+import { useLimitedSelection } from "../useLimitedSelection";
 
-export interface StepInterestsProps extends StepProps {}
-
-export function StepInterests({ onNext }: StepInterestsProps) {
-  const t = useTranslations('profile.steps.interests');
-  const { watch, setValue } = useWizardContext();
-  
-  const currentInterests = watch("interests") || [];
-
-  const handleToggleInterest = (interest: string) => {
-    if (currentInterests.includes(interest)) {
-      setValue("interests", currentInterests.filter((i) => i !== interest), { shouldValidate: true });
-    } else {
-      if (currentInterests.length < 4) {
-        setValue("interests", [...currentInterests, interest], { shouldValidate: true });
-      }
-    }
-  };
-
-  const isValidSelection = currentInterests.length > 0;
+/** Step 6: interests and hobbies as grouped chips, MIN–MAX; the rest lock at the limit. */
+export function StepInterests({ onNext }: StepProps) {
+  const t = useTranslations("profile.steps.interests");
+  const { count, isSelected, isLocked, toggle } = useLimitedSelection("interests", MAX_INTERESTS);
 
   return (
-    <StepContainer
-      title={t('title')}
-      onNext={onNext}
-      nextDisabled={!isValidSelection}
-    >
-      <SelectionGrid maxSelections={4} currentSelections={currentInterests.length}>
-        {INTERESTS.map((interest) => (
-          <SelectedButton
-            key={interest}
-            selected={currentInterests.includes(interest)}
-            disabled={!currentInterests.includes(interest) && currentInterests.length >= 4}
-            onClick={() => handleToggleInterest(interest)}
-          >
-            {interest}
-          </SelectedButton>
+    <StepWindow title={t("title")} onNext={onNext} nextDisabled={count < MIN_INTERESTS}>
+      <div className="flex flex-col gap-6">
+        <SelectionGuidance>{t("guidance", { min: MIN_INTERESTS, max: MAX_INTERESTS })}</SelectionGuidance>
+        {INTEREST_GROUPS.map((group) => (
+          <section key={group.title} className="flex flex-col gap-3">
+            <CategoryHeader title={group.title} icon={false} />
+            <div className="flex flex-wrap gap-2">
+              {group.options.map(({ label, emoji }) => (
+                <InterestChip
+                  key={label}
+                  label={label}
+                  icon={emoji}
+                  selected={isSelected(label)}
+                  disabled={isLocked(label)}
+                  onClick={() => toggle(label)}
+                />
+              ))}
+            </div>
+          </section>
         ))}
-      </SelectionGrid>
-      {!isValidSelection && (
-        <div className="input-error-text">{t('error')}</div>
-      )}
-    </StepContainer>
+      </div>
+    </StepWindow>
   );
 }

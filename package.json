@@ -14,7 +14,8 @@
     "db:deploy": "prisma migrate deploy",
     "db:studio": "prisma studio",
     "health:check": "curl -s http://localhost:3000/api/health",
-    "db:seed": "tsx prisma/seed.ts"
+    "db:seed": "tsx prisma/seed.ts",
+    "db:cleanup-tags": "tsx prisma/cleanup-legacy-tags.ts"
   },
   "dependencies": {
     "@prisma/client": "^5.22.0",

@@ -1,8 +1,9 @@
-import localFont from "next/font/local";
+import { Inter } from "next/font/google";
 
-export const handjet = localFont({
-    src: "../public/fonts/Handjet-Light.ttf",
-    variable: "--font-handjet",
-    weight: "400",
-    display: "swap",
+// XP Foundations: Inter Regular (400) and Inter Bold (700) only.
+export const inter = Inter({
+  subsets: ["latin", "cyrillic"],
+  weight: ["400", "700"],
+  variable: "--font-inter",
+  display: "swap",
 });

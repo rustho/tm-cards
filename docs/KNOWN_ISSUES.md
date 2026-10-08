@@ -4,9 +4,11 @@ State after the `feature/relational-schema` branch. Remove entries when fixed.
 
 ## Needs action before production
 
-1. **Two migrations not applied** (`20261007120000_user_settings_unique_matches`,
-   `20261008090000_relational_model`). The second drops the legacy tables
-   after backfilling. Back up, run `pnpm db:deploy`, then `pnpm db:seed`.
+1. **Migrations not applied** (`20261007120000_user_settings_unique_matches`,
+   `20261008090000_relational_model`, `20261008120000_profile_occupation`,
+   `20261008130000_profile_goals`). The relational one drops the legacy
+   tables after backfilling. Back up, run `pnpm db:deploy`, then
+   `pnpm db:seed` (it also retires the old trait/hobby tags).
 2. **Rotate the old credentials in `.env`** (Supabase password, Google key)
    before the repo or the DB becomes production-facing. The owner has
    deferred this knowingly.
@@ -32,8 +34,8 @@ State after the `feature/relational-schema` branch. Remove entries when fixed.
    in list responses (`/api/matches`, `/api/users`). Move to object storage
    before the user base grows.
 9. `app/settings/profile/ProfileSettings.tsx` headings and buttons are
-   hardcoded English; `AdminMenu` descriptions, `not-found` copy and
-   `StepContainer`/`SelectionGrid` labels are hardcoded too.
+   hardcoded English; `AdminMenu` descriptions and `not-found` copy are
+   hardcoded too.
 10. `en.json` is never served (`locales = ["ru"]`), yet `Root` calls the
     `setLocale` server action on every load.
 11. The UI `Profile` type (`models/types.ts`) is still the flat
@@ -41,8 +43,8 @@ State after the `feature/relational-schema` branch. Remove entries when fixed.
     `similarInterests`, `profile` meaning "about"); `lib/profileDto.ts`
     bridges it. The wizard reads tags/locations from the constants instead
     of `GET /api/reference`.
-12. No step collects `placesToVisit` or `announcement` anymore; the columns
-    stay empty for new users.
+12. No step collects `placesToVisit`, `announcement` or `instagram` anymore;
+    the columns stay empty for new users.
 13. Pages wait for their first API call with no timeout. When the DB is
     unreachable Prisma takes several seconds to fail, so `/profile` shows
     "Загрузка..." until `GET /api/profile` errors out (it then opens an
@@ -51,13 +53,19 @@ State after the `feature/relational-schema` branch. Remove entries when fixed.
     reference. `Wizard` now passes a stable object, but
     `ProfileSettings` re-mounts the wizard per edit, which is fine today and
     fragile if props start changing.
+15. Matching ignores `profiles.goals` (and `occupation`).
+16. The legacy `profiles.goal` column is no longer written or read; drop it
+    in a later migration.
+17. `components/profile-templates` (`ProfileCard`) is only used by the
+    wizard's design picker; `/profile/[userId]` still renders its own card
+    and ignores `profiles.theme`.
 
 ## Code health
 
-15. No ESLint config (`next lint` prompts), no Prettier, no tests, no CI.
+18. No ESLint config (`next lint` prompts), no Prettier, no tests, no CI.
     `pnpm typecheck` + `pnpm build` are the only gates.
-16. Legacy `.theme-*` utilities and the new shadcn tokens coexist in
+19. Legacy `.theme-*` utilities and the new shadcn tokens coexist in
     `globals.css`; pick one when the redesign lands.
-17. `hooks/useClientOnce.ts` and `hooks/useDidMount.ts` are no longer used.
-18. Browserslist data is 17 months old (`npx update-browserslist-db@latest`).
-19. Git history is mostly "up"/"upd".
+20. `hooks/useClientOnce.ts` and `hooks/useDidMount.ts` are no longer used.
+21. Browserslist data is 17 months old (`npx update-browserslist-db@latest`).
+22. Git history is mostly "up"/"upd".

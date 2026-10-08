@@ -23,9 +23,9 @@ export function ProfileSettings({
       username: "",
       name: "",
       interests: [],
-      hobbies: [],
-      personalityTraits: [],
-      goal: "",
+      values: [],
+      meetingFormats: [],
+      goals: [],
       similarInterests: "",
       announcement: "",
       profile: "",
@@ -35,6 +35,8 @@ export function ProfileSettings({
       country: "",
       region: "",
       dateOfBirth: "",
+      occupation: "",
+      theme: "",
     }
   );
 
@@ -167,43 +169,19 @@ export function ProfileSettings({
             <div className="setting-items">
               {/* Note: placesToVisit (Travel Plans) is not in new wizard steps, so leaving it read-only or removing edit button if there's no step for it. */}
               
-              <div className={`setting-item ${isFieldComplete(currentProfile.country) && isFieldComplete(currentProfile.region) ? 'completed' : 'incomplete'}`}>
+              <div className={`setting-item ${isFieldComplete(currentProfile.country) ? 'completed' : 'incomplete'}`}>
                 <div className="setting-info">
                   <label>Current Location</label>
                   <span className="setting-value">
-                    {currentProfile.country && currentProfile.region
-                      ? `${currentProfile.country}, ${currentProfile.region}`
-                      : "Add your location"}
+                    {[currentProfile.country, currentProfile.region].filter(Boolean).join(", ") ||
+                      "Add your location"}
                   </span>
                 </div>
                 <button 
                   className="edit-button"
-                  onClick={() => handleEditStep('country')}
+                  onClick={() => handleEditStep('location')}
                 >
-                  {currentProfile.country && currentProfile.region ? "Edit" : "Add"}
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {/* Social & Contact */}
-          <div className="settings-section">
-            <div className="section-header">
-              <h2>📱 Social & Contact</h2>
-            </div>
-            <div className="setting-items">
-              <div className={`setting-item ${isFieldComplete(currentProfile.instagram) ? 'completed' : 'incomplete'}`}>
-                <div className="setting-info">
-                  <label>Instagram</label>
-                  <span className="setting-value">
-                    {currentProfile.instagram || "Add your Instagram"}
-                  </span>
-                </div>
-                <button 
-                  className="edit-button"
-                  onClick={() => handleEditStep('socials')}
-                >
-                  {currentProfile.instagram ? "Edit" : "Add"}
+                  {currentProfile.country ? "Edit" : "Add"}
                 </button>
               </div>
             </div>
@@ -255,20 +233,11 @@ export function ProfileSettings({
               
               <button 
                 className="optional-card"
-                onClick={() => handleEditStep('personality')}
+                onClick={() => handleEditStep('values')}
               >
-                <div className="card-icon">✨</div>
-                <div className="card-title">Personality</div>
-                <div className="card-subtitle">Describe yourself</div>
-              </button>
-              
-              <button 
-                className="optional-card"
-                onClick={() => handleEditStep('hobbies')}
-              >
-                <div className="card-icon">🎯</div>
-                <div className="card-title">Hobbies</div>
-                <div className="card-subtitle">What you enjoy</div>
+                <div className="card-icon">🧭</div>
+                <div className="card-title">Values</div>
+                <div className="card-subtitle">What matters to you</div>
               </button>
               
               <button 

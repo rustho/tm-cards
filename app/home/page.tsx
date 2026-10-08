@@ -72,7 +72,7 @@ export default function Home() {
                     // eslint-disable-next-line @next/next/no-img-element
                     <img src={match.photo} alt={match.name} className="h-12 w-12 rounded-full object-cover" />
                   ) : (
-                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-primary font-bold text-white">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary font-bold text-primary-foreground">
                       {(match.name || match.id).slice(0, 2).toUpperCase()}
                     </div>
                   )}

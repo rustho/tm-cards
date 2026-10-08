@@ -3,9 +3,9 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { ChevronLeft } from "lucide-react";
 import { settingsService } from "@/lib/settingsService";
 import type { NotificationSettings } from "@/models/types";
+import { BackButton } from "@/components/ui/back-button";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
@@ -15,7 +15,6 @@ const KEYS: Array<keyof NotificationSettings> = ["newMatches", "messages", "prof
 export default function NotificationSettingsPage() {
   const router = useRouter();
   const t = useTranslations("settings.notifications");
-  const tCommon = useTranslations("settings.common");
   const [notifications, setNotifications] = useState<NotificationSettings>({
     newMatches: true,
     messages: true,
@@ -66,9 +65,7 @@ export default function NotificationSettingsPage() {
   return (
     <div className="container p-4 pb-24">
       <div className="mb-6 flex items-center gap-2">
-        <Button variant="ghost" size="sm" onClick={() => router.back()}>
-          <ChevronLeft /> {tCommon("back")}
-        </Button>
+        <BackButton />
         <h1 className="text-2xl font-bold">{t("title")}</h1>
       </div>
 

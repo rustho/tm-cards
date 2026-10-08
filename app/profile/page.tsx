@@ -1,16 +1,14 @@
 "use client";
 
-import { useTranslations } from "next-intl";
 import { FooterMenu } from "@/components/FooterMenu";
 import "./pageStyles.css";
 import { Wizard } from "./ui/Wizard";
 
+/** Onboarding page: the wizard fills the screen above the fixed footer (pb-24). */
 export default function Profile() {
-  const t = useTranslations('profile');
-
   return (
-    <div style={{ minHeight: 'calc(100vh - 55px)', height: 'calc(100vh - 55px)', display: 'flex', flexDirection: 'column' }}>
-      <div className="max-w-4xl p-6" style={{flexGrow: 1, display: 'flex', flexDirection: 'column'}}>
+    <div className="flex h-[100dvh] flex-col overflow-hidden px-4 pb-24">
+      <div className="mx-auto flex min-h-0 w-full max-w-4xl flex-1 flex-col">
         <Wizard />
       </div>
       <FooterMenu />

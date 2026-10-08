@@ -43,6 +43,7 @@ backup first, then:
 ```bash
 pnpm db:deploy   # applies both
 pnpm db:seed     # tags + locations reference lists
+pnpm db:cleanup-tags  # one-off: drop legacy trait/hobby tags and links to inactive tags (irreversible)
 ```
 
 Fake data: `POST /api/matching?action=create-mock-users` (admin) creates

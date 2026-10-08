@@ -1,5 +1,5 @@
 import { PrismaClient } from "@prisma/client";
-import { HOBBIES, INTERESTS, LOCATIONS, PERSONALITY_TRAITS } from "../models/types";
+import { INTERESTS, LOCATIONS, MEETING_FORMATS, VALUES } from "../models/types";
 
 /**
  * Idempotent reference-data seed: tags and locations from the option lists
@@ -10,8 +10,8 @@ const prisma = new PrismaClient();
 async function main() {
   const tagRows = [
     ...INTERESTS.map((label, i) => ({ category: "interest", label, sortOrder: i })),
-    ...HOBBIES.map((label, i) => ({ category: "hobby", label, sortOrder: i })),
-    ...PERSONALITY_TRAITS.map((label, i) => ({ category: "trait", label, sortOrder: i })),
+    ...VALUES.map((label, i) => ({ category: "value", label, sortOrder: i })),
+    ...MEETING_FORMATS.map((label, i) => ({ category: "format", label, sortOrder: i })),
   ];
   for (const row of tagRows) {
     await prisma.tag.upsert({
@@ -21,16 +21,20 @@ async function main() {
     });
   }
 
-  let order = 0;
-  for (const { country, regions } of LOCATIONS) {
-    for (const region of regions) {
-      await prisma.location.upsert({
-        where: { country_region: { country, region } },
-        update: { sortOrder: order, isActive: true },
-        create: { country, region, sortOrder: order },
-      });
-      order++;
-    }
+  // Traits were replaced by values and hobbies merged into interests; keep old rows, hide them.
+  await prisma.tag.updateMany({ where: { category: { in: ["trait", "hobby"] } }, data: { isActive: false } });
+  await prisma.tag.updateMany({
+    where: { category: "interest", label: { notIn: [...INTERESTS] } },
+    data: { isActive: false },
+  });
+
+  for (let order = 0; order < LOCATIONS.length; order++) {
+    const { country, region, available } = LOCATIONS[order];
+    await prisma.location.upsert({
+      where: { country_region: { country, region } },
+      update: { sortOrder: order, isActive: available },
+      create: { country, region, sortOrder: order, isActive: available },
+    });
   }
 
   const [tags, locations] = await Promise.all([prisma.tag.count(), prisma.location.count()]);

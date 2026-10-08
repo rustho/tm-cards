@@ -1,91 +1,64 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { Input, StepContainer } from "@/components";
+import { AgeSummary, TextInput } from "@/components/ui";
 import { StepProps } from "@/models/types";
-import {
-  validateDateOfBirth,
-  calculateAge,
-  formatDateForInput,
-} from "@/lib/dateUtils";
+import { validateDateOfBirth, calculateAge, formatDateForInput } from "@/lib/dateUtils";
 import { useWizardContext } from "../WizardContext";
+import { StepWindow } from "../StepWindow";
 
-export interface StepDateOfBirthProps extends StepProps {}
+/** Accepted range: 18–100 years old, as YYYY-MM-DD bounds for the native picker. */
+function yearsAgo(years: number) {
+  const today = new Date();
+  return formatDateForInput(
+    new Date(Date.UTC(today.getFullYear() - years, today.getMonth(), today.getDate())).toISOString()
+  );
+}
 
-export function StepDateOfBirth({ onNext }: StepDateOfBirthProps) {
+/** Step 3: date of birth via the native date input; shows the resulting age. */
+export function StepDateOfBirth({ onNext }: StepProps) {
   const t = useTranslations("profile.steps.dateOfBirth");
-  const {
-    register,
-    watch,
-    formState: { errors },
-  } = useWizardContext();
+  const { register, watch, formState: { errors } } = useWizardContext();
 
   const dateOfBirth = watch("dateOfBirth") || "";
-  const validation = dateOfBirth
-    ? validateDateOfBirth(dateOfBirth)
-    : { isValid: false };
-  const isValidDate = validation.isValid;
-
-  // Calculate and display current age if valid date
-  const displayAge =
-    dateOfBirth && isValidDate ? calculateAge(dateOfBirth) : null;
-
-  // Set max date to 18 years ago from today
-  const today = new Date();
-  const maxDate = new Date(
-    today.getFullYear() - 18,
-    today.getMonth(),
-    today.getDate()
-  );
-  const maxDateString = formatDateForInput(maxDate.toISOString());
-
-  // Set min date to 100 years ago from today
-  const minDate = new Date(
-    today.getFullYear() - 100,
-    today.getMonth(),
-    today.getDate()
-  );
-  const minDateString = formatDateForInput(minDate.toISOString());
+  const isValidDate = Boolean(dateOfBirth) && validateDateOfBirth(dateOfBirth).isValid;
+  const age = isValidDate ? calculateAge(dateOfBirth) : null;
 
   return (
-    <StepContainer
+    <StepWindow
       title={t("title")}
       onNext={onNext}
       nextDisabled={!isValidDate}
+      bodyClassName="flex flex-col justify-between gap-6"
     >
-      <Input
-        type="date"
-        {...register("dateOfBirth", {
-          required: true,
-          validate: (value) => {
-            if (!value) return t("error.invalid");
-            const validation = validateDateOfBirth(value);
-            if (!validation.isValid) {
-              return validation.errorMessage ===
-                "You must be at least 18 years old"
-                ? t("error.minAge")
-                : validation.errorMessage === "Age cannot exceed 100 years"
-                ? t("error.maxAge")
-                : t("error.invalid");
-            }
-            return true;
-          },
-        })}
-        placeholder={t("placeholder")}
-        min={minDateString}
-        max={maxDateString}
-        required
+      <div className="flex flex-col gap-2">
+        <TextInput
+          type="date"
+          {...register("dateOfBirth", {
+            required: true,
+            validate: (value) => {
+              if (!value || !validateDateOfBirth(value).isValid) {
+                if (!value || Number.isNaN(Date.parse(value))) return t("error.invalid");
+                return calculateAge(value) < 18 ? t("error.minAge") : t("error.maxAge");
+              }
+              return true;
+            },
+          })}
+          aria-label={t("placeholder")}
+          min={yearsAgo(100)}
+          max={yearsAgo(18)}
+          error={Boolean(errors.dateOfBirth)}
+          className="appearance-none text-left"
+        />
+        {errors.dateOfBirth && (
+          <p className="m-0 px-1 text-caption text-destructive">{errors.dateOfBirth.message}</p>
+        )}
+      </div>
+
+      <AgeSummary
+        age={age !== null ? t("ageSummary", { age }) : " "}
+        hint={t("ageHint")}
       />
-
-      {displayAge && (
-        <div className="age-display">
-          {t("ageDisplay", { age: displayAge })}
-        </div>
-      )}
-
-      {errors.dateOfBirth && (
-        <div className="input-error-text">{errors.dateOfBirth.message}</div>
-      )}
-    </StepContainer>
+    </StepWindow>
   );
 }

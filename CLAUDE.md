@@ -37,7 +37,7 @@ list is enforced server-side by `requireAdmin()` in `lib/auth.ts`.
 | Bot | **grammY** webhook (`/api/bot/webhook`), setup via `/api/bot/setup` |
 | Scheduling | None yet. Matching is weekly and started by hand: **GitHub Actions** `workflow_dispatch` (`.github/workflows/run-matching.yml`) → `GET /api/cron/matching` with `CRON_SECRET`. Later: a `vercel.json` cron |
 | Forms | react-hook-form 7 through `app/profile/ui/WizardContext.tsx` |
-| UI | **shadcn/ui** primitives in `components/ui/` (Button, Card, Switch) on Tailwind 3 + lucide-react icons; custom wizard components in `components/`; CSS vars in `app/_assets/globals.css`. Telegram UI (TGUI) is **removed** |
+| UI | **shadcn/ui**-style primitives in `components/ui/` (Button, Card, Switch, TextInput, TextArea, WindowTitleBar, ListItem, InterestChip, …; barrel `components/ui/index.ts`) on Tailwind 3 + lucide-react icons; wizard steps wrap them in `app/profile/ui/StepWindow.tsx`; profile card designs in `components/profile-templates/`; **XP Foundations** tokens (colors, Inter, type/spacing/radius scales) in `app/_assets/globals.css` + `tailwind.config.ts`, see `docs/guides/THEME_SYSTEM_GUIDE.md`. Telegram UI (TGUI) is **removed** |
 | i18n | next-intl, `public/locales/{ru,en}.json`, only `ru` is served |
 | Tests / lint | none / `next lint` not configured (prompts) |
 
@@ -51,6 +51,7 @@ pnpm typecheck                    # tsc --noEmit — THE verification step (0 er
 pnpm db:migrate                   # prisma migrate dev (needs DIRECT_URL)
 pnpm db:deploy                    # prisma migrate deploy (CI/prod)
 pnpm db:seed                      # tags + locations reference data (idempotent)
+pnpm db:cleanup-tags              # one-off: drop legacy trait/hobby tags (irreversible)
 pnpm db:studio
 ```
 
@@ -69,15 +70,16 @@ pnpm db:studio
 
 ```
 app/
-  _assets/globals.css     shadcn HSL tokens + brand vars + .theme-* utilities
+  _assets/globals.css     XP foundation tokens → shadcn aliases → legacy --theme-* aliases
   api/                    route handlers — all authenticated except /api/health, /api/bot/webhook, /api/cron/*
   icebreaker/             card game; constants/questions.ts is the question bank
   profile/ui/             Wizard (entry) → FlexibleWizard (engine) → WizardContext (RHF),
-                          wizardConfig.ts (ONBOARDING_STEPS), steps/Step*.tsx
+                          wizardConfig.ts (ONBOARDING_STEPS), StepWindow.tsx (step shell),
+                          useLimitedSelection.ts (capped multi-select), steps/Step*.tsx
   home/, profile/[userId], settings/{profile,notifications,matching-schedule,subscription}
-components/ui/            shadcn primitives (button, card, switch)
-components/               Input, NextButton, PhotoUpload, SelectedButton, SelectionCard,
-                          SelectionGrid, StepContainer, Root, AdminMenu, FooterMenu, Error*
+components/ui/            shadcn + XP primitives (button, card, switch, text-input, list-item, …), barrel index.ts
+components/profile-templates/  profile card designs (notebook, retro) + registry (ProfileCard)
+components/               Root, AdminMenu, FooterMenu, ErrorBoundary, ErrorPage (no barrel; import by path)
 core/init.ts, mockEnv.ts  SDK v3 bootstrap and dev mock (called from Root)
 core/i18n/                next-intl wiring
 hooks/useAuth.ts          client view of the Telegram user (UI gating only)
@@ -87,7 +89,8 @@ lib/bot.ts                grammY bot, BOT_COMMANDS, notifyUser
 lib/matchingService.ts    matching engine (singleton)
 lib/profileDto.ts         users+profiles+tags → UI Profile mapper (read side)
 lib/profileService.ts     profile upsert: location/tag resolution, referral, validation (write side)
-lib/prisma.ts, dateUtils.ts, settingsService.ts (client), utils.ts (cn)
+lib/prisma.ts, dateUtils.ts, settingsService.ts (client), utils.ts (cn),
+  imageUtils.ts           fileToResizedDataUrl: client-side photo downscale (client)
 prisma/                   schema, migrations, seed.ts (tags + locations)
 config/constants.ts       ADMIN_TELEGRAM_IDS, MENU_ITEMS, APP_METADATA
 models/types.ts           Profile/User/settings types + option lists
@@ -99,9 +102,10 @@ docs/                     agent docs; docs/guides (RHF, wizard context, theme); 
 PostgreSQL with a relational model (see `docs/DATA_AND_API.md`). `users`
 (Telegram id externally, uuid internally, with `referralCode` and
 `referrerId`) have one `profiles` row (name, date of birth, location FK,
-goal, about, photo, socials, `isComplete`) and M:N `tags` through
-`profile_tags`; `locations` and `tags` are reference lists seeded by
-`prisma/seed.ts`. `user_settings` holds notification flags, matching pause
+occupation, private `goals[]`, about, photo, socials, card `theme`,
+`isComplete`) and M:N `tags` (categories `interest`, `value`, `format`)
+through `profile_tags`; `locations` and `tags` are reference lists seeded by
+`prisma/seed.ts` from `models/types.ts`. `user_settings` holds notification flags, matching pause
 and preferences. Matching writes `matches` into weekly `match_rounds`;
 `match_feedback` stores each participant's verdict. `plans`,
 `subscriptions`, `payments` exist for Telegram Stars but have no API yet.
@@ -123,8 +127,9 @@ admin-only. Details in `docs/DATA_AND_API.md`.
 - Aliases `@/*` → root, `@public/*` → `public/`.
 - New UI: shadcn primitives from `@/components/ui`, semantic Tailwind classes
   (`bg-card`, `text-muted-foreground`, `border-border`). Never raw greys.
-- Wizard steps take only `{ onNext }` and use `useWizardContext()`
-  (`register`, `watch`, `setValue`, `Controller`). Register in `wizardConfig.ts`.
+- Wizard steps take only `{ onNext }`, render inside `<StepWindow>` and use
+  `useWizardContext()` (`register`, `watch`, `setValue`) or
+  `useLimitedSelection()` for capped multi-selects. Register in `wizardConfig.ts`.
 - Strings via `useTranslations('<namespace>')`, keys in **both** locale files.
 - Server-only modules (`lib/prisma.ts`, `lib/auth.ts`, `lib/bot.ts`,
   `lib/matchingService.ts`) are never imported from client components.
@@ -165,7 +170,9 @@ anything new there.
   but never served.
 - `FooterMenu` is not in the layout; pages include it and add `pb-24`.
 - Never add a `components.json` (or any `components.*` file) at the repo
-  root: with the `@/*` alias it shadows the `components/` barrel import.
+  root: with the `@/*` alias it can shadow the `components/` directory.
+- `globals.css` gives every `h1`–`h6` and `p` a bottom margin (`1rem`) and a
+  color; new components put `m-0` on headings and paragraphs.
 
 ## Docs
 

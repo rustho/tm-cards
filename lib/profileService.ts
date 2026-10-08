@@ -3,6 +3,7 @@ import prisma from "@/lib/prisma";
 import { ensureUser, type AuthUser } from "@/lib/auth";
 import { TAG_CATEGORIES, userWithProfileInclude, type TagCategory, type UserWithProfile } from "@/lib/profileDto";
 import { validateDateOfBirth } from "@/lib/dateUtils";
+import { GOAL_IDS, MAX_GOALS, PROFILE_THEMES } from "@/models/types";
 
 /**
  * Write side of the profile API. Accepts the flat shape the wizard sends
@@ -79,12 +80,19 @@ export async function saveProfile(auth: AuthUser, input: Input): Promise<UserWit
   if (name !== undefined) data.name = name;
   const gender = optString(input, "gender", 20);
   if (gender !== undefined) data.gender = gender;
-  const goal = optString(input, "goal", 100);
-  if (goal !== undefined) data.goal = goal;
+  const occupation = optString(input, "occupation", 80);
+  if (occupation !== undefined) data.occupation = occupation;
+  const goals = optStringArray(input, "goals", MAX_GOALS);
+  if (goals !== undefined) data.goals = goals.filter((g) => GOAL_IDS.includes(g));
   const announcement = optString(input, "announcement", 1000);
   if (announcement !== undefined) data.announcement = announcement;
   const theme = optString(input, "theme", 50);
-  if (theme !== undefined && theme !== null) data.theme = theme;
+  if (theme !== undefined && theme !== null) {
+    if (!(PROFILE_THEMES as readonly string[]).includes(theme)) {
+      throw new ProfileValidationError(`theme must be one of ${PROFILE_THEMES.join(", ")}`);
+    }
+    data.theme = theme;
+  }
 
   // "about" is called `profile` in the UI type
   const about = input.about !== undefined ? optString(input, "about", 1000) : optString(input, "profile", 1000);
@@ -153,6 +161,16 @@ export async function saveProfile(auth: AuthUser, input: Input): Promise<UserWit
     update: data,
     create: { ...(data as Omit<Prisma.ProfileUncheckedCreateInput, "userId">), userId: user.id },
   });
+
+  // --- matching settings (onboarding "first meeting this week?") ------------------
+  if (input.skipNextRound !== undefined) {
+    if (typeof input.skipNextRound !== "boolean") throw new ProfileValidationError("skipNextRound must be a boolean");
+    await prisma.userSettings.upsert({
+      where: { userId: user.id },
+      update: { skipNextRound: input.skipNextRound },
+      create: { userId: user.id, skipNextRound: input.skipNextRound },
+    });
+  }
 
   // --- tags -----------------------------------------------------------------------
   for (const [category, field] of Object.entries(TAG_CATEGORIES) as [TagCategory, string][]) {

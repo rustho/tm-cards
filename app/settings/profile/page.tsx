@@ -11,12 +11,12 @@ const EMPTY_PROFILE: Profile = {
   id: "",
   username: "",
   name: "",
-  goal: "",
+  goals: [],
   country: "",
   region: "",
   interests: [],
-  hobbies: [],
-  personalityTraits: [],
+  values: [],
+  meetingFormats: [],
   similarInterests: "",
   announcement: "",
   profile: "",
@@ -24,6 +24,8 @@ const EMPTY_PROFILE: Profile = {
   instagram: "",
   photo: "",
   dateOfBirth: "",
+  occupation: "",
+  theme: "",
 };
 
 /** Loads the current user's profile and persists edits through POST /api/profile. */

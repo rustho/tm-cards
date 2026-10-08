@@ -1,44 +1,59 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useRef, useState } from "react";
 import { useTranslations } from "next-intl";
-import { StepContainer, PhotoUpload } from "@/components";
+import { Upload } from "lucide-react";
+import { Button, PhotoUploader } from "@/components/ui";
 import { StepProps } from "@/models/types";
+import { fileToResizedDataUrl } from "@/lib/imageUtils";
 import { useWizardContext } from "../WizardContext";
+import { StepWindow } from "../StepWindow";
 
-export interface StepPhotoProps extends StepProps {}
-
-export function StepPhoto({ onNext }: StepPhotoProps) {
-  const t = useTranslations('profile.steps.photo');
+/** Step 10 (last): profile photo, downscaled on the client and stored as a data URL. */
+export function StepPhoto({ onNext }: StepProps) {
+  const t = useTranslations("profile.steps.photo");
   const { watch, setValue } = useWizardContext();
-  const photo = watch("photo");
-  const [preview, setPreview] = useState<string | null>(photo || null);
+  const photo = watch("photo") || "";
+  const uploaderRef = useRef<HTMLButtonElement>(null);
+  const [error, setError] = useState(false);
 
-  useEffect(() => {
-    setPreview(photo || null);
-  }, [photo]);
-
-  const handleFileSelect = (file: File) => {
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      const base64String = reader.result as string;
-      setPreview(base64String);
-      setValue("photo", base64String, { shouldValidate: true });
-    };
-    reader.readAsDataURL(file);
+  const handleFileSelect = async (file: File) => {
+    try {
+      setError(false);
+      setValue("photo", await fileToResizedDataUrl(file), { shouldDirty: true });
+    } catch (e) {
+      console.error("Failed to process photo:", e);
+      setError(true);
+    }
   };
 
   return (
-    <StepContainer
-      title={t('title')}
+    <StepWindow
+      title={t("title")}
       onNext={onNext}
-      nextDisabled={!preview}
+      nextDisabled={!photo}
+      bodyClassName="flex flex-col items-center justify-center gap-8 py-8"
     >
-      <PhotoUpload preview={preview} onFileSelect={handleFileSelect}>
-        <div>
-          <p>{t('upload')}</p>
-        </div>
-      </PhotoUpload>
-    </StepContainer>
+      <PhotoUploader
+        ref={uploaderRef}
+        src={photo || null}
+        onFileSelect={handleFileSelect}
+        aria-label={photo ? t("change") : t("upload")}
+        className="w-[60%] max-w-[240px]"
+      />
+      <div className="flex flex-col items-center gap-6">
+        <Button
+          variant="outline"
+          className="h-12 gap-3 rounded-md border-divider bg-surface px-8 text-counter font-bold text-primary hover:bg-surface/80 [&_svg]:size-5"
+          onClick={() => uploaderRef.current?.click()}
+        >
+          <Upload aria-hidden />
+          {photo ? t("change") : t("upload")}
+        </Button>
+        <p className="m-0 whitespace-pre-line text-center text-body text-muted-foreground">
+          {error ? <span className="text-destructive">{t("error")}</span> : t("hint")}
+        </p>
+      </div>
+    </StepWindow>
   );
 }

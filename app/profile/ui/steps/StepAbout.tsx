@@ -1,48 +1,33 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { Input, StepContainer } from "@/components";
+import { AnswerExamples, TextArea } from "@/components/ui";
 import { StepProps } from "@/models/types";
 import { useWizardContext } from "../WizardContext";
-import { Controller } from "react-hook-form";
+import { StepWindow } from "../StepWindow";
 
-const MAX_CHARS = 284;
+/** Matches the server limit for `profiles.about` (lib/profileService.ts). */
+const MAX_CHARS = 1000;
 
-export interface StepAboutProps extends StepProps {}
+/** Step 9: free-form "about me" (UI field `profile`), with prompts for what to write. */
+export function StepAbout({ onNext }: StepProps) {
+  const t = useTranslations("profile.steps.about");
+  const { register, watch } = useWizardContext();
 
-export function StepAbout({ onNext }: StepAboutProps) {
-  const t = useTranslations('profile.steps.about');
-  const { control, watch } = useWizardContext();
-  
   const about = watch("profile") || "";
 
   return (
-    <StepContainer
-      title={t('title')}
-      onNext={onNext}
-      nextDisabled={!about.trim()}
-    >
-      <Controller
-        name="profile"
-        control={control}
-        rules={{ required: true }}
-        render={({ field }) => (
-          <Input
-            {...field}
-            type="text"
-            onChange={(e) => {
-              const value = e.target.value.slice(0, MAX_CHARS);
-              field.onChange(value);
-            }}
-            placeholder={t('placeholder')}
-            maxLength={MAX_CHARS}
-            required
-          />
-        )}
-      />
-      <div className="character-count">
-        {about.length}/{MAX_CHARS}
+    <StepWindow title={t("title")} onNext={onNext} nextDisabled={!about.trim()}>
+      <div className="flex flex-col gap-4">
+        <TextArea
+          {...register("profile", { required: true, validate: (v) => Boolean(v?.trim()) })}
+          maxLength={MAX_CHARS}
+          className="min-h-[148px]"
+          autoFocus
+        />
+        <hr className="border-0 border-t border-dashed border-divider" />
+        <AnswerExamples heading={t("examplesHeading")} examples={t.raw("examples") as string[]} />
       </div>
-    </StepContainer>
+    </StepWindow>
   );
 }

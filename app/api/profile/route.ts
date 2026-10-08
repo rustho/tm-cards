@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
     if (!user?.profile) {
       return NextResponse.json({ error: "Profile not found" }, { status: 404 });
     }
-    return NextResponse.json(toProfile(user));
+    return NextResponse.json(toProfile(user, { includePrivate: true }));
   } catch (error) {
     const authError = authErrorResponse(error);
     if (authError) return authError;
@@ -36,7 +36,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
     }
     const user = await saveProfile(auth, body as Record<string, unknown>);
-    return NextResponse.json({ success: true, profile: toProfile(user) });
+    return NextResponse.json({ success: true, profile: toProfile(user, { includePrivate: true }) });
   } catch (error) {
     const authError = authErrorResponse(error);
     if (authError) return authError;

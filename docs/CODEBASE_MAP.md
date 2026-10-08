@@ -15,8 +15,8 @@ example code.
 | `tailwind.config.ts` | LIVE | `darkMode: ["class"]`, shadcn HSL tokens + brand palette, `tailwindcss-animate` |
 | `postcss.config.js` | LIVE | tailwind + autoprefixer |
 | `.github/workflows/run-matching.yml` | OPS | manual (`workflow_dispatch`) GitHub Actions run → `/api/cron/matching`; no schedule and no `vercel.json` yet |
-| `prisma/schema.prisma`, `prisma/migrations/` | LIVE | relational model (users, profiles, locations, tags, profile_tags, user_settings, match_rounds, matches, match_feedback, plans, subscriptions, payments); 6 migrations, the last one backfills from the legacy tables |
-| `prisma/seed.ts` | DEV | idempotent tags + locations seed (`pnpm db:seed`) |
+| `prisma/schema.prisma`, `prisma/migrations/` | LIVE | relational model (users, profiles, locations, tags, profile_tags, user_settings, match_rounds, matches, match_feedback, plans, subscriptions, payments); 8 migrations: `20261008090000_relational_model` backfills from the legacy tables, then `…_profile_occupation` and `…_profile_goals` add columns |
+| `prisma/seed.ts` | DEV | idempotent tags + locations seed (`pnpm db:seed`); deactivates `trait`/`hobby` tags, interest tags not in `INTERESTS` and unavailable locations |
 | `.env.example` | DEV | documents every variable |
 | `.env` | ⚠️ | tracked with old credentials; untouched on purpose |
 | `.claude/launch.json` | DEV | dev-server config for the Claude browser pane |
@@ -26,17 +26,20 @@ example code.
 
 | Route / file | Status | Notes |
 |---|---|---|
-| `layout.tsx` | LIVE | server component: locale, `I18nProvider`, `Root`; imports normalize.css + `globals.css`; Handjet font var |
-| `fonts.ts` | LIVE | `localFont` Handjet → `--font-handjet` |
+| `layout.tsx` | LIVE | server component: locale, `I18nProvider`, `Root`; imports normalize.css + `globals.css`; Inter font var |
+| `fonts.ts` | LIVE | `next/font/google` Inter 400/700 (latin+cyrillic) → `--font-inter` |
 | `page.tsx` | LIVE | `/`: admin → `AdminMenu`; others → `router.replace("/icebreaker")` in an effect |
 | `error.tsx`, `not-found.tsx` | LIVE | |
-| `_assets/globals.css` | LIVE | shadcn tokens (`:root`, `.dark`), brand vars, body background, `.theme-*` utilities, input/age/character-count helpers |
+| `_assets/globals.css` | LIVE | XP foundation tokens (`--color-*`, `--radius-*`), shadcn aliases, legacy `--theme-*` aliases and `.theme-*` utilities; base `h1`–`h6`/`p` margins (new components use `m-0`) |
 | `/icebreaker` (`page.tsx`, `ui/{startGame,game,endGame}.tsx`, `constants/questions.ts`, `pageStyles.css`) | LIVE | card game; `questions.md` is the source text; easter egg: 5 taps → `/profile` |
-| `/profile` → `ui/Wizard.tsx` | LIVE | loads `GET /api/profile`, seeds Telegram name/username, forwards `startapp=ref_<code>` as `referralCode`, autosaves steps via `POST /api/profile`, finishes with `isComplete: true` and `router.push("/home")` |
-| `ui/FlexibleWizard.tsx` | LIVE | step engine (`steps`, `mode full\|edit`, progress bar, back button) |
+| `/profile` (`page.tsx`) → `ui/Wizard.tsx` | LIVE | page is a full-height column (`h-[100dvh] px-4 pb-24`) above the fixed `FooterMenu`; the wizard loads `GET /api/profile`, seeds Telegram name/username, forwards `startapp=ref_<code>` as `referralCode`, autosaves steps via `POST /api/profile`, finishes with `isComplete: true` and `router.push("/home")` |
+| `ui/FlexibleWizard.tsx` | LIVE | step engine (`steps`, `mode full\|edit`, `ProgressHeader` with back, `WizardStepConfig.countsInProgress`) |
+| `ui/StepWindow.tsx` | LIVE | step shell: `WindowTitleBar` + scrollable body + full-width primary "Далее" `Button` (`title, onNext, nextDisabled, nextText, bodyClassName`) |
+| `ui/useLimitedSelection.ts` | LIVE | multi-select over a `string[]` field with a max → `{ selected, count, isSelected, isLocked, toggle }` |
 | `ui/WizardContext.tsx` | LIVE | `WizardProvider` = `useForm<Partial<Profile>>` + step index; `useWizardContext()` |
-| `ui/wizardConfig.ts` | LIVE | `ONBOARDING_STEPS`: country, region, name, dateOfBirth, personality, interests, hobbies, goal, photo, socials, about |
-| `ui/steps/Step{Country,City,Name,DateOfBirth,Personality,Interests,Hobbies,Goal,Photo,Socials,About}.tsx` | LIVE | one file per step, all on `useWizardContext()` |
+| `ui/wizardConfig.ts` | LIVE | `ONBOARDING_STEPS`: location, name, dateOfBirth, occupation, values, interests, goal, meetingFormat, about, photo, theme (design picker), firstMeeting (full-screen "join this week?" → `skipNextRound`); the last two have `countsInProgress: false`, so progress shows 10/10 |
+| `ui/steps/Step{Location,Name,DateOfBirth,Occupation,Values,Interests,Goal,MeetingFormat,About,Photo,Theme}.tsx` | LIVE | one file per step on `useWizardContext()` / `useLimitedSelection()`; all but `StepTheme` (own window + carousel of `PROFILE_TEMPLATES`) render inside `StepWindow` |
+| `ui/steps/StepReview.tsx` | — | optional "Спасибо, {name}!" interstitial with `autoAdvanceMs`; not in `ONBOARDING_STEPS` (header comment shows how to add it) |
 | `/profile/[userId]` | LIVE | read-only profile card (all fields, null-safe Instagram) |
 | `/profile/settings` | LIVE | client redirect → `/settings/profile` |
 | `/home` | LIVE | `GET /api/matches/{me}` → cards → `/profile/[id]` |
@@ -67,12 +70,15 @@ example code.
 
 | Path | Status | Notes |
 |---|---|---|
-| `ui/button.tsx`, `ui/card.tsx`, `ui/switch.tsx`, `ui/index.ts` | LIVE | shadcn primitives (Tailwind 3 variants) |
-| `index.ts` | LIVE | exports `Input`, `SelectedButton`, `SelectionGrid`, `StepContainer`, `SelectionCard`, `NextButton`, `PhotoUpload` |
+| `ui/button.tsx`, `ui/card.tsx`, `ui/switch.tsx` | LIVE | shadcn primitives (Tailwind 3 variants) |
+| `ui/*.tsx` (XP) | LIVE | `text-input`, `text-area`, `window-title-bar`, `window-control`, `progress-header`, `back-button`, `step-item`, `counter-badge`, `status-icon`, `country-card`, `unlock-divider`, `interest-chip`, `list-item`, `meeting-goal-card`, `answer-examples`, `age-summary`, `photo-uploader`, `selection-guidance`, `category-header` (`icon={false}` for a bare title) |
+| `ui/index.ts` | LIVE | barrel for all of `ui/`; there is no `components/index.ts` |
+| `profile-templates/index.tsx` | LIVE | registry: `PROFILE_TEMPLATES`, `getProfileTemplate(theme)`, `ProfileCard`; header comment explains adding a template. Used by `StepTheme`, not yet by `/profile/[userId]` |
+| `profile-templates/{notebook/NotebookTemplate,retro/RetroTemplate}.tsx` | LIVE | card designs with their own fixed palettes; labels from the `profileCard` locale namespace |
+| `profile-templates/{types,utils,fonts}.ts` | LIVE | `ProfileTemplateProps`/`ProfileCardData`, `formatLocation`/`getAge`, Caveat / PT Mono / Press Start 2P via `next/font` (`preload: false`) |
 | `Root/Root.tsx` | LIVE | runs `mockEnv()` → `init()`; toggles `.dark` from `miniApp.isDark`; sets locale from `user.language_code`; "Loading" until ready |
 | `FooterMenu.tsx` | LIVE | fixed bottom nav with lucide icons, active state from `usePathname` |
 | `AdminMenu.tsx` | LIVE | 4 cards (descriptions hardcoded English) |
-| `StepContainer/`, `NextButton/`, `Input/`, `SelectionCard/`, `SelectedButton/`, `SelectionGrid/`, `PhotoUpload/` | LIVE | wizard building blocks; `SelectedButton` wraps the shadcn `Button` |
 | `ErrorBoundary.tsx`, `ErrorPage.tsx` | LIVE | |
 
 ## `core/`, `config/`, `hooks/`
@@ -100,9 +106,10 @@ example code.
 | `lib/settingsService.ts` | LIVE | client wrapper for settings routes |
 | `lib/dateUtils.ts` | LIVE | `calculateAge`, `validateDateOfBirth`, `formatDateForInput` |
 | `lib/utils.ts` | LIVE | `cn()` |
-| `models/types.ts` | LIVE | `StepProps`, `User`, `Profile`, `ProfileData`, settings types, option lists (`PERSONALITY_TRAITS`, `INTERESTS`, `HOBBIES`, `GOALS`, `LOCATIONS`) |
+| `lib/imageUtils.ts` | LIVE | `fileToResizedDataUrl` (browser): downscale to 1280px JPEG before the photo is saved |
+| `models/types.ts` | LIVE | `StepProps`, `User`, `Profile`, `ProfileData`, settings types, option lists (`VALUE_OPTIONS`/`VALUES`, `INTEREST_GROUPS`/`INTERESTS`, `GOAL_OPTIONS`, `MEETING_FORMAT_OPTIONS`, `LOCATIONS: LocationOption[]`, `PROFILE_THEMES`/`DEFAULT_PROFILE_THEME`) |
 
 ## `public/`
 
-`locales/{ru,en}.json`, `fonts/Handjet-Light.ttf`, `Hardpixel.OTF`
-(`.logo-font`), `background.png`, `left-arrow.svg`, `logo-*.PNG`, `texture.png`.
+`locales/{ru,en}.json`, `fonts/Handjet-Light.ttf` (unused), `Hardpixel.OTF`
+(`.logo-font`), `background.png` (unused), `logo-*.PNG`, `texture.png`.

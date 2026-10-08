@@ -80,7 +80,6 @@ export default function UserProfile() {
                   {profile.name}
                   {age !== null && <span className="ml-2 text-lg font-normal text-muted-foreground">{age}</span>}
                 </h1>
-                {profile.goal && <p className="text-sm text-muted-foreground">{t("goal")}: {profile.goal}</p>}
               </div>
 
               <Section title={t("location")}>
@@ -93,16 +92,16 @@ export default function UserProfile() {
                 </Section>
               )}
 
-              <Section title={t("personality")}>
-                <Tags items={profile.personalityTraits ?? []} className="bg-secondary text-secondary-foreground" />
+              <Section title={t("values")}>
+                <Tags items={profile.values ?? []} className="bg-secondary text-secondary-foreground" />
+              </Section>
+
+              <Section title={t("meetingFormats")}>
+                <Tags items={profile.meetingFormats ?? []} className="bg-accent/30 text-foreground" />
               </Section>
 
               <Section title={t("interests")}>
                 <Tags items={profile.interests ?? []} className="bg-accent/30 text-foreground" />
-              </Section>
-
-              <Section title={t("hobbies")}>
-                <Tags items={profile.hobbies ?? []} className="bg-primary/15 text-foreground" />
               </Section>
 
               {profile.placesToVisit && (
