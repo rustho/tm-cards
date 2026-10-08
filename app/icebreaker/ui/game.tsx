@@ -3,13 +3,12 @@
 import { useState, useMemo } from "react";
 import { useSwipeable } from "react-swipeable";
 import { useTranslations } from "next-intl";
-import { Button } from "@telegram-apps/telegram-ui";
+import { Button } from "@/components/ui/button";
 import {
   QUESTIONS,
   questionsCategoriesLabels,
   getRandomQuestionsWithoutCategoryRepetition,
 } from "../constants/questions";
-import logo from "../../../public/logo-black.png";
 
 interface GameProps {
   onEndGame: () => void;
@@ -64,9 +63,8 @@ export default function Game({ onEndGame }: GameProps) {
       {currentIndex < QUESTIONS.length - 1 && (
         <div className="button-container">
           <Button
-            size="l"
-            mode="filled"
-            stretched
+            size="lg"
+            className="w-full"
             onClick={() => setCurrentIndex(currentIndex + 1)}
           >
             {t('nextQuestion')}
@@ -75,7 +73,7 @@ export default function Game({ onEndGame }: GameProps) {
       )}
       {currentIndex === QUESTIONS.length - 1 && (
         <div className="button-container">
-          <Button size="l" mode="outline" stretched onClick={onEndGame}>
+          <Button size="lg" variant="outline" className="w-full" onClick={onEndGame}>
             {t('finishGame')}
           </Button>
         </div>

@@ -51,6 +51,28 @@ model MatchingUser {
   // Relations
   matchesAsUser1 MatchResult[] @relation("User1Matches")
   matchesAsUser2 MatchResult[] @relation("User2Matches")
+  settings       UserSettings?
+}
+
+/// Per-user preferences. Created lazily on first settings write.
+model UserSettings {
+  telegramId String       @id
+  user       MatchingUser @relation(fields: [telegramId], references: [telegramId], onDelete: Cascade)
+
+  // Notification preferences
+  notifyNewMatches   Boolean @default(true)
+  notifyMessages     Boolean @default(true)
+  notifyProfileViews Boolean @default(false)
+  notifyGameInvites  Boolean @default(true)
+  notifyWeeklyDigest Boolean @default(true)
+
+  // Matching schedule: active | pause_week | pause_month | pause_custom | pause_indefinite
+  matchingOption     String    @default("active")
+  matchingCustomDate DateTime?
+  matchingResumeDate DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model MatchResult {
@@ -72,7 +94,8 @@ model MatchResult {
   user1              MatchingUser @relation("User1Matches", fields: [user1Id], references: [telegramId])
   user2              MatchingUser @relation("User2Matches", fields: [user2Id], references: [telegramId])
 
-  @@index([user1Id, user2Id])
+  // user1Id < user2Id is enforced by the matching service so a pair is stored once
+  @@unique([user1Id, user2Id])
   @@index([status, createdAt])
   @@index([expiresAt])
 }

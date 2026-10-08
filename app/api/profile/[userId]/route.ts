@@ -1,44 +1,24 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { authenticate, authErrorResponse } from "@/lib/auth";
+import { toProfile } from "@/lib/profileDto";
 
-export async function GET(
-  request: Request,
-  { params }: { params: { userId: string } }
-) {
+export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
+
+/** GET /api/profile/[userId] — public profile of another user (authenticated users only). */
+export async function GET(request: NextRequest, { params }: { params: { userId: string } }) {
   try {
-    const userId = params.userId;
-
-    const user = await prisma.matchingUser.findUnique({
-      where: { telegramId: userId }
-    });
-
-    if (!user) {
+    await authenticate(request);
+    const row = await prisma.matchingUser.findUnique({ where: { telegramId: params.userId } });
+    if (!row || !row.isActive) {
       return NextResponse.json({ error: "Profile not found" }, { status: 404 });
     }
-
-    // Map to frontend Profile format if necessary
-    // Currently frontend expects: id, name, interests, etc.
-    const profile = {
-        id: user.telegramId,
-        username: user.username,
-        name: user.name,
-        interests: user.interests,
-        dateOfBirth: user.dateOfBirth,
-        country: user.country,
-        region: user.region,
-        placesToVisit: Array.isArray(user.placesToVisit) ? user.placesToVisit.join(', ') : user.placesToVisit, // Frontend expects string
-        instagram: user.instagram,
-        photo: user.photo,
-        announcement: user.announcement,
-        // Add other fields as needed
-    };
-
-    return NextResponse.json(profile);
+    return NextResponse.json(toProfile(row));
   } catch (error) {
+    const auth = authErrorResponse(error);
+    if (auth) return auth;
     console.error("Error fetching profile:", error);
-    return NextResponse.json(
-      { error: "Internal Server Error" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }

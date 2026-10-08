@@ -1,44 +1,74 @@
 import {
   backButton,
-  viewport,
-  themeParams,
-  miniApp,
-  initData,
-  $debug,
+  emitEvent,
   init as initSDK,
-} from "@telegram-apps/sdk-react";
+  initData,
+  miniApp,
+  mockTelegramEnv,
+  retrieveLaunchParams,
+  setDebug,
+  themeParams,
+  type ThemeParams,
+  viewport,
+} from "@tma.js/sdk-react";
 
 /**
- * Initializes the application and configures its dependencies.
+ * Initializes the Telegram Mini Apps SDK and mounts the components the app
+ * uses. Called once from components/Root/Root.tsx after mockEnv().
  */
-export function init(debug: boolean): void {
-  // Set @telegram-apps/sdk-react debug mode.
-  $debug.set(debug);
-
-  // Initialize special event handlers for Telegram Desktop, Android, iOS, etc.
-  // Also, configure the package.
+export async function init(options: {
+  debug: boolean;
+  eruda: boolean;
+  mockForMacOS: boolean;
+}): Promise<void> {
+  setDebug(options.debug);
   initSDK();
 
-  // Mount all components used in the project.
-  backButton.isSupported() && backButton.mount();
-  miniApp.mount();
-  themeParams.mount();
-  initData.restore();
-  void viewport
-    .mount()
-    .then(() => {
-      viewport.bindCssVars();
-    })
-    .catch((e) => {
-      console.error("Something went wrong mounting the viewport", e);
+  if (options.eruda) {
+    void import("eruda").then(({ default: eruda }) => {
+      eruda.init();
+      eruda.position({ x: window.innerWidth - 50, y: 0 });
     });
+  }
 
-  // Define components-related CSS variables.
+  // Telegram for macOS does not answer "web_app_request_theme" and sends a
+  // malformed "web_app_request_safe_area" response. Mock both.
+  if (options.mockForMacOS) {
+    let firstThemeSent = false;
+    mockTelegramEnv({
+      onEvent(event, next) {
+        if (event.name === "web_app_request_theme") {
+          let tp: Partial<ThemeParams> = {};
+          if (firstThemeSent) {
+            tp = themeParams.state as Partial<ThemeParams>;
+          } else {
+            firstThemeSent = true;
+            tp = (retrieveLaunchParams().tgWebAppThemeParams || {}) as Partial<ThemeParams>;
+          }
+          return emitEvent("theme_changed", { theme_params: tp as any });
+        }
+        if (event.name === "web_app_request_safe_area") {
+          return emitEvent("safe_area_changed", { left: 0, top: 0, right: 0, bottom: 0 });
+        }
+        next();
+      },
+    });
+  }
 
-  miniApp.bindCssVars();
-  themeParams.bindCssVars();
+  backButton.mount();
+  initData.restore();
 
-  // Add Eruda if needed.
-  debug &&
-    import("eruda").then((lib) => lib.default.init()).catch(console.error);
+  try {
+    miniApp.mount();
+    themeParams.bindCssVars();
+  } catch {
+    // miniApp not available in this environment
+  }
+
+  try {
+    await viewport.mount();
+    viewport.bindCssVars();
+  } catch {
+    // viewport not available in this environment (or already bound)
+  }
 }

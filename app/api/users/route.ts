@@ -1,32 +1,24 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { requireAdmin, authErrorResponse } from "@/lib/auth";
+import { toProfile } from "@/lib/profileDto";
 
-export async function GET() {
+export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
+
+/** GET /api/users — all active profiles. Admin only. */
+export async function GET(request: NextRequest) {
   try {
+    await requireAdmin(request);
     const users = await prisma.matchingUser.findMany({
-      where: { isActive: true }
+      where: { isActive: true },
+      orderBy: { updatedAt: "desc" },
     });
-
-    const mappedUsers = users.map((user) => ({
-      id: user.telegramId,
-      username: user.username,
-      name: user.name,
-      interests: user.interests,
-      dateOfBirth: user.dateOfBirth,
-      country: user.country,
-      region: user.region,
-      placesToVisit: Array.isArray(user.placesToVisit) ? user.placesToVisit.join(', ') : user.placesToVisit,
-      instagram: user.instagram,
-      photo: user.photo,
-      announcement: user.announcement,
-    }));
-
-    return NextResponse.json(mappedUsers);
+    return NextResponse.json(users.map(toProfile));
   } catch (error) {
+    const auth = authErrorResponse(error);
+    if (auth) return auth;
     console.error("Error fetching users:", error);
-    return NextResponse.json(
-      { error: "Internal Server Error" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }

@@ -2,7 +2,9 @@
 
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { Button, Card, Section } from "@telegram-apps/telegram-ui";
+import { ChevronLeft } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 
 export default function Subscription() {
   const router = useRouter();
@@ -10,59 +12,55 @@ export default function Subscription() {
   const tCommon = useTranslations('settings.common');
 
   return (
-    <div className="container mx-auto p-4">
+    <div className="container p-4 pb-24">
       <div className="flex items-center mb-6">
-        <Button
-          mode="plain"
-          onClick={() => router.back()}
-          className="mr-4"
-        >
-          {tCommon('back')}
+        <Button variant="ghost" size="sm" onClick={() => router.back()} className="mr-2">
+          <ChevronLeft /> {tCommon('back')}
         </Button>
         <h1 className="text-2xl font-bold">{t('title')}</h1>
       </div>
 
-      <Section>
+      <section>
         <div className="text-center mb-8">
           <div className="text-6xl mb-4">🎉</div>
           <h2 className="text-3xl font-bold mb-2">{t('everythingFree')}</h2>
-          <p className="text-gray-600 mb-6">
+          <p className="text-muted-foreground mb-6">
             {t('betaDescription')}
           </p>
         </div>
 
-        <Card className="p-6 mb-6 bg-gradient-to-r from-blue-50 to-purple-50">
+        <Card className="p-6 mb-6 bg-primary/10">
           <h3 className="text-xl font-semibold mb-4">{t('currentPlan')}</h3>
           <div className="space-y-3">
             <div className="flex items-center">
-              <span className="text-green-500 mr-2">✓</span>
+              <span className="text-success mr-2">✓</span>
               <span>{t('features.unlimitedProfiles')}</span>
             </div>
             <div className="flex items-center">
-              <span className="text-green-500 mr-2">✓</span>
+              <span className="text-success mr-2">✓</span>
               <span>{t('features.unlimitedMatches')}</span>
             </div>
             <div className="flex items-center">
-              <span className="text-green-500 mr-2">✓</span>
+              <span className="text-success mr-2">✓</span>
               <span>{t('features.interactiveGames')}</span>
             </div>
             <div className="flex items-center">
-              <span className="text-green-500 mr-2">✓</span>
+              <span className="text-success mr-2">✓</span>
               <span>{t('features.allDestinations')}</span>
             </div>
             <div className="flex items-center">
-              <span className="text-green-500 mr-2">✓</span>
+              <span className="text-success mr-2">✓</span>
               <span>{t('features.prioritySupport')}</span>
             </div>
           </div>
         </Card>
 
-        <Card className="p-6 mb-6 border-2 border-dashed border-gray-300">
+        <Card className="p-6 mb-6 border-2 border-dashed">
           <h3 className="text-lg font-semibold mb-3">{t('comingSoon')}</h3>
-          <p className="text-gray-600 mb-4">
+          <p className="text-muted-foreground mb-4">
             {t('comingSoonDesc')}
           </p>
-          <div className="space-y-2 text-sm text-gray-500">
+          <div className="space-y-2 text-sm text-muted-foreground">
             <div className="flex items-center">
               <span className="mr-2">🚀</span>
               <span>{t('premiumFeatures.advancedMatching')}</span>
@@ -83,11 +81,11 @@ export default function Subscription() {
         </Card>
 
         <div className="text-center">
-          <p className="text-sm text-gray-500">
+          <p className="text-sm text-muted-foreground">
             {t('stayTuned')}
           </p>
         </div>
-      </Section>
+      </section>
     </div>
   );
 } 

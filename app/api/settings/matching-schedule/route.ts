@@ -1,106 +1,109 @@
 import { NextRequest, NextResponse } from "next/server";
-import { MatchingScheduleSettings } from "@/models/types";
+import prisma from "@/lib/prisma";
+import { authenticate, authErrorResponse, ensureUser } from "@/lib/auth";
+import type { MatchingScheduleSettings } from "@/models/types";
 
-export const dynamic = 'force-dynamic';
+export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
 
-// Mock data storage (in production, this would be database)
-const mockMatchingSchedules: { [userId: string]: MatchingScheduleSettings } = {
-  "default": {
-    option: "active",
-    customDate: null,
-    resumeDate: null,
-    lastUpdated: new Date().toISOString(),
-  }
-};
+const OPTIONS: MatchingScheduleSettings["option"][] = [
+  "active",
+  "pause_week",
+  "pause_month",
+  "pause_custom",
+  "pause_indefinite",
+];
 
-function calculateResumeDate(option: string, customDate?: string | null): string | null {
+function calculateResumeDate(option: string, customDate?: string | null): Date | null {
   const now = new Date();
-  
   switch (option) {
-    case "pause_week":
-      const nextWeek = new Date(now);
-      nextWeek.setDate(now.getDate() + 7);
-      return nextWeek.toISOString();
-    case "pause_month":
-      const nextMonth = new Date(now);
-      nextMonth.setMonth(now.getMonth() + 1);
-      return nextMonth.toISOString();
-    case "pause_custom":
-      return customDate ? new Date(customDate).toISOString() : null;
-    case "active":
-      return null;
-    case "pause_indefinite":
-      return null;
+    case "pause_week": {
+      const d = new Date(now);
+      d.setDate(now.getDate() + 7);
+      return d;
+    }
+    case "pause_month": {
+      const d = new Date(now);
+      d.setMonth(now.getMonth() + 1);
+      return d;
+    }
+    case "pause_custom": {
+      if (!customDate) return null;
+      const d = new Date(customDate);
+      return isNaN(d.getTime()) ? null : d;
+    }
     default:
       return null;
   }
 }
 
+function fromRow(row: {
+  matchingOption: string;
+  matchingCustomDate: Date | null;
+  matchingResumeDate: Date | null;
+  updatedAt: Date;
+}): MatchingScheduleSettings {
+  return {
+    option: row.matchingOption as MatchingScheduleSettings["option"],
+    customDate: row.matchingCustomDate?.toISOString() ?? null,
+    resumeDate: row.matchingResumeDate?.toISOString() ?? null,
+    lastUpdated: row.updatedAt.toISOString(),
+  };
+}
+
 export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url);
-    const userId = searchParams.get('userId') || 'default';
-
-    const settings = mockMatchingSchedules[userId] || mockMatchingSchedules["default"];
-
+    const user = await authenticate(request);
+    const row = await prisma.userSettings.findUnique({ where: { telegramId: user.id } });
+    const settings: MatchingScheduleSettings = row
+      ? fromRow(row)
+      : { option: "active", customDate: null, resumeDate: null, lastUpdated: new Date().toISOString() };
     return NextResponse.json(settings);
   } catch (error) {
+    const auth = authErrorResponse(error);
+    if (auth) return auth;
     console.error("Error fetching matching schedule:", error);
-    return NextResponse.json(
-      { error: "Internal Server Error" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }
 
 export async function PUT(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url);
-    const userId = searchParams.get('userId') || 'default';
-    
-    const scheduleData = await request.json();
-    const { option, customDate } = scheduleData;
+    const user = await authenticate(request);
+    const body = await request.json().catch(() => null);
+    const option = body?.option;
+    const customDate = typeof body?.customDate === "string" ? body.customDate : undefined;
 
-    // Validate the option
-    const validOptions = ["active", "pause_week", "pause_month", "pause_custom", "pause_indefinite"];
-    if (!validOptions.includes(option)) {
-      return NextResponse.json(
-        { error: "Invalid schedule option" },
-        { status: 400 }
-      );
+    if (!OPTIONS.includes(option)) {
+      return NextResponse.json({ error: "Invalid schedule option" }, { status: 400 });
     }
-
-    // Validate custom date if provided
-    if (option === "pause_custom" && !customDate) {
-      return NextResponse.json(
-        { error: "Custom date is required for pause_custom option" },
-        { status: 400 }
-      );
-    }
-
-    // Calculate resume date
     const resumeDate = calculateResumeDate(option, customDate);
+    if (option === "pause_custom" && !resumeDate) {
+      return NextResponse.json({ error: "A valid customDate is required for pause_custom" }, { status: 400 });
+    }
 
-    const matchingSchedule: MatchingScheduleSettings = {
-      option,
-      customDate: option === "pause_custom" ? customDate : null,
-      resumeDate,
-      lastUpdated: new Date().toISOString(),
+    const data = {
+      matchingOption: option,
+      matchingCustomDate: option === "pause_custom" ? resumeDate : null,
+      matchingResumeDate: resumeDate,
     };
 
-    // Save settings (mock storage)
-    mockMatchingSchedules[userId] = matchingSchedule;
+    await ensureUser(user);
+    const row = await prisma.userSettings.upsert({
+      where: { telegramId: user.id },
+      update: data,
+      create: { telegramId: user.id, ...data },
+    });
 
-    return NextResponse.json({ 
-      success: true, 
-      message: "Matching schedule updated successfully",
-      settings: matchingSchedule
+    return NextResponse.json({
+      success: true,
+      message: "Matching schedule updated",
+      settings: fromRow(row),
     });
   } catch (error) {
+    const auth = authErrorResponse(error);
+    if (auth) return auth;
     console.error("Error saving matching schedule:", error);
-    return NextResponse.json(
-      { error: "Internal Server Error" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
-} 
+}

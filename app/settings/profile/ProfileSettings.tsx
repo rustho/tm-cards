@@ -49,14 +49,13 @@ export function ProfileSettings({
     }
   };
 
-  const handleStepComplete = (stepId: string, data: Partial<Profile>) => {
+  const handleStepComplete = (_stepId: string, data: Partial<Profile>) => {
     const updatedProfile = { ...currentProfile, ...data };
     setCurrentProfile(updatedProfile);
     setEditingStepIndex(null);
     onProfileUpdate?.(updatedProfile);
-    
-    // Show success toast
-    setToastMessage(`Updated successfully!`);
+
+    setToastMessage("Сохранено");
     setShowSuccessToast(true);
   };
 
