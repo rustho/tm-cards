@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
       include: userWithProfileInclude,
       orderBy: { updatedAt: "desc" },
     });
-    return NextResponse.json(users.map(toProfile));
+    return NextResponse.json(users.map((u) => toProfile(u)));
   } catch (error) {
     const authError = authErrorResponse(error);
     if (authError) return authError;

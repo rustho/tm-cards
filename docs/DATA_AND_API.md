@@ -25,17 +25,21 @@ set once from `startapp=ref_<code>`), `status` (`active | hidden | banned`),
 `lastMatchedAt`, timestamps.
 
 ### `Profile` (`profiles`, PK = `userId`)
-`name`, `dateOfBirth` (DATE), `gender`, `locationId` → `locations`, `goal`,
-`about`, `announcement`, `placesToVisit String[]`, `photo` (base64 data URL
-for now), `socials Json` (`{ instagram }`), `theme`, `isComplete` (set when
+`name`, `dateOfBirth` (DATE), `gender`, `locationId` → `locations`,
+`occupation` (varchar 80), `goals` (text[] of `GOAL_OPTIONS` ids, max 2,
+private: `toProfile()` returns it only with `{ includePrivate: true }`, which
+only `/api/profile` passes; legacy `goal` unused), `about`, `announcement`, `placesToVisit String[]`, `photo` (base64 data URL
+for now), `socials Json` (`{ instagram }`), `theme` (one of `PROFILE_THEMES`,
+validated on write), `isComplete` (set when
 the wizard finishes; only complete profiles are matched or listed).
 
 ### `Location` (`locations`) and `Tag` (`tags`)
 Reference lists. `Location { country, region ("" for none), isActive, sortOrder }`
-unique on `(country, region)`. `Tag { category: interest | hobby | trait,
+unique on `(country, region)`; `isActive` mirrors `LocationOption.available`. `Tag { category: interest | value | format (old `trait`/`hobby` rows inactive),
 label, isActive, sortOrder }` unique on `(category, label)`. `profile_tags`
 is the M:N table. `prisma/seed.ts` fills both from the constants in
-`models/types.ts`; unknown labels sent by clients are added on the fly.
+`models/types.ts` (`INTERESTS`, `VALUES`, `MEETING_FORMATS`, `LOCATIONS`) and
+deactivates `trait`/`hobby` tags and interest tags no longer in `INTERESTS`; unknown labels sent by clients are added on the fly.
 
 ### `UserSettings` (`user_settings`, PK = `userId`)
 Notification flags, `matchingOption` + `matchingCustomDate` +
@@ -67,6 +71,8 @@ users/profiles/locations/tags/settings/rounds/matches from the legacy
 tables (including spreadsheet-era `previousMatches` pairs into a closed
 legacy round dated 2024-12-30) and drops the legacy tables. Verified end to
 end against PGlite with sample data; apply with `pnpm db:deploy`.
+`20261008120000_profile_occupation` adds `profiles.occupation`;
+`20261008130000_profile_goals` adds `profiles.goals`.
 
 ## Authentication (`lib/auth.ts`)
 
@@ -82,12 +88,13 @@ goes through it. Dev accepts unsigned mock data; prod is strict.
 | Method & path | Who | Response |
 |---|---|---|
 | `GET /api/profile` | user | own `Profile`; 404 until something was saved |
-| `POST /api/profile` | user | partial upsert via `lib/profileService.ts`. Accepts the UI `Profile` fields (`name, dateOfBirth, country, region, goal, profile \| about, announcement, placesToVisit, instagram, photo, interests, hobbies, personalityTraits`) plus `gender, theme, isComplete` (alias `isActive`) and `referralCode` (applied once). Country+region are upserted into `locations`; tag arrays replace that category's `profile_tags`. 400 on validation, 413 on photo > 2 MB |
+| `POST /api/profile` | user | partial upsert via `lib/profileService.ts`. Accepts the UI `Profile` fields (`name, dateOfBirth, country, region, goals, profile \| about, announcement, placesToVisit, instagram, photo, occupation, interests, values, meetingFormats`) plus `gender, theme, isComplete` (alias `isActive`), `referralCode` (applied once) and write-only `skipNextRound` (boolean, upserted into `user_settings`; sent by the onboarding "first meeting" screen). Country+region are upserted into `locations`; tag arrays replace that category's `profile_tags`. 400 on validation, 413 on photo > 2 MB |
 | `GET /api/profile/[userId]` | user | another user's `Profile` (complete + active; owner/admin see incomplete) |
 | `GET /api/users[?all=1]` | admin | complete profiles (or everyone) |
 
-`Profile` shape is unchanged for the UI; `lib/profileDto.ts` builds it from
-`users` + `profiles` + `locations` + `tags`.
+`Profile` is the flat UI shape from `models/types.ts`; `lib/profileDto.ts`
+builds it from `users` + `profiles` + `locations` + `tags` (tag categories
+`interest`/`value`/`format` → `interests`/`values`/`meetingFormats`).
 
 ### Matches
 | Method & path | Who | Response |
@@ -102,7 +109,7 @@ goes through it. Dev accepts unsigned mock data; prod is strict.
 | `GET/PUT /api/settings/matching-schedule` | `{ option, customDate? }` |
 
 ### Reference
-`GET /api/reference` (user) → `{ tags: { interests, hobbies, personalityTraits },
+`GET /api/reference` (user) → `{ tags: { interests, values, meetingFormats },
 locations: [{ country, regions }] }`, same shape as `models/types.ts` constants.
 
 ### Matching, cron, bot, ops
@@ -127,5 +134,6 @@ Unchanged paths: `/api/matching` (admin: status/stats/config, `run`,
    transaction; optional Telegram notification (`notifiedAt`).
 7. Clear `skipNextRound` for everyone.
 
-Score = region (4 / 2 / 0.5) + 1 per common interest + 0.5 per hobby +
-0.25 per trait + 0.5 per common destination + `max(0, 2 − |Δage|/5)`.
+Score = region (4 / 2 / 0.5) + 1 per common interest +
+0.25 per common value + 0.5 per common meeting format + 0.5 per common destination + `max(0, 2 − |Δage|/5)`.
+`goals`, `occupation` and `theme` do not affect the score.

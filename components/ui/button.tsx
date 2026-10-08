@@ -15,12 +15,16 @@ const buttonVariants = cva(
         secondary: "bg-secondary text-secondary-foreground hover:bg-secondary/80",
         ghost: "hover:bg-accent hover:text-accent-foreground",
         link: "text-primary underline-offset-4 hover:underline",
+        // XP primary action: #296CF9 fill, white Counter 16/22 Regular, 8px radius.
+        primary: "rounded-md bg-action text-counter font-normal text-white hover:bg-action/90 active:bg-action/80",
       },
       size: {
         default: "h-10 px-4 py-2",
         sm: "h-9 rounded-md px-3",
         lg: "h-12 rounded-md px-8 text-base",
         icon: "h-10 w-10",
+        // Full-width 48px bar (343 × 48 on a 375 screen with 16px gutters).
+        block: "h-12 w-full px-4",
       },
     },
     defaultVariants: {

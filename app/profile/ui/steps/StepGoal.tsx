@@ -1,48 +1,40 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { StepContainer, SelectionCard } from "@/components";
-import { GOALS, StepProps, Goal } from "@/models/types";
-import { useWizardContext } from "../WizardContext";
-import { Controller } from "react-hook-form";
+import { MeetingGoalCard, SelectionGuidance } from "@/components/ui";
+import { GOAL_OPTIONS, MAX_GOALS, StepProps } from "@/models/types";
+import { StepWindow } from "../StepWindow";
+import { useLimitedSelection } from "../useLimitedSelection";
 
-export interface StepGoalProps extends StepProps {}
-
-export function StepGoal({ onNext }: StepGoalProps) {
-  const t = useTranslations('profile.steps.goal');
-  const { control, watch } = useWizardContext();
-  
-  const currentGoal = watch("goal") || "";
+/** Step 7: what the user wants from meetings, 1 to MAX_GOALS; private (not on the profile). */
+export function StepGoal({ onNext }: StepProps) {
+  const t = useTranslations("profile.steps.goal");
+  const { count, isSelected, isLocked, toggle } = useLimitedSelection("goals", MAX_GOALS);
 
   return (
-    <StepContainer
-      title={t('title')}
+    <StepWindow
+      title={t("title")}
       onNext={onNext}
-      nextDisabled={!currentGoal}
+      nextDisabled={count === 0}
+      nextText={count > 0 ? t("nextWithCount", { count, max: MAX_GOALS }) : undefined}
     >
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', alignItems: 'center' }}>
-        <Controller
-          name="goal"
-          control={control}
-          rules={{ required: true }}
-          render={({ field }) => (
-            <>
-              {GOALS.map((goal) => (
-                <SelectionCard
-                  key={goal}
-                  state={field.value === goal ? "selected" : "default"}
-                  type="big card"
-                  text={goal}
-                  showImage={false}
-                  showEmoji={false}
-                  showDescription={false}
-                  onClick={() => field.onChange(goal)}
-                />
-              ))}
-            </>
-          )}
-        />
+      <div className="flex flex-col gap-3">
+        <SelectionGuidance>{t("guidance", { max: MAX_GOALS })}</SelectionGuidance>
+        <p className="m-0 text-center text-body text-text-disabled">{t("privacy")}</p>
+        <div className="flex flex-col gap-2">
+          {GOAL_OPTIONS.map(({ id, emoji }) => (
+            <MeetingGoalCard
+              key={id}
+              emoji={emoji}
+              title={t(`options.${id}.title`)}
+              description={t(`options.${id}.description`)}
+              selected={isSelected(id)}
+              disabled={isLocked(id)}
+              onClick={() => toggle(id)}
+            />
+          ))}
+        </div>
       </div>
-    </StepContainer>
+    </StepWindow>
   );
 }

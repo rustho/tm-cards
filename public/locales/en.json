@@ -31,7 +31,6 @@
       "stepIndicator": "Step {current} of {total}",
       "finish": "Finish",
       "next": "Next",
-      "back": "Back",
       "loading": "Loading...",
       "saveFailed": "Could not save. Please try again."
     },
@@ -43,10 +42,10 @@
         "error": "Name must contain at least 2 characters"
       },
       "dateOfBirth": {
-        "title": "When were you born?",
-        "description": "Select your date of birth",
+        "title": "When is your birthday?",
         "placeholder": "Date of birth",
-        "ageDisplay": "Your age: {age} years",
+        "ageSummary": "{age, plural, one {# year} other {# years}}",
+        "ageHint": "Your age is not shown in your profile",
         "error": {
           "minAge": "You must be at least 18 years old",
           "maxAge": "Age cannot exceed 100 years",
@@ -54,24 +53,23 @@
         }
       },
       "occupation": {
-        "title": "What do you do for work?",
-        "description": "Enter your occupation",
-        "placeholder": "Your occupation"
+        "title": "What are you doing these days?",
+        "placeholder": "Work, studies or your own project",
+        "examplesHeading": "For example:",
+        "examples": [
+          "Product designer at a tech company",
+          "Studying architecture, working part-time as a barista",
+          "Launching my own coffee shop"
+        ]
       },
-      "personality": {
-        "title": "What describes your personality?",
-        "description": "Choose traits that describe you",
-        "error": "Select at least one personality trait"
+      "values": {
+        "title": "What do you value most in life?",
+        "guidance": "Pick 1 to {max}",
+        "nextWithCount": "Next {count}/{max}"
       },
       "interests": {
-        "title": "What interests you?",
-        "description": "Choose your interests",
-        "error": "Select at least one interest"
-      },
-      "hobbies": {
-        "title": "What are your hobbies?",
-        "description": "Choose your hobbies",
-        "error": "Select at least one hobby"
+        "title": "What are your interests and hobbies?",
+        "guidance": "Pick {min} to {max}"
       },
       "travel": {
         "title": "Where are you planning to go in the next 3 months?",
@@ -79,26 +77,50 @@
         "placeholder": "Enter cities and countries"
       },
       "about": {
-        "title": "Tell us about yourself",
-        "description": "Write a brief description about yourself",
-        "placeholder": "About yourself..."
-      },
-      "instagram": {
-        "title": "What's your Instagram?",
-        "description": "Enter your Instagram handle",
-        "placeholder": "@username"
+        "title": "Tell us what matters most about you",
+        "examplesHeading": "For example:",
+        "examples": [
+          "What matters in your life right now",
+          "What makes your ordinary days happier",
+          "What you'd like to share with others"
+        ]
       },
       "location": {
-        "title": "Where are you from?",
-        "titleCity": "And where exactly?",
-        "description": "Description some text",
-        "descriptionText": "Specify the city where you plan to look for a travel companion",
-        "selectCountry": "Select country",
-        "selectRegion": "Select region",
-        "selectCountryFirst": "Select country first"
+        "title": "Choose a location to meet",
+        "upcoming": "Coming later"
       },
       "goal": {
-        "title": "What are you here for?"
+        "title": "What are you looking for right now?",
+        "guidance": "Pick 1 to {max}",
+        "privacy": "Your choices are not shown on your profile",
+        "nextWithCount": "Next {count}/{max}",
+        "options": {
+          "close": {
+            "title": "Close connection",
+            "description": "Meet someone you can truly be yourself with"
+          },
+          "casual": {
+            "title": "Easy company",
+            "description": "Grab breakfast, have a coffee or just walk around the city together"
+          },
+          "romance": {
+            "title": "Something more",
+            "description": "Go on a date, text until morning or even fall in love"
+          },
+          "hobbies": {
+            "title": "Shared hobbies",
+            "description": "Find people for your favourite activities or new hobbies"
+          },
+          "adventures": {
+            "title": "Adventures together",
+            "description": "Meet someone to explore new places, cities and countries with"
+          }
+        }
+      },
+      "meetingFormat": {
+        "title": "How would you like to spend the meeting?",
+        "guidance": "Pick 1 to {max}",
+        "nextWithCount": "Next {count}/{max}"
       },
       "request": {
         "title": "What are you looking for in a travel companion?",
@@ -106,39 +128,43 @@
         "placeholder": "I'm looking for..."
       },
       "photo": {
-        "title": "Add your photo",
-        "description": "Upload a profile photo",
-        "upload": "Upload Photo",
-        "change": "Change Photo"
+        "title": "Upload your profile photo",
+        "upload": "Upload photo",
+        "change": "Change photo",
+        "hint": "Pick an image where you are\nclearly visible and there\nare no other people",
+        "error": "Couldn't process this photo, try another one"
       },
       "review": {
-        "title": "Review your information",
-        "description": "Make sure all information is correct",
-        "name": "Name:",
-        "age": "Age:",
-        "occupation": "Occupation:",
-        "personality": "Personality:",
-        "interests": "Interests:",
-        "hobbies": "Hobbies:",
-        "travel": "Travel plans:",
-        "about": "About:",
-        "instagram": "Instagram:",
-        "location": "City:",
-        "request": "Looking for:"
+        "title": "Thank you, {name}!",
+        "titleNoName": "Thank you!",
+        "text": "We're reviewing your profile before your first introduction."
+      },
+      "theme": {
+        "title": "Choose your profile design",
+        "select": "Choose",
+        "prev": "Previous design",
+        "next": "Next design"
+      },
+      "firstMeeting": {
+        "title": "Your first meeting —\nno subscription",
+        "trial": "You can try your first meeting for free within a month after filling in your profile.",
+        "noBurn": "If you tap “I want to meet” and your partner doesn't, the meeting isn't lost. You can try again next week.",
+        "question": "Want to meet someone new this week?",
+        "yes": "Yes, let's go!",
+        "no": "Not this time"
       }
     },
     "view": {
       "loading": "Loading...",
       "notFound": "Profile not found",
       "location": "Location",
-      "personality": "Personality",
+      "values": "Values",
+      "meetingFormats": "Meeting format",
       "interests": "Interests",
-      "hobbies": "Hobbies",
       "travelStyle": "Travel Style",
       "instagram": "Instagram",
       "lookingFor": "Looking for",
       "writeToMatch": "Write to Match",
-      "goal": "Goal",
       "about": "About"
     }
   },
@@ -170,7 +196,8 @@
     "next": "Next",
     "previous": "Previous",
     "submit": "Submit",
-    "close": "Close"
+    "close": "Close",
+    "minimize": "Minimize"
   },
   "errors": {
     "pageNotFound": "Page not found",
@@ -255,10 +282,19 @@
       "saveFailed": "Failed to save schedule. Please try again."
     },
     "common": {
-      "back": "← Back",
       "loading": "Loading...",
       "save": "Save",
       "cancel": "Cancel"
+    }
+  },
+  "profileCard": {
+    "templates": {
+      "yoga": "Yoga",
+      "sky": "Sky",
+      "music": "Music",
+      "art": "Art",
+      "retro": "Surf",
+      "notebook": "Code"
     }
   }
 }

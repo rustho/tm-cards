@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
       prisma.location.findMany({ where: { isActive: true }, orderBy: [{ sortOrder: "asc" }, { country: "asc" }, { region: "asc" }] }),
     ]);
 
-    const tagsByField: Record<string, string[]> = { interests: [], hobbies: [], personalityTraits: [] };
+    const tagsByField: Record<string, string[]> = { interests: [], values: [], meetingFormats: [] };
     for (const tag of tags) {
       const field = TAG_CATEGORIES[tag.category as TagCategory];
       if (field) tagsByField[field].push(tag.label);

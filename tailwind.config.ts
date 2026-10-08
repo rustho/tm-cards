@@ -1,12 +1,19 @@
 import type { Config } from "tailwindcss";
 import animate from "tailwindcss-animate";
 
+const hsl = (token: string) => `hsl(var(--${token}) / <alpha-value>)`;
+
 /**
- * Two layers of tokens live here:
- * - shadcn/ui semantic tokens (background, foreground, primary, ...) backed by
- *   HSL CSS variables in app/_assets/globals.css, switched by the `.dark` class.
- * - the TravelMate brand palette (primary-50..900, accent-*, bg-*, muted-*) kept
- *   for existing components and gradients.
+ * XP UI Foundations (Figma "00 — XP Foundations"). Every color is a CSS
+ * variable from app/_assets/globals.css, so the `.dark` class (toggled from the
+ * Telegram theme in Root.tsx) switches the whole palette.
+ *
+ * Colors:     background, card (surface), foreground, muted-foreground,
+ *             primary (+ light, muted), success (+ bg), destructive (= danger), border.
+ * Type:       text-title 20/26 bold, text-option 17/24, text-counter 16/22, text-body 15/20.
+ * Spacing:    4 · 6 · 8 · 11 · 12 · 16 · 20 · 24 px → 1 · 1.5 · 2 · 2.75 · 3 · 4 · 5 · 6.
+ * Radius:     rounded-xs 2 · rounded-sm 4 · rounded-md 8 · rounded-xl 26 (rounded-lg = 8 for shadcn).
+ * Stroke:     1px (`border`).
  */
 const config: Config = {
   darkMode: ["class"],
@@ -22,96 +29,83 @@ const config: Config = {
     },
     extend: {
       colors: {
-        border: "hsl(var(--border))",
-        input: "hsl(var(--input))",
-        ring: "hsl(var(--ring))",
-        background: "hsl(var(--background))",
-        foreground: "hsl(var(--foreground))",
+        border: hsl("border"),
+        input: hsl("input"),
+        ring: hsl("ring"),
+        background: hsl("background"),
+        foreground: hsl("foreground"),
+        surface: hsl("card"),
         card: {
-          DEFAULT: "hsl(var(--card))",
-          foreground: "hsl(var(--card-foreground))",
+          DEFAULT: hsl("card"),
+          foreground: hsl("card-foreground"),
         },
         popover: {
-          DEFAULT: "hsl(var(--popover))",
-          foreground: "hsl(var(--popover-foreground))",
-        },
-        destructive: {
-          DEFAULT: "hsl(var(--destructive))",
-          foreground: "hsl(var(--destructive-foreground))",
+          DEFAULT: hsl("popover"),
+          foreground: hsl("popover-foreground"),
         },
         primary: {
-          DEFAULT: "hsl(var(--primary))",
-          foreground: "hsl(var(--primary-foreground))",
-          light: "#7FA7D1",
-          dark: "#4A7AA3",
-          50: "#F0F6FC",
-          100: "#E1EDF9",
-          200: "#C4DBF3",
-          300: "#A7C8ED",
-          400: "#8AB6E7",
-          500: "#5D90C0",
-          600: "#4A7AA3",
-          700: "#3A6085",
-          800: "#2A4768",
-          900: "#1A2F4A",
+          DEFAULT: hsl("primary"),
+          foreground: hsl("primary-foreground"),
+          light: hsl("primary-light"),
+          muted: hsl("primary-muted"),
         },
         secondary: {
-          DEFAULT: "hsl(var(--secondary))",
-          foreground: "hsl(var(--secondary-foreground))",
-          light: "#C4D4E5",
-          dark: "#9ABACF",
-          500: "#AFC7DA",
-        },
-        accent: {
-          DEFAULT: "hsl(var(--accent))",
-          foreground: "hsl(var(--accent-foreground))",
-          light: "#A1CDB9",
-          dark: "#71B3A1",
-          500: "#89C3AD",
+          DEFAULT: hsl("secondary"),
+          foreground: hsl("secondary-foreground"),
         },
         muted: {
-          DEFAULT: "hsl(var(--muted))",
-          foreground: "hsl(var(--muted-foreground))",
-          500: "#8DA4B1",
+          DEFAULT: hsl("muted"),
+          foreground: hsl("muted-foreground"),
         },
-        bg: {
-          DEFAULT: "#D4E2EC",
-          light: "#E1EBF3",
-          dark: "#C7D9E5",
-          primary: "#D4E2EC",
-          secondary: "#EAF1F6",
-          tertiary: "#F5F8FA",
+        accent: {
+          DEFAULT: hsl("accent"),
+          foreground: hsl("accent-foreground"),
         },
-        success: { DEFAULT: "#10B981", light: "#34D399", dark: "#059669" },
-        warning: { DEFAULT: "#F59E0B", light: "#FBBF24", dark: "#D97706" },
-        error: { DEFAULT: "#EF4444", light: "#F87171", dark: "#DC2626" },
-        info: { DEFAULT: "#5D90C0", light: "#7FA7D1", dark: "#4A7AA3" },
-      },
-      borderRadius: {
-        lg: "var(--radius)",
-        md: "calc(var(--radius) - 2px)",
-        sm: "calc(var(--radius) - 4px)",
-        brand: "12px",
-        button: "8px",
-        input: "6px",
+        success: {
+          DEFAULT: hsl("success"),
+          foreground: hsl("success-foreground"),
+          bg: hsl("success-bg"),
+        },
+        destructive: {
+          DEFAULT: hsl("destructive"),
+          foreground: hsl("destructive-foreground"),
+        },
+        danger: {
+          DEFAULT: hsl("destructive"),
+          foreground: hsl("destructive-foreground"),
+        },
+        action: hsl("color-action"),
+        "icon-disabled": hsl("icon-disabled"),
+        divider: hsl("divider"),
+        "text-disabled": hsl("text-disabled"),
+        // Legacy names still used by older screens; not part of the foundation.
+        error: hsl("destructive"),
+        info: hsl("primary"),
+        warning: "#F59E0B",
       },
       fontFamily: {
-        sans: ["var(--font-handjet)", "Rubik", "system-ui", "sans-serif"],
-        display: ["Rubik", "system-ui", "sans-serif"],
+        sans: ["var(--font-inter)", "system-ui", "-apple-system", "sans-serif"],
       },
-      backgroundImage: {
-        "gradient-radial": "radial-gradient(var(--tw-gradient-stops))",
-        "gradient-conic": "conic-gradient(from 180deg at 50% 50%, var(--tw-gradient-stops))",
-        "gradient-primary": "linear-gradient(135deg, #5D90C0, #4A7AA3)",
-        "gradient-secondary": "linear-gradient(135deg, #AFC7DA, #9ABACF)",
-        "gradient-accent": "linear-gradient(135deg, #89C3AD, #71B3A1)",
-        "gradient-brand": "linear-gradient(135deg, #5D90C0, #89C3AD)",
+      fontSize: {
+        title: ["20px", { lineHeight: "26px", fontWeight: "700" }],
+        option: ["17px", { lineHeight: "24px" }],
+        counter: ["16px", { lineHeight: "22px" }],
+        body: ["15px", { lineHeight: "20px" }],
+        chip: ["14px", { lineHeight: "20px" }],
+        caption: ["13px", { lineHeight: "18px" }],
       },
-      boxShadow: {
-        soft: "0 2px 15px -3px rgba(0, 0, 0, 0.07), 0 10px 20px -2px rgba(0, 0, 0, 0.04)",
-        medium: "0 4px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 25px -5px rgba(0, 0, 0, 0.04)",
-        strong: "0 10px 40px -15px rgba(0, 0, 0, 0.2)",
-        brand: "0 8px 32px -8px rgba(93, 144, 192, 0.2)",
+      spacing: {
+        "2.75": "11px",
+      },
+      borderRadius: {
+        xs: "var(--radius-xs)",
+        sm: "var(--radius-sm)",
+        md: "var(--radius-md)",
+        lg: "var(--radius-md)",
+        xl: "var(--radius-xl)",
+      },
+      borderWidth: {
+        DEFAULT: "1px",
       },
       keyframes: {
         "accordion-down": { from: { height: "0" }, to: { height: "var(--radix-accordion-content-height)" } },

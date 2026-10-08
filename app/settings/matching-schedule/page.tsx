@@ -3,9 +3,9 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { ChevronLeft } from "lucide-react";
 import { settingsService } from "@/lib/settingsService";
 import type { MatchingScheduleSettings } from "@/models/types";
+import { BackButton } from "@/components/ui/back-button";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
@@ -84,9 +84,7 @@ export default function MatchingSchedulePage() {
   return (
     <div className="container p-4 pb-24">
       <div className="mb-6 flex items-center gap-2">
-        <Button variant="ghost" size="sm" onClick={() => router.back()}>
-          <ChevronLeft /> {tCommon("back")}
-        </Button>
+        <BackButton />
         <h1 className="text-2xl font-bold">{t("title")}</h1>
       </div>
 

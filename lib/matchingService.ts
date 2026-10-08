@@ -2,7 +2,7 @@ import type { Prisma } from "@prisma/client";
 import prisma from "./prisma";
 import { notifyUser } from "./bot";
 import { userWithProfileInclude, type UserWithProfile } from "./profileDto";
-import { HOBBIES, INTERESTS, LOCATIONS, PERSONALITY_TRAITS } from "@/models/types";
+import { INTERESTS, LOCATIONS, MEETING_FORMATS, VALUES } from "@/models/types";
 
 /**
  * Matching engine. Once per weekly round it pairs complete, active profiles
@@ -28,8 +28,8 @@ interface Candidate {
   country: string;
   region: string;
   interests: string[];
-  hobbies: string[];
-  traits: string[];
+  values: string[];
+  meetingFormats: string[];
   placesToVisit: string[];
   previousPartners: Set<string>;
   preferredAgeMin: number;
@@ -115,13 +115,13 @@ class MatchingService {
     factors.push({ factor: "common_interests", score: interestScore });
     total += interestScore;
 
-    const hobbyScore = common(a.hobbies, b.hobbies) * 0.5;
-    factors.push({ factor: "common_hobbies", score: hobbyScore });
-    total += hobbyScore;
+    const valueScore = common(a.values, b.values) * 0.25;
+    factors.push({ factor: "common_values", score: valueScore });
+    total += valueScore;
 
-    const traitScore = common(a.traits, b.traits) * 0.25;
-    factors.push({ factor: "common_traits", score: traitScore });
-    total += traitScore;
+    const formatScore = common(a.meetingFormats, b.meetingFormats) * 0.5;
+    factors.push({ factor: "common_meeting_formats", score: formatScore });
+    total += formatScore;
 
     const destinationScore = common(a.placesToVisit, b.placesToVisit) * 0.5;
     factors.push({ factor: "travel_destinations", score: destinationScore });
@@ -195,8 +195,8 @@ class MatchingService {
       country: p.location?.country ?? "",
       region: p.location?.region ?? "",
       interests: tags("interest"),
-      hobbies: tags("hobby"),
-      traits: tags("trait"),
+      values: tags("value"),
+      meetingFormats: tags("format"),
       placesToVisit: p.placesToVisit,
       previousPartners,
       preferredAgeMin: user.settings?.preferredAgeMin ?? 18,
@@ -365,17 +365,17 @@ class MatchingService {
     const created: string[] = [];
     try {
       for (let i = 1; i <= count; i++) {
-        const loc = LOCATIONS[Math.floor(Math.random() * LOCATIONS.length)];
-        const region = loc.regions[Math.floor(Math.random() * loc.regions.length)];
+        const available = LOCATIONS.filter((l) => l.available);
+        const { country, region } = available[Math.floor(Math.random() * available.length)];
         const location = await prisma.location.upsert({
-          where: { country_region: { country: loc.country, region } },
+          where: { country_region: { country, region } },
           update: {},
-          create: { country: loc.country, region },
+          create: { country, region },
         });
         const labels = [
-          ...pick(INTERESTS, 3).map((label) => ({ category: "interest", label })),
-          ...pick(HOBBIES, 2).map((label) => ({ category: "hobby", label })),
-          ...pick(PERSONALITY_TRAITS, 2).map((label) => ({ category: "trait", label })),
+          ...pick(INTERESTS, 5).map((label) => ({ category: "interest", label })),
+          ...pick(VALUES, 2).map((label) => ({ category: "value", label })),
+          ...pick(MEETING_FORMATS, 2).map((label) => ({ category: "format", label })),
         ];
         await prisma.tag.createMany({ data: labels, skipDuplicates: true });
         const tags = await prisma.tag.findMany({
@@ -394,7 +394,7 @@ class MatchingService {
                 dateOfBirth: new Date(Date.UTC(birthYear, 0, 1)),
                 gender: ["male", "female"][Math.floor(Math.random() * 2)],
                 locationId: location.id,
-                placesToVisit: pick(LOCATIONS.map((l) => l.country), 2),
+                placesToVisit: pick(LOCATIONS.map((l) => l.label), 2),
                 isComplete: true,
                 tags: { create: tags.map((t) => ({ tagId: t.id })) },
               },

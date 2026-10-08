@@ -1,26 +1,22 @@
 import { WizardStepConfig } from "./FlexibleWizard";
-import { StepCountry } from "./steps/StepCountry";
-import { StepCity } from "./steps/StepCity";
+import { StepLocation } from "./steps/StepLocation";
 import { StepName } from "./steps/StepName";
 import { StepDateOfBirth } from "./steps/StepDateOfBirth";
-import { StepPersonality } from "./steps/StepPersonality";
+import { StepOccupation } from "./steps/StepOccupation";
+import { StepValues } from "./steps/StepValues";
 import { StepInterests } from "./steps/StepInterests";
-import { StepHobbies } from "./steps/StepHobbies";
 import { StepGoal } from "./steps/StepGoal";
+import { StepMeetingFormat } from "./steps/StepMeetingFormat";
 import { StepPhoto } from "./steps/StepPhoto";
-import { StepSocials } from "./steps/StepSocials";
 import { StepAbout } from "./steps/StepAbout";
+import { StepTheme } from "./steps/StepTheme";
+import { StepFirstMeeting } from "./steps/StepFirstMeeting";
 
 export const ONBOARDING_STEPS: WizardStepConfig[] = [
   {
-    id: "country",
-    component: StepCountry,
-    title: "Country",
-  },
-  {
-    id: "region",
-    component: StepCity,
-    title: "City",
+    id: "location",
+    component: StepLocation,
+    title: "Location",
   },
   {
     id: "name",
@@ -33,9 +29,14 @@ export const ONBOARDING_STEPS: WizardStepConfig[] = [
     title: "Date of Birth",
   },
   {
-    id: "personality",
-    component: StepPersonality,
-    title: "Personality",
+    id: "occupation",
+    component: StepOccupation,
+    title: "Occupation",
+  },
+  {
+    id: "values",
+    component: StepValues,
+    title: "Values",
   },
   {
     id: "interests",
@@ -43,14 +44,19 @@ export const ONBOARDING_STEPS: WizardStepConfig[] = [
     title: "Interests",
   },
   {
-    id: "hobbies",
-    component: StepHobbies,
-    title: "Hobbies",
-  },
-  {
     id: "goal",
     component: StepGoal,
     title: "Goal",
+  },
+  {
+    id: "meetingFormat",
+    component: StepMeetingFormat,
+    title: "Meeting format",
+  },
+  {
+    id: "about",
+    component: StepAbout,
+    title: "About",
   },
   {
     id: "photo",
@@ -58,13 +64,15 @@ export const ONBOARDING_STEPS: WizardStepConfig[] = [
     title: "Photo",
   },
   {
-    id: "socials",
-    component: StepSocials,
-    title: "Social Networks",
+    id: "theme",
+    component: StepTheme,
+    title: "Profile design",
+    countsInProgress: false,
   },
   {
-    id: "about",
-    component: StepAbout,
-    title: "About",
+    id: "firstMeeting",
+    component: StepFirstMeeting,
+    title: "First meeting",
+    countsInProgress: false,
   },
 ];

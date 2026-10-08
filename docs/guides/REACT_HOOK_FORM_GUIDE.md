@@ -11,15 +11,16 @@ The wizard now uses **react-hook-form** for form state management. This provides
 
 ## Key Benefits
 
-### 1. StepCity automatically reacts to StepCountry changes
+### 1. Every step sees what earlier steps wrote
 
 ```typescript
-// StepCountry.tsx
-const { register, setValue } = useWizardContext();
-setValue("country", "USA"); // Updates form state
+// StepLocation.tsx: one card writes two fields
+const { watch, setValue } = useWizardContext();
+setValue("country", location.country, { shouldDirty: true });
+setValue("region", location.region, { shouldDirty: true });
 
-// StepCity.tsx - automatically receives the update!
-const country = watch("country"); // "USA" - reactive!
+// Any later step (or the autosave in Wizard.tsx) reads them reactively
+const country = watch("country"); // "Сербия"
 ```
 
 ### 2. No prop drilling
@@ -46,78 +47,71 @@ export function StepName({ onNext }: StepProps) {
   const name = watch("name") || "";
 
   return (
-    <StepContainer title="Name" onNext={onNext} nextDisabled={!name}>
-      <Input
+    <StepWindow title="Name" onNext={onNext} nextDisabled={name.trim().length < 2}>
+      <TextInput
         {...register("name", {
           required: true,
-          minLength: { value: 2, message: "Name must be at least 2 characters" }
+          validate: (v) => (v ?? "").trim().length >= 2 || "At least 2 characters",
         })}
+        error={Boolean(errors.name)}
       />
-      {errors.name && <div>{errors.name.message}</div>}
-    </StepContainer>
+      {errors.name && <p className="m-0 text-caption text-destructive">{errors.name.message}</p>}
+    </StepWindow>
   );
 }
 ```
 
-### Watching Fields (Cross-Step Dependencies)
+### Watching and Setting Several Fields
 
 ```typescript
-// StepCity watches country from StepCountry
-export function StepCity({ onNext }: StepProps) {
-  const { watch, setValue, register } = useWizardContext();
-  
-  // Watch country field - automatically updates when StepCountry changes it!
-  const country = watch("country");
-  const region = watch("region") || "";
+// StepLocation: country + region come from one LocationOption
+export function StepLocation({ onNext }: StepProps) {
+  const { watch, setValue } = useWizardContext();
 
-  // Reset region when country changes
-  useEffect(() => {
-    if (country && region) {
-      const validRegions = getRegionsForCountry(country);
-      if (!validRegions.includes(region)) {
-        setValue("region", "");
-      }
-    }
-  }, [country, region, setValue]);
+  const country = watch("country") || "";
+  const region = watch("region") || "";
+  const selected = AVAILABLE.find((l) => l.country === country && l.region === region);
 
   return (
-    <Select
-      {...register("region")}
-      value={region}
-      disabled={!country}
-    >
-      {/* options */}
-    </Select>
+    <StepWindow title="Location" onNext={onNext} nextDisabled={!selected}>
+      {AVAILABLE.map((location) => (
+        <CountryCard
+          key={location.label}
+          label={location.label}
+          state={location === selected ? "selected" : "default"}
+          onClick={() => {
+            setValue("country", location.country, { shouldDirty: true });
+            setValue("region", location.region, { shouldDirty: true });
+          }}
+        />
+      ))}
+    </StepWindow>
   );
 }
 ```
 
 ### Array Fields (Multi-Select)
 
-```typescript
-export function StepPersonality({ onNext }: StepProps) {
-  const { watch, setValue } = useWizardContext();
-  const traits = watch("personalityTraits") || [];
+`useLimitedSelection(field, max)` (`app/profile/ui/useLimitedSelection.ts`)
+wraps `watch` + `setValue` for any `string[]` field of `Profile`:
 
-  const handleToggle = (trait: string) => {
-    if (traits.includes(trait)) {
-      setValue("personalityTraits", traits.filter(t => t !== trait));
-    } else if (traits.length < 4) {
-      setValue("personalityTraits", [...traits, trait]);
-    }
-  };
+```typescript
+export function StepValues({ onNext }: StepProps) {
+  const { count, isSelected, isLocked, toggle } = useLimitedSelection("values", MAX_VALUES);
 
   return (
-    <SelectionGrid>
-      {TRAITS.map(trait => (
-        <SelectedButton
-          selected={traits.includes(trait)}
-          onClick={() => handleToggle(trait)}
-        >
-          {trait}
-        </SelectedButton>
+    <StepWindow title="Values" onNext={onNext} nextDisabled={count === 0}>
+      {VALUE_OPTIONS.map(({ label, emoji }) => (
+        <ListItem
+          key={label}
+          label={label}
+          icon={emoji}
+          selected={isSelected(label)}
+          disabled={isLocked(label)} // locked once MAX_VALUES are picked
+          onClick={() => toggle(label)}
+        />
       ))}
-    </SelectionGrid>
+    </StepWindow>
   );
 }
 ```
@@ -148,7 +142,7 @@ Returns react-hook-form's `UseFormReturn` plus wizard-specific methods:
 
 #### Register an input
 ```typescript
-<Input {...register("name", { required: true })} />
+<TextInput {...register("name", { required: true })} />
 ```
 
 #### Watch a field
@@ -158,12 +152,12 @@ const name = watch("name");
 
 #### Watch multiple fields
 ```typescript
-const { name, country, region } = watch(["name", "country", "region"]);
+const [name, country, region] = watch(["name", "country", "region"]);
 ```
 
 #### Set a value
 ```typescript
-setValue("country", "USA", { shouldValidate: true });
+setValue("country", "Сербия", { shouldDirty: true });
 ```
 
 #### Get all values
@@ -179,7 +173,7 @@ export function StepName({ data, onUpdate, onNext }: StepProps) {
   const name = data.name || "";
   const handleChange = (e) => onUpdate({ name: e.target.value });
   
-  return <Input value={name} onChange={handleChange} />;
+  return <input value={name} onChange={handleChange} />;
 }
 ```
 
@@ -189,17 +183,15 @@ export function StepName({ onNext }: StepProps) {
   const { register, watch } = useWizardContext();
   const name = watch("name") || "";
   
-  return <Input {...register("name")} />;
+  return <TextInput {...register("name")} />;
 }
 ```
 
-## Backward Compatibility
+## No Backward Compatibility
 
-The wizard still supports the old prop-based pattern for existing steps:
-- `data` prop is still passed (contains current form values)
-- `onUpdate` prop still works (updates form state)
-
-But new steps should use react-hook-form directly for better performance and reactivity.
+The old prop-based pattern is gone: `StepProps` is just `{ onNext }` and
+`FlexibleWizard` passes only `onNext` plus the step's optional `props` from
+`wizardConfig.ts`. All state goes through `useWizardContext()`.
 
 ## Example: Complete Step
 
@@ -207,39 +199,44 @@ But new steps should use react-hook-form directly for better performance and rea
 "use client";
 
 import { useTranslations } from "next-intl";
-import { Input, StepContainer } from "@/components";
+import { TextInput } from "@/components/ui";
 import { StepProps } from "@/models/types";
 import { useWizardContext } from "../WizardContext";
+import { StepWindow } from "../StepWindow";
 
 export function StepName({ onNext }: StepProps) {
-  const t = useTranslations('profile.steps.name');
+  const t = useTranslations("profile.steps.name");
   const { register, watch, formState: { errors } } = useWizardContext();
-  
+
   const name = watch("name") || "";
+  const valid = name.trim().length >= 2;
 
   return (
-    <StepContainer
-      title={t('title')}
-      onNext={onNext}
-      nextDisabled={!name || name.trim().length < 2}
-    >
-      <Input
-        {...register("name", {
-          required: true,
-          minLength: {
-            value: 2,
-            message: t('error')
-          }
-        })}
-        placeholder={t('placeholder')}
-        maxLength={50}
-      />
-      {errors.name && (
-        <div className="input-error-text">
-          {errors.name.message}
-        </div>
-      )}
-    </StepContainer>
+    <StepWindow title={t("title")} onNext={onNext} nextDisabled={!valid}>
+      <form
+        className="flex flex-col gap-2"
+        onSubmit={(event) => {
+          event.preventDefault();
+          if (valid) onNext();
+        }}
+      >
+        <TextInput
+          {...register("name", {
+            required: true,
+            validate: (value) => (value ?? "").trim().length >= 2 || t("error"),
+          })}
+          placeholder={t("placeholder")}
+          maxLength={50}
+          autoComplete="given-name"
+          enterKeyHint="next"
+          autoFocus
+          error={Boolean(errors.name)}
+        />
+        {errors.name && (
+          <p className="m-0 px-1 text-caption text-destructive">{errors.name.message || t("error")}</p>
+        )}
+      </form>
+    </StepWindow>
   );
 }
 ```

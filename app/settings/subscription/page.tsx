@@ -1,22 +1,16 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { ChevronLeft } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { BackButton } from "@/components/ui/back-button";
 import { Card } from "@/components/ui/card";
 
 export default function Subscription() {
-  const router = useRouter();
   const t = useTranslations('settings.subscription');
-  const tCommon = useTranslations('settings.common');
 
   return (
     <div className="container p-4 pb-24">
       <div className="flex items-center mb-6">
-        <Button variant="ghost" size="sm" onClick={() => router.back()} className="mr-2">
-          <ChevronLeft /> {tCommon('back')}
-        </Button>
+        <BackButton className="mr-2" />
         <h1 className="text-2xl font-bold">{t('title')}</h1>
       </div>
 
