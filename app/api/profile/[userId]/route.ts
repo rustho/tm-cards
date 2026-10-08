@@ -1,23 +1,25 @@
 import { NextRequest, NextResponse } from "next/server";
-import prisma from "@/lib/prisma";
 import { authenticate, authErrorResponse } from "@/lib/auth";
 import { toProfile } from "@/lib/profileDto";
+import { getProfileByTelegramId } from "@/lib/profileService";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
-/** GET /api/profile/[userId] — public profile of another user (authenticated users only). */
+/** GET /api/profile/[userId] — another user's public profile (userId = Telegram id). */
 export async function GET(request: NextRequest, { params }: { params: { userId: string } }) {
   try {
-    await authenticate(request);
-    const row = await prisma.matchingUser.findUnique({ where: { telegramId: params.userId } });
-    if (!row || !row.isActive) {
+    const auth = await authenticate(request);
+    const user = await getProfileByTelegramId(params.userId);
+    const visible =
+      user?.profile && user.status === "active" && (user.profile.isComplete || auth.isAdmin || auth.id === params.userId);
+    if (!user || !visible) {
       return NextResponse.json({ error: "Profile not found" }, { status: 404 });
     }
-    return NextResponse.json(toProfile(row));
+    return NextResponse.json(toProfile(user));
   } catch (error) {
-    const auth = authErrorResponse(error);
-    if (auth) return auth;
+    const authError = authErrorResponse(error);
+    if (authError) return authError;
     console.error("Error fetching profile:", error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }

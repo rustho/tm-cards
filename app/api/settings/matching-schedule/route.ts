@@ -54,7 +54,8 @@ function fromRow(row: {
 export async function GET(request: NextRequest) {
   try {
     const user = await authenticate(request);
-    const row = await prisma.userSettings.findUnique({ where: { telegramId: user.id } });
+    const account = await prisma.user.findUnique({ where: { telegramId: user.id } });
+    const row = account ? await prisma.userSettings.findUnique({ where: { userId: account.id } }) : null;
     const settings: MatchingScheduleSettings = row
       ? fromRow(row)
       : { option: "active", customDate: null, resumeDate: null, lastUpdated: new Date().toISOString() };
@@ -88,11 +89,11 @@ export async function PUT(request: NextRequest) {
       matchingResumeDate: resumeDate,
     };
 
-    await ensureUser(user);
+    const account = await ensureUser(user);
     const row = await prisma.userSettings.upsert({
-      where: { telegramId: user.id },
+      where: { userId: account.id },
       update: data,
-      create: { telegramId: user.id, ...data },
+      create: { userId: account.id, ...data },
     });
 
     return NextResponse.json({

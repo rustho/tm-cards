@@ -33,13 +33,20 @@ pnpm db:deploy                   # apply committed migrations (CI / prod)
 pnpm db:studio
 ```
 
-The `20261007120000_user_settings_unique_matches` migration was written by
-hand (the Supabase project was unreachable at the time) and has **not been
-applied yet**. Run `pnpm db:deploy` once the DB is up; it dedupes
-`MatchResult` pairs before adding the unique index.
+Two migrations are pending on the shared database (both written offline
+because Supabase port 5432 was unreachable from the dev machine):
+`20261007120000_user_settings_unique_matches` and
+`20261008090000_relational_model`. The second one **backfills and drops**
+the legacy `MatchingUser`/`MatchResult`/`UserSettings` tables, so take a
+backup first, then:
 
-Seed data: `POST /api/matching?action=create-mock-users` (admin) inserts
-fake users with the same Russian option lists as real profiles.
+```bash
+pnpm db:deploy   # applies both
+pnpm db:seed     # tags + locations reference lists
+```
+
+Fake data: `POST /api/matching?action=create-mock-users` (admin) creates
+complete profiles with real tags and locations.
 
 ## Running
 

@@ -1,140 +1,131 @@
 # Data, auth and API
 
-Verified on branch `feature/platform-upgrade`.
+Verified on branch `feature/relational-schema`.
 
 ## Store
 
-One store: PostgreSQL (Supabase) through Prisma (`lib/prisma.ts`). Three
-tables, all keyed by the Telegram user id (`telegramId`, string).
+PostgreSQL (Supabase) through Prisma (`lib/prisma.ts`). Prisma models are
+PascalCase, tables are snake_case via `@@map`. Internal foreign keys use
+`users.id` (uuid); the API addresses people by `users.telegramId`.
 
-### `MatchingUser`
+```
+users ──1:1── profiles ──M:N── tags            (profile_tags)
+  │              └──N:1── locations
+  ├──1:1── user_settings
+  ├──1:N── subscriptions ──1:N── payments ; subscriptions ──N:1── plans
+  ├──self── referrer (users.referrerId)
+  └──N:N── matches (user1Id/user2Id) ──N:1── match_rounds
+                 └──1:N── match_feedback
+```
 
-| Field | Type | Notes |
-|---|---|---|
-| `id` | uuid | PK |
-| `telegramId` | String @unique | the user key everywhere |
-| `username`, `name` | String? | seeded from Telegram by `Wizard` / `ensureUser()` |
-| `age` | Int? | computed from `dateOfBirth` in `POST /api/profile` |
-| `dateOfBirth` | String? | `YYYY-MM-DD` (or `DD.MM.YYYY`, parsed for age) |
-| `gender` | String? | not set by the UI yet |
-| `country`, `region` | String? | Russian labels from `LOCATIONS` |
-| `interests`, `hobbies`, `personalityTraits` | String[] | max 4 each in the UI |
-| `placesToVisit` | String[] | API accepts array or comma string; responses join with `, ` |
-| `instagram`, `photo`, `announcement`, `goal`, `profile` | String? | `photo` is a base64 data URL (≤ 2 000 000 chars); `profile` = "about" |
-| `isActive` | Boolean =true | set `true` when the wizard finishes; read routes hide inactive users |
-| `lastMatchTime`, `totalMatches`, `previousMatches: String[]` | | maintained by `runMatching()` |
-| `skip` | Boolean | excluded from pairing |
-| `preferredAgeMin/Max` (18/65), `preferredGender` ("any") | | not set by the UI yet |
-| `settings` | relation | optional `UserSettings` |
+### `User` (`users`)
+`telegramId` unique, `username`, `firstName`, `lastName`, `languageCode`,
+`referralCode` unique (cuid, generated on create), `referrerId` (self FK,
+set once from `startapp=ref_<code>`), `status` (`active | hidden | banned`),
+`lastMatchedAt`, timestamps.
 
-### `UserSettings` (1:1, created lazily)
+### `Profile` (`profiles`, PK = `userId`)
+`name`, `dateOfBirth` (DATE), `gender`, `locationId` → `locations`, `goal`,
+`about`, `announcement`, `placesToVisit String[]`, `photo` (base64 data URL
+for now), `socials Json` (`{ instagram }`), `theme`, `isComplete` (set when
+the wizard finishes; only complete profiles are matched or listed).
 
-`telegramId` PK/FK (cascade), `notifyNewMatches`, `notifyMessages`,
-`notifyProfileViews`, `notifyGameInvites`, `notifyWeeklyDigest` (booleans),
-`matchingOption` (`active | pause_week | pause_month | pause_custom |
-pause_indefinite`), `matchingCustomDate`, `matchingResumeDate`,
-`createdAt`, `updatedAt`. `runMatching()` skips users whose option is not
-`active` and auto-resets options whose `matchingResumeDate` has passed.
+### `Location` (`locations`) and `Tag` (`tags`)
+Reference lists. `Location { country, region ("" for none), isActive, sortOrder }`
+unique on `(country, region)`. `Tag { category: interest | hobby | trait,
+label, isActive, sortOrder }` unique on `(category, label)`. `profile_tags`
+is the M:N table. `prisma/seed.ts` fills both from the constants in
+`models/types.ts`; unknown labels sent by clients are added on the fly.
 
-### `MatchResult`
+### `UserSettings` (`user_settings`, PK = `userId`)
+Notification flags, `matchingOption` + `matchingCustomDate` +
+`matchingResumeDate`, matching preferences `preferredAgeMin/Max`,
+`preferredGender`, `skipNextRound` (consumed by the next run).
 
-`user1Id`, `user2Id` (FK → `MatchingUser.telegramId`, stored with
-`user1Id < user2Id`, **unique pair**), `compatibilityScore`,
-`matchingFactors` Json (`[{factor, score}]`), `matchingRound`,
-`status` (`pending | accepted | declined | expired`), `notificationSent`,
-`createdAt`, `expiresAt` (+7 days).
+### `MatchRound` (`match_rounds`) and `Match` (`matches`)
+A round is a week (`weekStart` DATE unique, Monday UTC; `status open |
+closed`). A match belongs to a round, stores `user1Id < user2Id` (by uuid),
+`score`, `factors` Json snapshot, `status` (`pending | met | not_met |
+expired`), `notifiedAt`, `expiresAt` (+7 d). Unique on
+`(roundId, user1Id, user2Id)`; the same pair can recur in later rounds only
+if the engine allows it (today it never re-pairs previous partners).
 
-Migrations: `20251129091939_init`, `20251129102932_remove` (dropped
-`BotLog`), `20251130095539_add_goal_field`, `20251130102725_add_profile_field`,
-`20261007120000_user_settings_unique_matches` (dedupes pairs, unique index,
-`UserSettings`).
+### `MatchFeedback` (`match_feedback`)
+One row per participant per match: `met`, `rating 1..5?`, `text?`.
+
+### `Plan`, `Subscription`, `Payment`
+Tables only, no API yet. `Plan { code, title, priceStars, periodWeeks }`,
+`Subscription { userId, planId, startedAt, weeks, endsAt, status }`,
+`Payment { subscriptionId, amountStars, currency XTR, telegramChargeId
+unique, providerChargeId, payload, paidAt }`.
+
+### Migrations
+`20251129091939_init` … `20261007120000_user_settings_unique_matches`
+(legacy `MatchingUser`/`MatchResult`/`UserSettings`), then
+`20261008090000_relational_model`: creates the tables above, **backfills**
+users/profiles/locations/tags/settings/rounds/matches from the legacy
+tables (including spreadsheet-era `previousMatches` pairs into a closed
+legacy round dated 2024-12-30) and drops the legacy tables. Verified end to
+end against PGlite with sample data; apply with `pnpm db:deploy`.
 
 ## Authentication (`lib/auth.ts`)
 
-- Client (`lib/api.ts`) sends `Authorization: tma <initDataRaw>` where the
-  raw string comes from `retrieveRawInitData()`.
-- `authenticate(request)` validates the signature with
-  `@tma.js/init-data-node/web` against `TELEGRAM_BOT_TOKEN` (24 h max age),
-  parses the user and returns `AuthUser { id, numericId, username,
-  firstName, lastName, languageCode, isAdmin }`.
-- In **development** a failed or impossible validation (missing token or
-  mocked data) logs a warning and continues. In production it is a 401.
-- `requireAdmin()` adds a 403 check against `ADMIN_TELEGRAM_IDS`.
-- `ensureUser()` upserts a minimal `MatchingUser` so `UserSettings` can be
-  written before the profile exists.
-- `authErrorResponse(e)` turns `AuthError` into `{ error }` + status.
-
-Public routes: `GET /api/health`, `POST /api/bot/webhook` (grammY checks
-`TELEGRAM_WEBHOOK_SECRET`), `GET /api/cron/matching` (`CRON_SECRET`).
+Unchanged: `Authorization: tma <initDataRaw>` validated with
+`@tma.js/init-data-node/web`; `authenticate()` → `AuthUser`,
+`requireAdmin()`, `authErrorResponse()`. `ensureUser(auth)` upserts the
+`users` row (refreshing Telegram fields) and returns it; every write path
+goes through it. Dev accepts unsigned mock data; prod is strict.
 
 ## API reference
 
-### Profile / users / matches
-
+### Profile
 | Method & path | Who | Response |
 |---|---|---|
-| `GET /api/profile` | user | own `Profile` or 404 |
-| `POST /api/profile` | user | partial upsert of **own** row; body may contain `username, name, dateOfBirth, country, region, interests, hobbies, personalityTraits, goal, placesToVisit, instagram, photo, announcement, profile \| about, gender, isActive`. Strings are length-capped, arrays ≤ 20 items. Returns `{ success, profile }`. 400 on type errors, 413 on oversized photo |
-| `GET /api/profile/[userId]` | user | another user's `Profile` (active only) or 404 |
-| `GET /api/users` | admin | all active `Profile`s, newest first |
-| `GET /api/matches/[userId]` | owner or admin | `Profile[]` from `previousMatches`, most recent first; `[]` if none |
+| `GET /api/profile` | user | own `Profile`; 404 until something was saved |
+| `POST /api/profile` | user | partial upsert via `lib/profileService.ts`. Accepts the UI `Profile` fields (`name, dateOfBirth, country, region, goal, profile \| about, announcement, placesToVisit, instagram, photo, interests, hobbies, personalityTraits`) plus `gender, theme, isComplete` (alias `isActive`) and `referralCode` (applied once). Country+region are upserted into `locations`; tag arrays replace that category's `profile_tags`. 400 on validation, 413 on photo > 2 MB |
+| `GET /api/profile/[userId]` | user | another user's `Profile` (complete + active; owner/admin see incomplete) |
+| `GET /api/users[?all=1]` | admin | complete profiles (or everyone) |
 
-`Profile` (see `lib/profileDto.ts`) = `{ id, username, name, goal, country,
-region, interests, hobbies, personalityTraits, similarInterests: "",
-announcement, profile, placesToVisit (string), instagram, photo, dateOfBirth }`.
+`Profile` shape is unchanged for the UI; `lib/profileDto.ts` builds it from
+`users` + `profiles` + `locations` + `tags`.
 
-### Settings (DB-backed)
-
-| Method & path | Body | Notes |
+### Matches
+| Method & path | Who | Response |
 |---|---|---|
-| `GET /api/settings/notifications` | | 5 booleans; defaults if no row |
-| `PUT /api/settings/notifications` | all 5 booleans | 400 on non-boolean |
-| `GET /api/settings/matching-schedule` | | `{ option, customDate, resumeDate, lastUpdated }` |
-| `PUT /api/settings/matching-schedule` | `{ option, customDate? }` | computes `resumeDate` (+7 d / +1 m / custom / null) |
+| `GET /api/matches/[id]` | owner/admin (`id` = Telegram id) | partner `Profile` + `matchId, matchStatus, matchedAt, weekStart, score, myFeedback`, newest first |
+| `POST /api/matches/[id]/feedback` | participant (`id` = match id) | body `{ met, rating?, text? }`; upserts the caller's feedback; status → `met` if anyone met, `not_met` if everyone says no |
 
-### Matching (admin)
+### Settings (DB)
+| Method & path | Body |
+|---|---|
+| `GET/PUT /api/settings/notifications` | 5 booleans |
+| `GET/PUT /api/settings/matching-schedule` | `{ option, customDate? }` |
 
-| Method | `?action=` | Effect |
-|---|---|---|
-| GET | *(none)* | `{ isRunning, lastRun, config }` |
-| GET | `stats` | counts, avg score, `lastRun`, config |
-| GET | `config` | current `MatchingConfig` |
-| POST | `run` | expire old + `runMatching()`; returns `RunResult` |
-| POST | `create-mock-users` body `{count}` (1–100) | fake users using the Russian `LOCATIONS`/`INTERESTS`/`HOBBIES` |
-| POST | `cleanup` | pending + expired → `expired` |
-| PUT | body partial `MatchingConfig` | in-memory until redeploy |
+### Reference
+`GET /api/reference` (user) → `{ tags: { interests, hobbies, personalityTraits },
+locations: [{ country, regions }] }`, same shape as `models/types.ts` constants.
 
-### Cron, bot, ops
-
-| Method & path | Auth | Effect |
-|---|---|---|
-| `GET /api/cron/matching` | `Authorization: Bearer <CRON_SECRET>` | cleanup + run; configured in `vercel.json` every 4 h |
-| `POST /api/bot/webhook` | Telegram secret token | grammY `webhookCallback(bot, "std/http")` |
-| `GET /api/bot/setup` | admin | `getMe` + `getWebhookInfo` |
-| `POST /api/bot/setup` | admin | `setWebhook(${APP_URL}/api/bot/webhook)` + `setMyCommands` |
-| `GET /api/health` | public | `SELECT 1` → 200 / 503 |
+### Matching, cron, bot, ops
+Unchanged paths: `/api/matching` (admin: status/stats/config, `run`,
+`create-mock-users`, `cleanup`, PUT config), `GET /api/cron/matching`
+(`CRON_SECRET`), `POST /api/bot/webhook`, `GET/POST /api/bot/setup`,
+`GET /api/health`.
 
 ## Matching algorithm (`lib/matchingService.ts`)
 
-1. Reset expired pauses in `UserSettings`.
-2. Eligible = `isActive`, has `country`, past `cooldownHours` (24) since
-   `lastMatchTime`, and no settings row or `matchingOption === "active"`.
-3. Group by country; `countriesWithoutRegions` form one pool, others are
-   split by region.
-4. In each pool: drop `skip`, skip previously matched pairs, require mutual
-   age-range/gender preferences, score every pair, sort desc, greedily take
-   pairs with both users free and score ≥ `minCompatibilityScore` (0.3).
-5. Merge all pools, sort by score, take the top `maxMatchesPerRun` (50).
-6. Per pair in one transaction: create `MatchResult` (ordered ids), update
-   both users (`lastMatchTime`, `totalMatches`, `previousMatches`). If
-   `enableNotifications`, send a Telegram message to both via `notifyUser()`.
+1. Upsert the `MatchRound` for the current week (Monday UTC).
+2. Reset settings whose pause expired.
+3. Candidates: `status active`, `profile.isComplete`, has `locationId`,
+   `lastMatchedAt` older than `cooldownHours` (24) or null, settings absent
+   or `matchingOption active` and `skipNextRound false`.
+4. Load all previous partners from `matches` for those users.
+5. Group by country (region inside, except `countriesWithoutRegions`);
+   score every pair not previously matched and passing mutual age/gender
+   preferences; greedy pairing per pool; global sort; take
+   `maxMatchesPerRun` (50).
+6. Per pair: `matches` row with ordered ids + `lastMatchedAt` update in one
+   transaction; optional Telegram notification (`notifiedAt`).
+7. Clear `skipNextRound` for everyone.
 
-Score = region (4 same / 2 same country / 0.5) + 1 per common interest +
-0.5 per common hobby + 0.5 per common destination + `max(0, 2 − |Δage|/5)`.
-
-## Bot (`lib/bot.ts`)
-
-grammY `Bot` singleton, webhook-only. Commands: `/start`, `/app` (welcome +
-"Открыть TravelMate" web-app button when `MINI_APP_URL` is https), `/help`;
-any other text gets a hint. `notifyUser(telegramId, html)` fails softly
-when the bot is unconfigured or the user never started it.
+Score = region (4 / 2 / 0.5) + 1 per common interest + 0.5 per hobby +
+0.25 per trait + 0.5 per common destination + `max(0, 2 − |Δage|/5)`.

@@ -41,7 +41,8 @@ function fromRow(row: {
 export async function GET(request: NextRequest) {
   try {
     const user = await authenticate(request);
-    const row = await prisma.userSettings.findUnique({ where: { telegramId: user.id } });
+    const account = await prisma.user.findUnique({ where: { telegramId: user.id } });
+    const row = account ? await prisma.userSettings.findUnique({ where: { userId: account.id } }) : null;
     return NextResponse.json(row ? fromRow(row) : DEFAULTS);
   } catch (error) {
     const auth = authErrorResponse(error);
@@ -72,11 +73,11 @@ export async function PUT(request: NextRequest) {
       notifyWeeklyDigest: settings.weeklyDigest,
     };
 
-    await ensureUser(user);
+    const account = await ensureUser(user);
     const row = await prisma.userSettings.upsert({
-      where: { telegramId: user.id },
+      where: { userId: account.id },
       update: data,
-      create: { telegramId: user.id, ...data },
+      create: { userId: account.id, ...data },
     });
 
     return NextResponse.json({

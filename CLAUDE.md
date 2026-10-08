@@ -2,7 +2,7 @@
 
 Entry point for AI agents working in this repo. Read this first, then the
 focused docs in `docs/`. Verified against the code on branch
-`feature/platform-upgrade` (2026-10-07).
+`feature/relational-schema` (2026-10-08).
 
 ## What this is
 
@@ -31,7 +31,7 @@ list is enforced server-side by `requireAdmin()` in `lib/auth.ts`.
 |---|---|
 | Framework | Next.js 14.2.4, App Router; every page is `"use client"` |
 | Package manager | **pnpm** only (`pnpm-lock.yaml`) |
-| DB | PostgreSQL (Supabase) via **Prisma 5**: `MatchingUser`, `MatchResult`, `UserSettings` |
+| DB | PostgreSQL (Supabase) via **Prisma 5**, relational model: `User`, `Profile`, `Location`, `Tag`/`ProfileTag`, `UserSettings`, `MatchRound`, `Match`, `MatchFeedback`, `Plan`, `Subscription`, `Payment` (snake_case tables) |
 | Auth | `@tma.js/init-data-node/web` validates `Authorization: tma <initDataRaw>` on every API route (`lib/auth.ts`) |
 | Telegram SDK | `@tma.js/sdk-react` **v3** (snake_case user fields, `tgWebApp*` launch params) |
 | Bot | **grammY** webhook (`/api/bot/webhook`), setup via `/api/bot/setup` |
@@ -50,6 +50,7 @@ pnpm build                        # prisma generate && next build
 pnpm typecheck                    # tsc --noEmit — THE verification step (0 errors expected)
 pnpm db:migrate                   # prisma migrate dev (needs DIRECT_URL)
 pnpm db:deploy                    # prisma migrate deploy (CI/prod)
+pnpm db:seed                      # tags + locations reference data (idempotent)
 pnpm db:studio
 ```
 
@@ -84,13 +85,28 @@ lib/auth.ts               authenticate / requireAdmin / ensureUser (server)
 lib/api.ts                apiFetch / api.get|post|put with the tma header (client)
 lib/bot.ts                grammY bot, BOT_COMMANDS, notifyUser
 lib/matchingService.ts    matching engine (singleton)
-lib/profileDto.ts         MatchingUser → Profile mapper for API responses
+lib/profileDto.ts         users+profiles+tags → UI Profile mapper (read side)
+lib/profileService.ts     profile upsert: location/tag resolution, referral, validation (write side)
 lib/prisma.ts, dateUtils.ts, settingsService.ts (client), utils.ts (cn)
-prisma/                   schema + migrations
+prisma/                   schema, migrations, seed.ts (tags + locations)
 config/constants.ts       ADMIN_TELEGRAM_IDS, MENU_ITEMS, APP_METADATA
 models/types.ts           Profile/User/settings types + option lists
 docs/                     agent docs; docs/guides (RHF, wizard context, theme); docs/archive (stale)
 ```
+
+## Data layer in one paragraph
+
+PostgreSQL with a relational model (see `docs/DATA_AND_API.md`). `users`
+(Telegram id externally, uuid internally, with `referralCode` and
+`referrerId`) have one `profiles` row (name, date of birth, location FK,
+goal, about, photo, socials, `isComplete`) and M:N `tags` through
+`profile_tags`; `locations` and `tags` are reference lists seeded by
+`prisma/seed.ts`. `user_settings` holds notification flags, matching pause
+and preferences. Matching writes `matches` into weekly `match_rounds`;
+`match_feedback` stores each participant's verdict. `plans`,
+`subscriptions`, `payments` exist for Telegram Stars but have no API yet.
+`lib/profileDto.ts` maps all of this back to the flat UI `Profile` type, so
+the frontend did not change shape.
 
 ## Request flow in one paragraph
 
@@ -139,8 +155,12 @@ anything new there.
   `DATABASE_URL`; at runtime every DB route needs the real URL.
 - The matching config edited through `PUT /api/matching` lives in memory and
   resets on redeploy.
-- `UserSettings` rows are created lazily; `ensureUser()` creates the parent
-  `MatchingUser` first.
+- `user_settings`/`profiles` rows are created lazily; `ensureUser()` creates
+  the parent `users` row first and returns it.
+- Dates: `profiles.dateOfBirth` is a DATE; the API accepts `YYYY-MM-DD` or
+  `DD.MM.YYYY` and returns `YYYY-MM-DD`.
+- The `20261008090000_relational_model` migration backfills and then drops
+  the legacy tables; it is one-way. Back up before `pnpm db:deploy` on real data.
 - `core/i18n/config.ts` has `locales = ["ru"]`; `en.json` is kept in sync
   but never served.
 - `FooterMenu` is not in the layout; pages include it and add `pb-24`.
@@ -149,6 +169,7 @@ anything new there.
 
 ## Docs
 
+- `docs/ARCHITECTURE.md` — logical and deployment diagrams (Mermaid) with what is live vs planned
 - `docs/CODEBASE_MAP.md` — every directory and file, with status tags
 - `docs/DATA_AND_API.md` — Prisma schema, auth, every API route, matching algorithm
 - `docs/DEV_WORKFLOW.md` — setup, running, DB, bot/webhook, verification, deploy
