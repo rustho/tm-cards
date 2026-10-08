@@ -9,7 +9,7 @@ const hsl = (token: string) => `hsl(var(--${token}) / <alpha-value>)`;
  * Telegram theme in Root.tsx) switches the whole palette.
  *
  * Colors:     background, card (surface), foreground, muted-foreground,
- *             primary (+ light, muted), success (+ bg), destructive (= danger), border.
+ *             primary (+ light, muted), success (+ bg), warning, destructive (= danger), border.
  * Type:       text-title 20/26 bold, text-option 17/24, text-counter 16/22, text-body 15/20.
  * Spacing:    4 · 6 · 8 · 11 · 12 · 16 · 20 · 24 px → 1 · 1.5 · 2 · 2.75 · 3 · 4 · 5 · 6.
  * Radius:     rounded-xs 2 · rounded-sm 4 · rounded-md 8 · rounded-xl 26 (rounded-lg = 8 for shadcn).
@@ -66,6 +66,7 @@ const config: Config = {
           foreground: hsl("success-foreground"),
           bg: hsl("success-bg"),
         },
+        warning: hsl("warning"),
         destructive: {
           DEFAULT: hsl("destructive"),
           foreground: hsl("destructive-foreground"),
@@ -81,7 +82,6 @@ const config: Config = {
         // Legacy names still used by older screens; not part of the foundation.
         error: hsl("destructive"),
         info: hsl("primary"),
-        warning: "#F59E0B",
       },
       fontFamily: {
         sans: ["var(--font-inter)", "system-ui", "-apple-system", "sans-serif"],

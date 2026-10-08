@@ -255,3 +255,94 @@ export interface UserSettings {
   notifications: NotificationSettings;
   matchingSchedule: MatchingScheduleSettings;
 }
+
+/** Match status as the meetings UI sees it (`expired` matches are never sent). */
+export type MeetingStatus = "pending" | "met" | "not_met" | "postponed";
+
+/** What the row button does: leave my impression, read the partner's, or nothing. */
+export type MeetingAction = "share" | "view" | null;
+
+/** «Поделись своим состоянием после встречи» chips (multi-select). Labels: `meetings.impressions.<id>`. */
+export const IMPRESSION_OPTIONS = [
+  { id: "easy", emoji: "✨" },
+  { id: "meet_again", emoji: "🫶" },
+  { id: "learned_self", emoji: "🌱" },
+  { id: "vibes_mismatch", emoji: "🎭" },
+  { id: "different_interesting", emoji: "🧩" },
+  { id: "new_thoughts", emoji: "🧠" },
+  { id: "deeper", emoji: "🌙" },
+  { id: "alike", emoji: "🤝" },
+  { id: "mixed", emoji: "💭" },
+  { id: "different_worlds", emoji: "🪐" },
+] as const;
+export type ImpressionId = (typeof IMPRESSION_OPTIONS)[number]["id"];
+
+/** «Что-то пошло не так?» (single choice). Labels: `meetings.reasons.<id>`. */
+export const NOT_MET_REASONS = [
+  { id: "no_reply", emoji: "💬" },
+  { id: "different_locations", emoji: "📍" },
+  { id: "too_busy", emoji: "💼" },
+  { id: "no_time_to_chat", emoji: "⏰" },
+  { id: "interests", emoji: "👥" },
+  { id: "plans_changed", emoji: "📅" },
+  { id: "app_issues", emoji: "⚙️" },
+  { id: "other", emoji: "✏️" },
+  { id: "report", emoji: "❌" },
+] as const;
+export type NotMetReason = (typeof NOT_MET_REASONS)[number]["id"];
+
+/** Free-text limit of an impression. */
+export const FEEDBACK_TEXT_MAX = 250;
+
+/** What the partner sees: only «met» feedback is ever shared, reasons stay private. */
+export interface MeetingImpression {
+  impressions: ImpressionId[];
+  text: string;
+}
+
+/** The viewer's own verdict. */
+export interface MyMeetingFeedback {
+  met: boolean;
+  impressions: ImpressionId[];
+  reason: NotMetReason | null;
+  text: string;
+}
+
+/** One match from the viewer's side (`/api/home`, `/api/meetings`). */
+export interface Meeting {
+  matchId: string;
+  partner: { id: string; name: string; photo: string };
+  status: MeetingStatus;
+  matchedAt: string;
+  action: MeetingAction;
+}
+
+/** `GET /api/meetings/[matchId]`: the meeting, both sides and both impressions. */
+export interface MeetingDetails extends Meeting {
+  partner: Meeting["partner"] & { occupation: string; location: string };
+  me: { id: string; name: string; photo: string };
+  myFeedback: MyMeetingFeedback | null;
+  partnerFeedback: MeetingImpression | null;
+}
+
+export interface PersonPreview {
+  id: string;
+  name: string;
+  photo: string;
+}
+
+/** `GET /api/home`: everything the «Люди» tab shows. */
+export interface HomeSummary {
+  /** Active subscription or the free trial month. */
+  hasAccess: boolean;
+  /** When access ends (subscription end or trial end), ISO; null when there is none. */
+  accessEndsAt: string | null;
+  /** Latest HOME_HISTORY_LIMIT meetings, newest first. */
+  history: Meeting[];
+  /** Meetings that took place (`met`) and a few of those partners. */
+  meetings: { count: number; people: PersonPreview[] };
+  /** Users who joined through my referral link. */
+  invited: { count: number; people: PersonPreview[] };
+  /** Meetings waiting for my impression; drives the hint banner. */
+  awaitingFeedback: number;
+}

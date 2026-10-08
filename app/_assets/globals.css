@@ -26,6 +26,7 @@
   --color-success: 90.8 54.3% 38.6%;       /* #61982D color/success */
   --color-success-bg: 86.7 39.1% 95.5%;    /* #F4F8EF color/success-bg (selected) */
   --color-danger: 6.4 62.7% 52.7%;         /* #D24B3B color/danger */
+  --color-warning: 32.1 94.6% 43.7%;       /* #D97706 color/warning */
   /* Window controls (XP title-bar buttons): border = *-dark, gradient *-dark → *-glow */
   --color-primary-dark: 225 100% 40%;      /* #0033CC color/primary-dark */
   --color-primary-glow: 214.1 90.2% 59.8%; /* #3C8CF5 */
@@ -65,6 +66,7 @@
   --success: var(--color-success);
   --success-foreground: var(--color-on-color);
   --success-bg: var(--color-success-bg);
+  --warning: var(--color-warning);
   --destructive: var(--color-danger);
   --destructive-foreground: var(--color-on-color);
   --border: var(--color-stroke);
@@ -130,6 +132,7 @@ body.dark {
   --color-success: 90.8 43.1% 49.6%;       /* #7DB548 */
   --color-success-bg: 98.8 27.9% 12%;      /* #1C2716 */
   --color-danger: 7.3 69.2% 60.6%;         /* #E06655 */
+  --color-warning: 37.7 92.1% 50.2%;       /* #F59E0B */
   --color-stroke: 220 14.6% 20.2%;         /* #2C313B */
   --color-divider: 218.2 13.9% 26.9%;      /* #3B414E */
   --color-text-disabled: 217.5 8.3% 42.5%; /* #636B76 */

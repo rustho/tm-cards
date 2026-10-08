@@ -2,105 +2,76 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { ChevronRight } from "lucide-react";
-import { Profile } from "@/models/types";
+import type { HomeSummary } from "@/models/types";
 import { api } from "@/lib/api";
-import { useAuth } from "@/hooks/useAuth";
 import { FooterMenu } from "@/components/FooterMenu";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { MeetingList } from "@/components/meetings/MeetingList";
+import { StatCard } from "@/components/meetings/StatCard";
+import { FeedbackHintBanner } from "@/components/meetings/FeedbackHintBanner";
 
+/**
+ * «Люди» tab. With access (subscription or trial): optional feedback hint, meeting history, counters.
+ * Without access: a headline instead of the hint and a «Выбрать подписку» button at the bottom.
+ */
 export default function Home() {
-  const router = useRouter();
   const t = useTranslations("home");
-  const { userId } = useAuth();
-  const [matches, setMatches] = useState<Profile[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [summary, setSummary] = useState<HomeSummary | null>(null);
+  const [failed, setFailed] = useState(false);
 
   useEffect(() => {
-    if (!userId) return;
     let cancelled = false;
     api
-      .get<Profile[]>(`/api/matches/${userId}`)
-      .then((data) => !cancelled && setMatches(Array.isArray(data) ? data : []))
+      .get<HomeSummary>("/api/home")
+      .then((data) => !cancelled && setSummary(data))
       .catch((error) => {
-        console.error("Error fetching matches:", error);
-        if (!cancelled) setMatches([]);
-      })
-      .finally(() => !cancelled && setIsLoading(false));
+        console.error("Error fetching home summary:", error);
+        if (!cancelled) setFailed(true);
+      });
     return () => {
       cancelled = true;
     };
-  }, [userId]);
-
-  if (isLoading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <Card>
-          <CardContent className="flex items-center gap-3 p-6">
-            <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-            <p>{t("loading")}</p>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
+  }, []);
 
   return (
     <div className="min-h-screen">
-      <div className="mx-auto max-w-4xl p-6 pb-24">
-        <div className="mb-8 text-center">
-          <h1 className="mb-2 text-3xl font-bold">🎯 {t("title")}</h1>
-          <p className="text-lg text-muted-foreground">{t("subtitle")}</p>
-        </div>
+      <div className="mx-auto max-w-xl space-y-3 px-4 pb-28 pt-4">
+        {failed ? (
+          <p className="m-0 py-12 text-center text-body text-muted-foreground">{t("loadFailed")}</p>
+        ) : !summary ? (
+          <div className="flex justify-center py-12" aria-label={t("loading")}>
+            <div className="size-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+          </div>
+        ) : (
+          <>
+            {summary.hasAccess ? (
+              summary.awaitingFeedback > 0 && <FeedbackHintBanner />
+            ) : (
+              <h1 className="m-0 pb-2 text-[26px] font-bold leading-8">{t("headline")}</h1>
+            )}
 
-        <div className="space-y-4">
-          {matches.map((match) => (
-            <Card
-              key={match.id}
-              role="button"
-              tabIndex={0}
-              className="cursor-pointer transition-transform hover:-translate-y-0.5"
-              onClick={() => router.push(`/profile/${match.id}`)}
-              onKeyDown={(e) => e.key === "Enter" && router.push(`/profile/${match.id}`)}
-            >
-              <CardContent className="flex items-center justify-between p-5">
-                <div className="flex items-center gap-4">
-                  {match.photo ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={match.photo} alt={match.name} className="h-12 w-12 rounded-full object-cover" />
-                  ) : (
-                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary font-bold text-primary-foreground">
-                      {(match.name || match.id).slice(0, 2).toUpperCase()}
-                    </div>
-                  )}
-                  <div>
-                    <h2 className="mb-1 text-xl font-semibold">{match.name || `${t("matchNumber")}${match.id.slice(-6)}`}</h2>
-                    <p className="text-sm text-muted-foreground">
-                      {[match.region, match.country].filter(Boolean).join(", ") || t("clickToExplore")}
-                    </p>
-                  </div>
-                </div>
-                <ChevronRight className="h-5 w-5 text-muted-foreground" />
-              </CardContent>
-            </Card>
-          ))}
+            <MeetingList title={t("history")} meetings={summary.history} />
+            <StatCard
+              title={t("myMeetings")}
+              count={summary.meetings.count}
+              people={summary.meetings.people}
+              href="/home/meetings"
+            />
+            <StatCard
+              title={t("invited")}
+              count={summary.invited.count}
+              people={summary.invited.people}
+              href="/invitations"
+            />
 
-          {matches.length === 0 && (
-            <Card>
-              <CardContent className="py-12 text-center">
-                <div className="mb-4 text-6xl">🌟</div>
-                <h3 className="mb-2 text-xl font-semibold">{t("noMatchesTitle")}</h3>
-                <p className="text-muted-foreground">{t("noMatches")}</p>
-                <Button asChild className="mt-6">
-                  <Link href="/profile">{t("completeProfile")}</Link>
-                </Button>
-              </CardContent>
-            </Card>
-          )}
-        </div>
+            {!summary.hasAccess && (
+              <Button asChild variant="primary" size="block" className="mt-3">
+                <Link href="/settings/subscription">{t("chooseSubscription")}</Link>
+              </Button>
+            )}
+          </>
+        )}
       </div>
       <FooterMenu />
     </div>

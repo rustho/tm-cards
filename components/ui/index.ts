@@ -20,3 +20,4 @@ export { AgeSummary, type AgeSummaryProps } from "./age-summary";
 export { PhotoUploader, type PhotoUploaderProps } from "./photo-uploader";
 export { SelectionGuidance, type SelectionGuidanceProps } from "./selection-guidance";
 export { CategoryHeader, type CategoryHeaderProps } from "./category-header";
+export { Avatar, AvatarStack, type AvatarProps, type AvatarStackProps } from "./avatar";

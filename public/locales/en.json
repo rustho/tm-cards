@@ -11,17 +11,95 @@
     "questions": "Question Cards",
     "profile": "Create Profile",
     "home": "Home",
-    "settings": "Settings"
+    "settings": "Settings",
+    "people": "People",
+    "invitations": "Invitations",
+    "meetings": "Meetings",
+    "questionnaire": "Questionnaire",
+    "account": "Profile"
   },
   "home": {
-    "title": "Your Matches",
     "loading": "Loading...",
-    "matchNumber": "Match #",
-    "noMatches": "No matches found. Complete your profile to get started!",
-    "subtitle": "Your travel companions await",
-    "clickToExplore": "Tap to open the profile",
-    "noMatchesTitle": "No matches yet",
-    "completeProfile": "Complete your profile"
+    "loadFailed": "Could not load data. Please try again.",
+    "headline": "Meet people, get to know them and share impressions of your meetings",
+    "history": "Meeting history",
+    "myMeetings": "My meetings",
+    "invited": "Invited people",
+    "chooseSubscription": "Choose a subscription"
+  },
+  "meetings": {
+    "loading": "Loading...",
+    "loadFailed": "Could not load meetings. Please try again.",
+    "allTitle": "All meetings",
+    "empty": "Your meetings will appear here. We pick new companions once a week.",
+    "share": "Share impression",
+    "view": {
+      "title": "Impression after the meeting",
+      "answer": "Share in return"
+    },
+    "status": {
+      "pending": "Waiting to meet",
+      "met": "Meeting took place",
+      "not_met": "Meeting did not happen",
+      "postponed": "You'll meet later"
+    },
+    "hint": {
+      "title": "Share impressions of your meetings",
+      "learn": "This way you can learn something new about yourself and help someone else do the same.",
+      "unlock": "After each piece of feedback, new people appear in «My meetings».",
+      "close": "Close"
+    },
+    "form": {
+      "outcomeTitle": "Share your impressions this week",
+      "outcomeQuestion": "Did the meeting happen?",
+      "outcome": {
+        "met": "Yes, it worked out!",
+        "later": "We agreed to meet later",
+        "not_met": "It didn't work out this time"
+      },
+      "metTitle": "How do you feel after the meeting?",
+      "metSubtitle": "Pick the ones that fit",
+      "textLabel": "Write a few words (optional)",
+      "textPlaceholder": "Your answer...",
+      "lockHint": "Once you send your impression, you'll be able to read your companion's.",
+      "notMetTitle": "Something went wrong?",
+      "otherPlaceholder": "Tell us what happened",
+      "reportPlaceholder": "Describe what happened. Only the TravelMate team will see this",
+      "submit": "Send",
+      "saveFailed": "Could not save. Please try again."
+    },
+    "impressions": {
+      "easy": "It felt easy and calm",
+      "meet_again": "I'd like to meet again",
+      "learned_self": "I learned something new about myself",
+      "vibes_mismatch": "Our vibes didn't match",
+      "different_interesting": "We seem very different — and that's interesting",
+      "new_thoughts": "I caught myself with new thoughts after the talk",
+      "deeper": "The conversation went deeper than I expected",
+      "alike": "We seem to see many things the same way",
+      "mixed": "I have mixed feelings after the meeting",
+      "different_worlds": "It's like we're from very different worlds"
+    },
+    "reasons": {
+      "no_reply": "They didn't reply",
+      "different_locations": "Different locations",
+      "too_busy": "Too much work",
+      "no_time_to_chat": "Didn't manage to get in touch",
+      "interests": "Our interests didn't match",
+      "plans_changed": "Plans changed",
+      "app_issues": "Problems with the app",
+      "other": "Other",
+      "report": "Report this user"
+    },
+    "done": {
+      "title": "Great!",
+      "waiting": "When {name} shares an impression of the meeting, you'll get a notification in the bot.",
+      "later": "If you meet later, you can leave an impression any time from the meeting history on the «People» screen.",
+      "thanks": "Thank you!",
+      "notMet": "Sorry it didn't work out. We'll pick new companions next week.",
+      "reported": "We received your report and will review it.",
+      "ok": "Got it"
+    }
   },
   "profile": {
     "title": "Profile",
@@ -296,5 +374,9 @@
       "retro": "Surf",
       "notebook": "Code"
     }
+  },
+  "invitations": {
+    "title": "Invitations",
+    "comingSoon": "Invitations from travel companions are coming soon."
   }
 }

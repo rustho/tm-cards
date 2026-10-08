@@ -179,7 +179,7 @@ model Match {
   /// Snapshot of what the two profiles had in common at match time: [{ factor, score }]
   factors Json
 
-  /// pending | met | not_met | expired
+  /// pending | met | not_met | postponed | expired. postponed = «встретимся позже»: never expires, feedback stays open.
   status     String    @default("pending")
   notifiedAt DateTime?
   expiresAt  DateTime
@@ -202,10 +202,15 @@ model MatchFeedback {
   authorId String
   author   User   @relation(fields: [authorId], references: [id], onDelete: Cascade)
 
-  met       Boolean
-  rating    Int?
-  text      String?
-  createdAt DateTime @default(now())
+  met         Boolean
+  /// Deprecated: 1–5 stars from the first feedback form; replaced by `impressions`.
+  rating      Int?
+  /// When met: ids from IMPRESSION_OPTIONS (models/types.ts). Shown to the partner.
+  impressions String[] @default([])
+  /// When not met: one id from NOT_MET_REASONS. Private; `report` flags the partner for admins.
+  reason      String?
+  text        String?
+  createdAt   DateTime @default(now())
 
   @@unique([matchId, authorId])
   @@map("match_feedback")
