@@ -1,0 +1,34 @@
+# Manual matching run (Actions → "Run matching" → Run workflow).
+# Matching is weekly and is started by hand for now. To automate it later,
+# add a "crons" entry for /api/cron/matching to vercel.json (a weekly
+# schedule fits the Hobby plan) and delete this workflow.
+#
+# Repository secrets (Settings → Secrets and variables → Actions):
+#   APP_URL      https URL of the production deployment, no trailing slash
+#   CRON_SECRET  same value as CRON_SECRET in the Vercel project
+name: Run matching
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: matching
+  cancel-in-progress: false
+
+jobs:
+  run-matching:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Call /api/cron/matching
+        env:
+          APP_URL: ${{ secrets.APP_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          if [ -z "$APP_URL" ] || [ -z "$CRON_SECRET" ]; then
+            echo "APP_URL or CRON_SECRET secret is not set" >&2
+            exit 1
+          fi
+          curl --fail-with-body --silent --show-error --max-time 90 \
+            -H "Authorization: Bearer $CRON_SECRET" \
+            "${APP_URL%/}/api/cron/matching"

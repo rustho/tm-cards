@@ -85,7 +85,9 @@ flowchart TB
 - Бот: Telegram сам вызывает `/api/bot/webhook` с `TELEGRAM_WEBHOOK_SECRET`.
   Это единственный способ получить апдейт, long polling на Vercel не работает.
 
-**Матчинг запускает cron, а не CRUD.** Vercel Cron раз в 4 часа дёргает
+**Матчинг запускается отдельно, а не через CRUD.** Раунд раз в неделю, пока
+вручную: GitHub Actions → «Run matching» (`.github/workflows/run-matching.yml`),
+позже переедем на Vercel Cron. Workflow вызывает
 `GET /api/cron/matching` с `CRON_SECRET`. Матчинг читает `MatchingUser`,
 пишет `MatchResult` и, если включён `MATCHING_NOTIFICATIONS`, через
 `notifyUser()` пишет обоим участникам. Поэтому на схеме есть стрелка
@@ -127,7 +129,6 @@ flowchart TB
             PAGES["Статика + client pages<br/>app/*"]
             API["Serverless functions<br/>app/api/*<br/>profile, matches, settings, users, matching<br/>bot/webhook, bot/setup, cron/matching, health"]
         end
-        VCRON["Vercel Cron<br/>0 */4 * * *"]
         ENV["Env: DATABASE_URL, DIRECT_URL,<br/>TELEGRAM_BOT_TOKEN, TELEGRAM_WEBHOOK_SECRET,<br/>APP_URL, MINI_APP_URL, CRON_SECRET,<br/>MATCHING_NOTIFICATIONS"]
     end
 
@@ -141,6 +142,7 @@ flowchart TB
 
     PAYSRV["Платёжный провайдер (план)<br/>Telegram Stars или CloudPayments"]
     SENTRY["Sentry (план)"]
+    GHCRON["GitHub Actions «Run matching»<br/>ручной запуск раз в неделю (позже Vercel Cron)"]
     CI["GitHub → Vercel deploy<br/>pnpm build = prisma generate && next build<br/>pnpm db:deploy = prisma migrate deploy"]
 
     CLIENT -- "открывает WebView" --> TGSRV
@@ -149,7 +151,7 @@ flowchart TB
     TGSRV -- "POST /api/bot/webhook<br/>X-Telegram-Bot-Api-Secret-Token" --> API
     API -- "Bot API sendMessage / setWebhook" --> TGSRV
 
-    VCRON -- "GET /api/cron/matching<br/>Authorization: Bearer CRON_SECRET" --> API
+    GHCRON -- "GET /api/cron/matching<br/>Authorization: Bearer CRON_SECRET" --> API
     ENV -.-> API
 
     API -- "Prisma runtime" --> POOL --> PG
@@ -173,7 +175,7 @@ flowchart TB
 одного деплоя на Vercel. Это дёшево и просто, но накладывает ограничения:
 
 - нет долгоживущего процесса, поэтому бот только в webhook‑режиме, а
-  матчинг только по cron;
+  матчинг только по внешнему вызову (сейчас ручной workflow, потом cron);
 - состояние в памяти не переживает деплой и не разделяется между функциями
   (отсюда долг по конфигу матчинга);
 - длительные задачи упираются в таймаут функции, большая рассылка должна

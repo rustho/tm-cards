@@ -80,9 +80,13 @@ The bot never polls; `bot.start()` must not be used.
 ### Matching
 
 - Manual: `POST /api/matching?action=run` (admin).
-- Scheduled: Vercel Cron (`vercel.json`, every 4 h) calls
+- Weekly round, started by hand: GitHub → Actions → "Run matching" → Run
+  workflow (`.github/workflows/run-matching.yml`). It calls
   `GET /api/cron/matching` with `Authorization: Bearer <CRON_SECRET>`. Set
-  `CRON_SECRET` in the Vercel project. Any other scheduler can do the same.
+  `CRON_SECRET` in the Vercel project and add repo secrets `APP_URL` and
+  `CRON_SECRET` (same value) in GitHub. There is no schedule yet; to automate,
+  add `{"crons":[{"path":"/api/cron/matching","schedule":"0 9 * * 1"}]}` to
+  `vercel.json` (weekly fits the Hobby plan) and delete the workflow.
 - Notifications to both users on a new match: `MATCHING_NOTIFICATIONS=true`
   (needs the bot and users who pressed /start).
 

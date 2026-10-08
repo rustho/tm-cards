@@ -14,7 +14,7 @@ example code.
 | `tsconfig.json` | LIVE | strict, aliases `@/*`, `@public/*` |
 | `tailwind.config.ts` | LIVE | `darkMode: ["class"]`, shadcn HSL tokens + brand palette, `tailwindcss-animate` |
 | `postcss.config.js` | LIVE | tailwind + autoprefixer |
-| `vercel.json` | OPS | cron `0 */4 * * *` → `/api/cron/matching` |
+| `.github/workflows/run-matching.yml` | OPS | manual (`workflow_dispatch`) GitHub Actions run → `/api/cron/matching`; no schedule and no `vercel.json` yet |
 | `prisma/schema.prisma`, `prisma/migrations/` | LIVE | relational model (users, profiles, locations, tags, profile_tags, user_settings, match_rounds, matches, match_feedback, plans, subscriptions, payments); 6 migrations, the last one backfills from the legacy tables |
 | `prisma/seed.ts` | DEV | idempotent tags + locations seed (`pnpm db:seed`) |
 | `.env.example` | DEV | documents every variable |

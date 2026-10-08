@@ -7,8 +7,8 @@ export const maxDuration = 60;
 
 /**
  * GET /api/cron/matching — scheduled matching run.
- * Configured in vercel.json; Vercel sends `Authorization: Bearer ${CRON_SECRET}`.
- * Any other scheduler can call it with the same header.
+ * Started by hand from GitHub Actions (.github/workflows/run-matching.yml) with
+ * `Authorization: Bearer ${CRON_SECRET}`; Vercel Cron sends the same header.
  */
 export async function GET(request: NextRequest) {
   const secret = process.env.CRON_SECRET;

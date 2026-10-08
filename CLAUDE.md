@@ -17,7 +17,7 @@ areas:
    `/settings/*`) — 11-step react-hook-form wizard that autosaves each step
    to PostgreSQL; match list; notification and matching-schedule settings.
 3. **Matching engine + bot** (`lib/matchingService.ts`, `lib/bot.ts`) —
-   compatibility scoring over `MatchingUser`, run by Vercel Cron through
+   compatibility scoring over `MatchingUser`, run weekly by hand (GitHub Actions) through
    `/api/cron/matching`; grammY bot in webhook mode that can notify users
    about new matches.
 
@@ -35,7 +35,7 @@ list is enforced server-side by `requireAdmin()` in `lib/auth.ts`.
 | Auth | `@tma.js/init-data-node/web` validates `Authorization: tma <initDataRaw>` on every API route (`lib/auth.ts`) |
 | Telegram SDK | `@tma.js/sdk-react` **v3** (snake_case user fields, `tgWebApp*` launch params) |
 | Bot | **grammY** webhook (`/api/bot/webhook`), setup via `/api/bot/setup` |
-| Scheduling | **Vercel Cron** (`vercel.json`) → `GET /api/cron/matching` with `CRON_SECRET` |
+| Scheduling | None yet. Matching is weekly and started by hand: **GitHub Actions** `workflow_dispatch` (`.github/workflows/run-matching.yml`) → `GET /api/cron/matching` with `CRON_SECRET`. Later: a `vercel.json` cron |
 | Forms | react-hook-form 7 through `app/profile/ui/WizardContext.tsx` |
 | UI | **shadcn/ui** primitives in `components/ui/` (Button, Card, Switch) on Tailwind 3 + lucide-react icons; custom wizard components in `components/`; CSS vars in `app/_assets/globals.css`. Telegram UI (TGUI) is **removed** |
 | i18n | next-intl, `public/locales/{ru,en}.json`, only `ru` is served |
@@ -145,7 +145,7 @@ anything new there.
 | `TELEGRAM_BOT_TOKEN` | init-data validation **and** the bot. Required in production; optional in dev (unsigned data accepted) |
 | `TELEGRAM_WEBHOOK_SECRET` | checked by grammY on every webhook update |
 | `APP_URL`, `MINI_APP_URL` | https URL of the deployment; webhook target and bot buttons |
-| `CRON_SECRET` | `Authorization: Bearer` expected by `/api/cron/matching` |
+| `CRON_SECRET` | `Authorization: Bearer` expected by `/api/cron/matching`; also a GitHub repo secret together with `APP_URL` |
 | `MATCHING_NOTIFICATIONS` | `"true"` to message both users when a match is created |
 
 ## Gotchas
