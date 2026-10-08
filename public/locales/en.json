@@ -288,17 +288,13 @@
     }
   },
   "profileCard": {
-    "name": "Name",
-    "age": "Age",
-    "occupation": "What I do",
-    "values": "My values",
-    "interests": "My interests and hobbies",
-    "meetingFormats": "How I'd like to meet",
-    "about": "About me",
-    "photoPlaceholder": "Photo goes here",
     "templates": {
-      "notebook": "Notebook",
-      "retro": "Retro"
+      "yoga": "Yoga",
+      "sky": "Sky",
+      "music": "Music",
+      "art": "Art",
+      "retro": "Surf",
+      "notebook": "Code"
     }
   }
 }

@@ -42,7 +42,7 @@ export const MAX_MEETING_FORMATS = 4;
  * Profile card designs ("themes"), picked at the end of onboarding and stored
  * in `profiles.theme`. Each id has a template in components/profile-templates.
  */
-export const PROFILE_THEMES = ["notebook", "retro"] as const;
+export const PROFILE_THEMES = ["yoga", "sky", "music", "art", "retro", "notebook"] as const;
 export type ProfileTheme = (typeof PROFILE_THEMES)[number];
 export const DEFAULT_PROFILE_THEME: ProfileTheme = "notebook";
 

@@ -74,7 +74,7 @@ example code.
 | `ui/*.tsx` (XP) | LIVE | `text-input`, `text-area`, `window-title-bar`, `window-control`, `progress-header`, `back-button`, `step-item`, `counter-badge`, `status-icon`, `country-card`, `unlock-divider`, `interest-chip`, `list-item`, `meeting-goal-card`, `answer-examples`, `age-summary`, `photo-uploader`, `selection-guidance`, `category-header` (`icon={false}` for a bare title) |
 | `ui/index.ts` | LIVE | barrel for all of `ui/`; there is no `components/index.ts` |
 | `profile-templates/index.tsx` | LIVE | registry: `PROFILE_TEMPLATES`, `getProfileTemplate(theme)`, `ProfileCard`; header comment explains adding a template. Used by `StepTheme`, not yet by `/profile/[userId]` |
-| `profile-templates/{notebook/NotebookTemplate,retro/RetroTemplate}.tsx` | LIVE | card designs with their own fixed palettes; labels from the `profileCard` locale namespace |
+| `profile-templates/image/ImageTemplate.tsx` | LIVE | one component for all card designs: artwork `public/profile-templates/<theme>.webp` (labels drawn in) with the answers laid over it at fixed coordinates |
 | `profile-templates/{types,utils,fonts}.ts` | LIVE | `ProfileTemplateProps`/`ProfileCardData`, `formatLocation`/`getAge`, Caveat / PT Mono / Press Start 2P via `next/font` (`preload: false`) |
 | `Root/Root.tsx` | LIVE | runs `mockEnv()` → `init()`; toggles `.dark` from `miniApp.isDark`; sets locale from `user.language_code`; "Loading" until ready |
 | `FooterMenu.tsx` | LIVE | fixed bottom nav with lucide icons, active state from `usePathname` |

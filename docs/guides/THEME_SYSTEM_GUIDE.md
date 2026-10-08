@@ -89,10 +89,10 @@ paragraphs.
 
 ## Exception: profile card templates
 
-`components/profile-templates/` (notebook, retro) deliberately use their own
-fixed palettes (hex colors, e.g. `text-[#1b1b1b]`) and decorative fonts
-(Caveat, PT Mono, Press Start 2P from `components/profile-templates/fonts.ts`,
-`preload: false`). A card is a user-chosen design and must look the same in
+`components/profile-templates/` deliberately uses its own fixed palette
+(hex colors, e.g. `text-[#1b1b1b]`) over artwork images in
+`public/profile-templates/`, and PT Mono from
+`components/profile-templates/fonts.ts` (`preload: false`). A card is a user-chosen design and must look the same in
 light and dark app themes, so it does not follow the tokens. Keep raw colors
 and these fonts inside the templates; everywhere else the token rules above
 apply.

@@ -3,23 +3,27 @@
 /**
  * Profile card templates ("themes"). The user picks one at the end of
  * onboarding; it is stored in `profiles.theme` and used whenever the card is
- * rendered.
+ * rendered. Every template is an artwork with the answers laid over it
+ * (see image/ImageTemplate.tsx).
  *
  * Adding a template:
  * 1. add its id to PROFILE_THEMES in models/types.ts (the server validates it);
- * 2. create `<id>/<Name>Template.tsx` taking ProfileTemplateProps;
- * 3. register it below and add its name to `profileCard.templates` in both locales.
+ * 2. put the 1125×2000 artwork at public/profile-templates/<id>.webp, with the
+ *    labels and photo window where the existing designs have them;
+ * 3. add its name to `profileCard.templates` in both locales.
  */
 
 import { DEFAULT_PROFILE_THEME, PROFILE_THEMES, type ProfileTheme } from "@/models/types";
-import { NotebookTemplate } from "./notebook/NotebookTemplate";
-import { RetroTemplate } from "./retro/RetroTemplate";
+import { ImageTemplate } from "./image/ImageTemplate";
 import type { ProfileTemplateDefinition, ProfileTemplateProps } from "./types";
 
-const TEMPLATES: Record<ProfileTheme, ProfileTemplateDefinition> = {
-  notebook: { id: "notebook", Component: NotebookTemplate },
-  retro: { id: "retro", Component: RetroTemplate },
-};
+const TEMPLATES = Object.fromEntries(
+  PROFILE_THEMES.map((id) => {
+    const Component = (props: ProfileTemplateProps) => <ImageTemplate theme={id} {...props} />;
+    Component.displayName = `ProfileTemplate(${id})`;
+    return [id, { id, Component }];
+  })
+) as Record<ProfileTheme, ProfileTemplateDefinition>;
 
 /** Templates in display order. */
 export const PROFILE_TEMPLATES: ProfileTemplateDefinition[] = PROFILE_THEMES.map((id) => TEMPLATES[id]);

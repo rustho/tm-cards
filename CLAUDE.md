@@ -78,7 +78,7 @@ app/
                           useLimitedSelection.ts (capped multi-select), steps/Step*.tsx
   home/, profile/[userId], settings/{profile,notifications,matching-schedule,subscription}
 components/ui/            shadcn + XP primitives (button, card, switch, text-input, list-item, …), barrel index.ts
-components/profile-templates/  profile card designs (notebook, retro) + registry (ProfileCard)
+components/profile-templates/  profile card designs (artwork in public/profile-templates + ImageTemplate overlay) + registry (ProfileCard)
 components/               Root, AdminMenu, FooterMenu, ErrorBoundary, ErrorPage (no barrel; import by path)
 core/init.ts, mockEnv.ts  SDK v3 bootstrap and dev mock (called from Root)
 core/i18n/                next-intl wiring

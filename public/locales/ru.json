@@ -287,17 +287,13 @@
     }
   },
   "profileCard": {
-    "name": "Имя",
-    "age": "Возраст",
-    "occupation": "Чем занимаюсь",
-    "values": "Мои ценности",
-    "interests": "Мои интересы и хобби",
-    "meetingFormats": "Как хочу встретиться",
-    "about": "Обо мне",
-    "photoPlaceholder": "Место для фото",
     "templates": {
-      "notebook": "Блокнот",
-      "retro": "Ретро"
+      "yoga": "Йога",
+      "sky": "Небо",
+      "music": "Музыка",
+      "art": "Искусство",
+      "retro": "Сёрф",
+      "notebook": "Код"
     }
   }
 }
