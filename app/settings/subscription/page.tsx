@@ -1,85 +1,68 @@
 "use client";
 
+import { useState } from "react";
 import { useTranslations } from "next-intl";
+import { Check } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { BackButton } from "@/components/ui/back-button";
-import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { BottomAction } from "@/components/meetings/BottomAction";
 
+/** Mock tariffs until Telegram Stars payments land (`plans` / `subscriptions` / `payments` have no API yet). */
+const MOCK_PLANS = [
+  { id: "month", weeks: 4, stars: 250 },
+  { id: "quarter", weeks: 12, stars: 600 },
+] as const;
+
+/** Subscription picker (mock): choose a plan; payment is not wired yet. */
 export default function Subscription() {
-  const t = useTranslations('settings.subscription');
+  const t = useTranslations("settings.subscription");
+  const [plan, setPlan] = useState<(typeof MOCK_PLANS)[number]["id"]>("month");
 
   return (
-    <div className="container p-4 pb-24">
-      <div className="flex items-center mb-6">
-        <BackButton className="mr-2" />
-        <h1 className="text-2xl font-bold">{t('title')}</h1>
+    <div className="mx-auto min-h-screen max-w-xl space-y-6 px-4 pb-32 pt-4">
+      <BackButton />
+      <div className="space-y-2">
+        <h1 className="m-0 text-[28px] font-bold leading-9">{t("title")}</h1>
+        <p className="m-0 text-body text-muted-foreground">{t("subtitle")}</p>
       </div>
 
-      <section>
-        <div className="text-center mb-8">
-          <div className="text-6xl mb-4">🎉</div>
-          <h2 className="text-3xl font-bold mb-2">{t('everythingFree')}</h2>
-          <p className="text-muted-foreground mb-6">
-            {t('betaDescription')}
-          </p>
-        </div>
+      <ul className="m-0 list-none space-y-2 p-0">
+        {[t("features.meetings"), t("features.feedback"), t("features.invites")].map((feature) => (
+          <li key={feature} className="flex items-center gap-2 text-counter">
+            <Check className="size-5 shrink-0 text-success" aria-hidden />
+            {feature}
+          </li>
+        ))}
+      </ul>
 
-        <Card className="p-6 mb-6 bg-primary/10">
-          <h3 className="text-xl font-semibold mb-4">{t('currentPlan')}</h3>
-          <div className="space-y-3">
-            <div className="flex items-center">
-              <span className="text-success mr-2">✓</span>
-              <span>{t('features.unlimitedProfiles')}</span>
-            </div>
-            <div className="flex items-center">
-              <span className="text-success mr-2">✓</span>
-              <span>{t('features.unlimitedMatches')}</span>
-            </div>
-            <div className="flex items-center">
-              <span className="text-success mr-2">✓</span>
-              <span>{t('features.interactiveGames')}</span>
-            </div>
-            <div className="flex items-center">
-              <span className="text-success mr-2">✓</span>
-              <span>{t('features.allDestinations')}</span>
-            </div>
-            <div className="flex items-center">
-              <span className="text-success mr-2">✓</span>
-              <span>{t('features.prioritySupport')}</span>
-            </div>
-          </div>
-        </Card>
+      <div className="space-y-3">
+        {MOCK_PLANS.map((p) => (
+          <button
+            key={p.id}
+            type="button"
+            aria-pressed={plan === p.id}
+            onClick={() => setPlan(p.id)}
+            className={cn(
+              "flex w-full items-center justify-between rounded-md border p-4 text-left transition-colors",
+              plan === p.id ? "border-primary bg-primary-muted" : "border-divider bg-card"
+            )}
+          >
+            <span>
+              <span className="block text-option font-semibold">{t(`plans.${p.id}`)}</span>
+              <span className="block text-body text-muted-foreground">{t("weeks", { count: p.weeks })}</span>
+            </span>
+            <span className="text-option font-semibold">{p.stars} ⭐</span>
+          </button>
+        ))}
+      </div>
 
-        <Card className="p-6 mb-6 border-2 border-dashed">
-          <h3 className="text-lg font-semibold mb-3">{t('comingSoon')}</h3>
-          <p className="text-muted-foreground mb-4">
-            {t('comingSoonDesc')}
-          </p>
-          <div className="space-y-2 text-sm text-muted-foreground">
-            <div className="flex items-center">
-              <span className="mr-2">🚀</span>
-              <span>{t('premiumFeatures.advancedMatching')}</span>
-            </div>
-            <div className="flex items-center">
-              <span className="mr-2">💬</span>
-              <span>{t('premiumFeatures.directMessaging')}</span>
-            </div>
-            <div className="flex items-center">
-              <span className="mr-2">🎯</span>
-              <span>{t('premiumFeatures.locationPreferences')}</span>
-            </div>
-            <div className="flex items-center">
-              <span className="mr-2">📊</span>
-              <span>{t('premiumFeatures.compatibilityInsights')}</span>
-            </div>
-          </div>
-        </Card>
-
-        <div className="text-center">
-          <p className="text-sm text-muted-foreground">
-            {t('stayTuned')}
-          </p>
-        </div>
-      </section>
+      <BottomAction>
+        <p className="m-0 pb-2 text-center text-body text-muted-foreground">{t("comingSoon")}</p>
+        <Button variant="primary" size="block" disabled>
+          {t("pay")}
+        </Button>
+      </BottomAction>
     </div>
   );
-} 
+}

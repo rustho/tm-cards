@@ -39,6 +39,17 @@ function openAppKeyboard(): InlineKeyboard | undefined {
 
 let botUsername: string | undefined;
 
+/** The bot's @username (cached), or undefined when the bot is not configured / unreachable. */
+export async function getBotUsername(): Promise<string | undefined> {
+  if (botUsername || !isBotConfigured()) return botUsername;
+  try {
+    botUsername = (await getBot().api.getMe()).username;
+  } catch (error) {
+    console.error("❌ Could not resolve bot username:", error);
+  }
+  return botUsername;
+}
+
 /**
  * Referral deep link `…?startapp=ref_<code>` (read by the wizard).
  * Base: TELEGRAM_MINI_APP_LINK (t.me/<bot>/<app>), else the bot's main Mini App (t.me/<bot>).
@@ -46,13 +57,9 @@ let botUsername: string | undefined;
  */
 export async function getInviteLink(referralCode: string): Promise<string | null> {
   let base = process.env.TELEGRAM_MINI_APP_LINK;
-  if (!base && isBotConfigured()) {
-    try {
-      botUsername ??= (await getBot().api.getMe()).username;
-      base = `https://t.me/${botUsername}`;
-    } catch (error) {
-      console.error("❌ Could not resolve bot username:", error);
-    }
+  if (!base) {
+    const username = await getBotUsername();
+    if (username) base = `https://t.me/${username}`;
   }
   return base ? `${base.replace(/\/$/, "")}?startapp=ref_${referralCode}` : null;
 }

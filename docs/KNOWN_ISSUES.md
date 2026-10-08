@@ -24,14 +24,13 @@ State after the `feature/relational-schema` branch. Remove entries when fixed.
    on redeploy. Persist it in a table if admins need to tune it.
 6. `preferredAgeMin/Max`, `preferredGender`, `skipNextRound` (in
    `user_settings`) and `profiles.gender` exist and are used by the engine,
-   but no UI sets them yet. `plans`/`subscriptions`/`payments` and
-   `match_feedback` have no UI either; nothing calls
-   `POST /api/matches/[id]/feedback` yet.
+   but no UI sets them yet. `plans`/`subscriptions`/`payments` have no UI
+   either.
 7. Notification preferences are stored but only `newMatches` has a sender
    (`MATCHING_NOTIFICATIONS`); messages, profile views, game invites and the
    weekly digest have no producer.
 8. `photo` is stored as a base64 data URL (≤ 2 MB) in Postgres and returned
-   in list responses (`/api/matches`, `/api/users`). Move to object storage
+   in list responses (`/api/home`, `/api/meetings`, `/api/users`). Move to object storage
    before the user base grows.
 9. `app/settings/profile/ProfileSettings.tsx` headings and buttons are
    hardcoded English; `AdminMenu` descriptions and `not-found` copy are
@@ -56,9 +55,11 @@ State after the `feature/relational-schema` branch. Remove entries when fixed.
 15. Matching ignores `profiles.goals` (and `occupation`).
 16. The legacy `profiles.goal` column is no longer written or read; drop it
     in a later migration.
-17. `components/profile-templates` (`ProfileCard`) is only used by the
-    wizard's design picker; `/profile/[userId]` still renders its own card
-    and ignores `profiles.theme`.
+17. Payments are not wired: `/settings/subscription` is a mock, referral
+    rewards (+2 weeks / −20%) are text only, and complaints
+    (`match_feedback.reason = "report"`) are only logged.
+17a. The weekly cycle uses one timezone (`MEETINGS_TIMEZONE`, Asia/Bangkok)
+    for every city.
 
 ## Code health
 

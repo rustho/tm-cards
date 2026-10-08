@@ -8,21 +8,35 @@ focused docs in `docs/`. Verified against the code on branch
 
 TravelMate is a **Telegram Mini App** (Next.js 14 App Router, React 18,
 TypeScript strict) for finding travel companions in South-East Asia
-(Vietnam, Bali, Thailand, Sri Lanka). UI copy is Russian. Three product
-areas:
+(Vietnam, Bali, Thailand, Sri Lanka). UI copy is Russian. Product areas:
 
 1. **Icebreaker card game** (`/icebreaker`) — swipeable question cards, 102
-   questions in 7 categories, fully client-side. Non-admins land here.
-2. **Onboarding wizard + matches** (`/profile`, `/home`, `/profile/[userId]`,
-   `/settings/*`) — 11-step react-hook-form wizard that autosaves each step
-   to PostgreSQL; match list; notification and matching-schedule settings.
-3. **Matching engine + bot** (`lib/matchingService.ts`, `lib/bot.ts`) —
-   compatibility scoring over `MatchingUser`, run weekly by hand (GitHub Actions) through
-   `/api/cron/matching`; grammY bot in webhook mode that can notify users
-   about new matches.
+   questions in 7 categories, fully client-side.
+2. **Questionnaire** (`/profile`, «Анкета» tab, `/settings/*`) — until
+   `isComplete` an 11-step react-hook-form wizard that autosaves each step to
+   PostgreSQL; afterwards my card in its template + city + meeting formats,
+   «Редактировать анкету» reopens the wizard prefilled (`MyProfileView`);
+   notification and matching-schedule settings. `/profile/[userId]` shows
+   someone's questionnaire with their card template.
+3. **Weekly meetings** — tab bar «Люди / Приглашения / Встречи / Анкета /
+   Профиль» (`components/FooterMenu.tsx`):
+   - `/meetings`, by phase of `WEEK_SCHEDULE` (`config/constants.ts`, all
+     times adjustable): `week` — this round's pair, «Хочу познакомиться»,
+     timer to `agreeDeadline`, contact once mutual, question of the week
+     (`/meetings/[matchId]/question`); `feedback` — the impression flow for
+     that pair; `signup` — opt-in («Участвую» / «Пропускаю неделю»).
+   - `/home` («Люди»): meeting history, counters; `/home/meetings` full log;
+     `/home/meetings/[matchId]` leave / read impressions.
+   - `/invitations`: referral link (paid subscribers only).
+   - Access = subscription or 30-day trial (`getAccess`); otherwise
+     «Выбрать подписку» → `/settings/subscription` (mock, no payments yet).
+4. **Matching engine + bot** (`lib/matchingService.ts`, `lib/bot.ts`) —
+   compatibility scoring, run weekly by hand (GitHub Actions) through
+   `/api/cron/matching`; grammY bot in webhook mode that notifies users
+   about matches, accepts and impressions.
 
 Admin gate: `config/constants.ts` → `ADMIN_TELEGRAM_IDS`. Admins see
-`AdminMenu` on `/`; everyone else is redirected to `/icebreaker`. The same
+`AdminMenu` on `/`; everyone else is redirected to `/meetings`. The same
 list is enforced server-side by `requireAdmin()` in `lib/auth.ts`.
 
 ## Stack
@@ -76,10 +90,13 @@ app/
   profile/ui/             Wizard (entry) → FlexibleWizard (engine) → WizardContext (RHF),
                           wizardConfig.ts (ONBOARDING_STEPS), StepWindow.tsx (step shell),
                           useLimitedSelection.ts (capped multi-select), steps/Step*.tsx
-  home/, profile/[userId], settings/{profile,notifications,matching-schedule,subscription}
+  meetings/                «Встречи» tab + [matchId]/question
+  home/                    «Люди» tab, meetings/ (log), meetings/[matchId] (feedback flow)
+  invitations/, profile/[userId], settings/{profile,notifications,matching-schedule,subscription}
 components/ui/            shadcn + XP primitives (button, card, switch, text-input, list-item, …), barrel index.ts
 components/profile-templates/  profile card designs (artwork in public/profile-templates + ImageTemplate overlay) + registry (ProfileCard)
-components/               Root, AdminMenu, FooterMenu, ErrorBoundary, ErrorPage (no barrel; import by path)
+components/meetings/      meetings UI: WeekMatchView, MeetingList, StatCard, CelebrationScreen, Countdown, BottomAction, …
+components/               Root, AdminMenu, FooterMenu (+ feedback reminder), ErrorBoundary, ErrorPage (no barrel; import by path)
 core/init.ts, mockEnv.ts  SDK v3 bootstrap and dev mock (called from Root)
 core/i18n/                next-intl wiring
 hooks/useAuth.ts          client view of the Telegram user (UI gating only)
@@ -87,6 +104,10 @@ lib/auth.ts               authenticate / requireAdmin / ensureUser (server)
 lib/api.ts                apiFetch / api.get|post|put with the tma header (client)
 lib/bot.ts                grammY bot, BOT_COMMANDS, notifyUser
 lib/matchingService.ts    matching engine (singleton)
+lib/meetingsService.ts    access (subscription/trial), week phase, participation, feedback rules (server)
+lib/weekMatchService.ts   this week's pair: accept, contacts, question of the week (server)
+lib/weekCycle.ts          WEEK_SCHEDULE math: getWeekPhase, agreeDeadline, closing unagreed pairs (server)
+lib/pendingFeedback.ts, telegramLinks.ts  feedback-reminder cache, openTgLink (client)
 lib/profileDto.ts         users+profiles+tags → UI Profile mapper (read side)
 lib/profileService.ts     profile upsert: location/tag resolution, referral, validation (write side)
 lib/prisma.ts, dateUtils.ts, settingsService.ts (client), utils.ts (cn),
@@ -110,7 +131,9 @@ and preferences. Matching writes `matches` into weekly `match_rounds`;
 `match_feedback` stores each participant's verdict. `plans`,
 `subscriptions`, `payments` exist for Telegram Stars but have no API yet.
 `lib/profileDto.ts` maps all of this back to the flat UI `Profile` type, so
-the frontend did not change shape.
+the frontend did not change shape. Matches also carry per-side
+`user1AcceptedAt`/`user2AcceptedAt`; feedback carries `impressions` and a
+private `reason`. Lifecycle and every meetings route: `docs/DATA_AND_API.md`.
 
 ## Request flow in one paragraph
 
@@ -118,8 +141,8 @@ The client calls our API only through `lib/api.ts`, which attaches
 `Authorization: tma <raw init data>`. Every route calls `authenticate()` (or
 `requireAdmin()`), which validates the signature with `TELEGRAM_BOT_TOKEN`
 and returns `{ id, isAdmin, ... }`. Routes never trust ids from the body or
-URL: `POST /api/profile` writes the caller's own row, `/api/matches/[id]`
-allows only the owner or an admin, `/api/users` and `/api/matching` are
+URL: `POST /api/profile` writes the caller's own row, `/api/meetings/[matchId]/*`
+allow only the two participants, `/api/users` and `/api/matching` are
 admin-only. Details in `docs/DATA_AND_API.md`.
 
 ## Conventions (short; full list in docs/CONVENTIONS.md)
@@ -153,6 +176,7 @@ anything new there.
 | `TELEGRAM_MINI_APP_LINK` | `t.me/<bot>/<app>` base of referral links (`?startapp=ref_<code>`); optional, defaults to `t.me/<bot>` (main Mini App) |
 | `CRON_SECRET` | `Authorization: Bearer` expected by `/api/cron/matching`; also a GitHub repo secret together with `APP_URL` |
 | `MATCHING_NOTIFICATIONS` | `"true"` to message both users when a match is created |
+| `MEETINGS_PHASE` | testing only: `week` / `feedback` / `signup` forces the «Встречи» tab phase instead of `WEEK_SCHEDULE` (`lib/weekCycle.ts`) |
 
 ## Gotchas
 
@@ -169,7 +193,12 @@ anything new there.
   the legacy tables; it is one-way. Back up before `pnpm db:deploy` on real data.
 - `core/i18n/config.ts` has `locales = ["ru"]`; `en.json` is kept in sync
   but never served.
-- `FooterMenu` is not in the layout; pages include it and add `pb-24`.
+- `FooterMenu` is not in the layout; pages include it and add `pb-24`
+  (`pb-48` with a `BottomAction aboveFooter`). It is a floating bar, plus the
+  «Как прошло знакомство?» reminder when a meeting waits for feedback.
+- Weekly cycle: `WEEK_SCHEDULE` in `MEETINGS_TIMEZONE` (Asia/Bangkok for
+  now), both in `config/constants.ts`; set `MEETINGS_PHASE=week|feedback|signup`
+  to test the «Встречи» tab on any weekday.
 - Never add a `components.json` (or any `components.*` file) at the repo
   root: with the `@/*` alias it can shadow the `components/` directory.
 - `globals.css` gives every `h1`–`h6` and `p` a bottom margin (`1rem`) and a

@@ -16,7 +16,8 @@
     "invitations": "Invitations",
     "meetings": "Meetings",
     "questionnaire": "Questionnaire",
-    "account": "Profile"
+    "account": "Profile",
+    "feedbackReminder": "How did this week's meeting go?"
   },
   "home": {
     "loading": "Loading...",
@@ -100,6 +101,46 @@
       "reported": "We received your report and will review it.",
       "ok": "Got it"
     }
+  },
+  "meetingsTab": {
+    "loading": "Loading...",
+    "loadFailed": "Could not load data. Please try again.",
+    "chooseCity": "Choose a city",
+    "signupTitle": "Want to meet someone new this week?",
+    "signupHint": "A new match arrives every Monday",
+    "participating": "I'm in",
+    "skipping": "Skipping this week",
+    "chooseSubscription": "Choose a subscription",
+    "weekTitle": "No match this week",
+    "weekText": "Sign-up for next week opens on Friday — your match arrives on Monday.",
+    "weekLink": "Open «People»"
+  },
+  "weekMatch": {
+    "loading": "Loading...",
+    "openProfile": "Open profile",
+    "vibes": "Shared vibes",
+    "formats": "Things to do together",
+    "questionTeaser": "A new question or challenge every week",
+    "questionLocked": "The question card opens once both of you tap «I want to meet»",
+    "questionTitle": "Question of the week",
+    "done": "Done",
+    "ok": "Got it",
+    "timeLeft": "Time left to agree on a meeting",
+    "accept": "I want to meet",
+    "acceptFailed": "Something went wrong. Please try again.",
+    "waitingPartner": "Waiting for your companion",
+    "write": "Message",
+    "shareFeedback": "Share impression",
+    "waitingTitle": "Great! Now wait for the second answer",
+    "waitingText": "As soon as {name} taps the button too, we'll send you a notification and a direct Telegram contact so you can agree on a meeting before the timer ends.",
+    "timer": "Timer",
+    "great": "Great",
+    "mutualTitle": "Great! You're both ready to meet.",
+    "mutualText": "Time to message each other and agree on a meeting before the timer runs out",
+    "daysShort": "{days}d",
+    "days": "{count, plural, one {day} other {days}}",
+    "hours": "{count, plural, one {hour} other {hours}}",
+    "minutes": "{count, plural, one {minute} other {minutes}}"
   },
   "profile": {
     "title": "Profile",
@@ -244,6 +285,10 @@
       "lookingFor": "Looking for",
       "writeToMatch": "Write to Match",
       "about": "About"
+    },
+    "mine": {
+      "formats": "What I'd like to do at a meeting",
+      "edit": "Edit profile"
     }
   },
   "questions": {
@@ -312,26 +357,20 @@
     },
     "subscription": {
       "title": "Subscription",
-      "description": "View subscription details",
-      "everythingFree": "Everything is Free!",
-      "betaDescription": "Enjoy all TravelMate features at no cost during our beta period",
-      "currentPlan": "Current Plan: Free Beta",
+      "description": "Plans and payment",
+      "subtitle": "A subscription unlocks weekly meetings and friend invitations.",
       "features": {
-        "unlimitedProfiles": "Unlimited profile creation",
-        "unlimitedMatches": "Unlimited matches",
-        "interactiveGames": "Interactive question games",
-        "allDestinations": "All travel destinations",
-        "prioritySupport": "Priority customer support"
+        "meetings": "A new companion every week",
+        "feedback": "Meeting impressions",
+        "invites": "Friend invitations with rewards"
       },
-      "comingSoon": "Coming Soon",
-      "comingSoonDesc": "We're working on premium features that will enhance your travel matching experience:",
-      "premiumFeatures": {
-        "advancedMatching": "Advanced matching algorithms",
-        "directMessaging": "Direct messaging",
-        "locationPreferences": "Location-based preferences",
-        "compatibilityInsights": "Travel compatibility insights"
+      "plans": {
+        "month": "1 month",
+        "quarter": "3 months"
       },
-      "stayTuned": "Stay tuned for updates! We'll notify you when premium features become available."
+      "weeks": "{count, plural, one {# week} other {# weeks}}",
+      "comingSoon": "Payment with Telegram Stars is coming soon",
+      "pay": "Pay"
     },
     "matchingSchedule": {
       "title": "Matching Schedule",

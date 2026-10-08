@@ -59,7 +59,7 @@ pnpm dev:https    # self-signed HTTPS; needs ./certificates (gitignored)
 In a plain browser `core/mockEnv.ts` fakes the Telegram launch
 (development only): user `ADMIN_TELEGRAM_IDS[0]`, platform `tdesktop`, light
 theme. To test as a non-admin, change the id in `mockEnv.ts`; `/` then
-redirects to `/icebreaker`. Eruda loads with `start_param=debug` on
+redirects to `/meetings`. Eruda loads with `start_param=debug` on
 iOS/Android or always in dev.
 
 Admin API calls from a terminal need a real `Authorization: tma <initDataRaw>`

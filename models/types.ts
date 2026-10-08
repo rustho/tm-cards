@@ -222,6 +222,8 @@ export type Profile = Omit<
   /** Write-only (onboarding "first meeting" screen): true skips the upcoming
    * matching round. Stored in user_settings, never returned by the API. */
   skipNextRound?: boolean;
+  /** Own profile only (`GET /api/profile`): the wizard was finished. */
+  isComplete?: boolean;
 };
 
 // Kept for backward compatibility if used elsewhere, but aligned with Profile
@@ -354,4 +356,57 @@ export interface InvitationsSummary {
   /** `t.me/…?startapp=ref_<code>`; null without a subscription or when the bot is not configured. */
   inviteLink: string | null;
   invited: (PersonPreview & { occupation: string })[];
+}
+
+/** Part of the weekly cycle (WEEK_SCHEDULE): the pair meets → leaves impressions → people opt in for next week. */
+export type WeekPhase = "week" | "feedback" | "signup";
+
+/** `GET /api/meetings/current`: the «Встречи» tab. */
+export interface MeetingsWeek {
+  /** Subscription or trial; without it the tab only leads to «Выбрать подписку». */
+  hasAccess: boolean;
+  phase: WeekPhase;
+  /** Not paused in settings and not skipping the next round. */
+  participating: boolean;
+  location: { country: string; region: string } | null;
+  /** This round's pair during the `week` and `feedback` phases; null when there is none. */
+  match: CurrentMatch | null;
+}
+
+/** `GET /api/meetings/pending-feedback`: a recent meeting still waiting for my impression. */
+export interface PendingFeedback {
+  matchId: string;
+  partner: PersonPreview;
+}
+
+/** A chip on the match screen: tag label plus its emoji from the option lists. */
+export interface MatchChip {
+  label: string;
+  emoji: string;
+}
+
+/** This round's pair as the «Встречи» tab shows it (`week` / `feedback` phases). */
+export interface CurrentMatch {
+  matchId: string;
+  partner: PersonPreview & { location: string };
+  me: PersonPreview;
+  /** Interests and values both profiles share. */
+  vibes: MatchChip[];
+  /** The partner's meeting formats; `common` when I picked it too. */
+  formats: (MatchChip & { common: boolean })[];
+  status: MeetingStatus;
+  /** Time to agree on the meeting (WEEK_SCHEDULE.agreeDeadline), ISO. */
+  deadline: string;
+  iAccepted: boolean;
+  partnerAccepted: boolean;
+  /** Where «Написать» leads once both accepted: the partner's t.me link, or the bot chat with the contact. */
+  contactUrl: string | null;
+  /** Both accepted at least FEEDBACK_OPENS_AFTER_HOURS ago and my impression is still missing. */
+  canShareFeedback: boolean;
+}
+
+/** `GET /api/meetings/[matchId]/question`: the pair's question of the week (opens once both accepted). */
+export interface WeeklyQuestion {
+  text: string;
+  category: string;
 }

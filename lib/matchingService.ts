@@ -3,6 +3,8 @@ import prisma from "./prisma";
 import { notifyUser } from "./bot";
 import { userWithProfileInclude, type UserWithProfile } from "./profileDto";
 import { INTERESTS, LOCATIONS, MEETING_FORMATS, VALUES } from "@/models/types";
+import { TRIAL_DAYS } from "@/config/constants";
+import { closeUnagreedMatches } from "./weekCycle";
 
 /**
  * Matching engine. Once per weekly round it pairs complete, active profiles
@@ -205,7 +207,10 @@ class MatchingService {
     };
   }
 
-  /** Active users with a complete profile and a location, past cooldown, not paused or skipping. */
+  /**
+   * Active users with a complete profile and a location, past cooldown, not paused or skipping,
+   * and with access: an active subscription or still inside the trial (same rule as getAccess).
+   */
   private async getCandidates(): Promise<Candidate[]> {
     const now = new Date();
 
@@ -223,6 +228,12 @@ class MatchingService {
         AND: [
           { OR: [{ settings: null }, { settings: { matchingOption: "active" } }] },
           { OR: [{ settings: null }, { settings: { skipNextRound: false } }] },
+          {
+            OR: [
+              { createdAt: { gt: new Date(now.getTime() - TRIAL_DAYS * 24 * 60 * 60 * 1000) } },
+              { subscriptions: { some: { status: "active", endsAt: { gt: now } } } },
+            ],
+          },
         ],
       },
       include: { ...userWithProfileInclude, settings: true },
@@ -436,7 +447,9 @@ class MatchingService {
     };
   }
 
+  /** Unagreed pairs past their deadline → not_met; pending past expiry → expired. Returns the expired count. */
   async cleanupExpiredMatches(): Promise<number> {
+    await closeUnagreedMatches();
     const result = await prisma.match.updateMany({
       where: { status: "pending", expiresAt: { lt: new Date() } },
       data: { status: "expired" },

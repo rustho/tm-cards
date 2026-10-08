@@ -3,29 +3,15 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { Profile } from "@/models/types";
+import type { Profile } from "@/models/types";
 import { api } from "@/lib/api";
-import { useAuth } from "@/hooks/useAuth";
 import { FooterMenu } from "@/components/FooterMenu";
-import { Card, CardContent } from "@/components/ui/card";
-import { calculateAge } from "@/lib/dateUtils";
+import { BackButton } from "@/components/ui/back-button";
+import { ProfileCard } from "@/components/profile-templates";
 
-function Tags({ items, className }: { items: string[]; className?: string }) {
-  if (items.length === 0) return <p className="text-muted-foreground">—</p>;
-  return (
-    <div className="flex flex-wrap gap-2">
-      {items.map((item) => (
-        <span key={item} className={`rounded-full px-3 py-1 text-sm ${className ?? "bg-primary/15 text-foreground"}`}>
-          {item}
-        </span>
-      ))}
-    </div>
-  );
-}
-
+/** Another user's questionnaire, rendered with the card template they picked. */
 export default function UserProfile() {
   const params = useParams<{ userId: string }>();
-  const { userId: ownId } = useAuth();
   const t = useTranslations("profile.view");
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
@@ -42,117 +28,19 @@ export default function UserProfile() {
     };
   }, [params.userId]);
 
-  if (loading) {
-    return <div className="container p-8 text-center">{t("loading")}</div>;
-  }
-
-  if (!profile) {
-    return (
-      <div className="container p-8 text-center text-destructive">
-        {t("notFound")}
-        <FooterMenu />
-      </div>
-    );
-  }
-
-  const age = (() => {
-    try {
-      return profile.dateOfBirth ? calculateAge(profile.dateOfBirth) : null;
-    } catch {
-      return null;
-    }
-  })();
-  const instagram = profile.instagram?.replace(/^@/, "");
-  const isOwn = ownId === params.userId;
-
   return (
-    <div className="container p-4 pb-24">
-      <Card>
-        <CardContent className="p-6">
-          <div className="flex flex-col items-start gap-6 sm:flex-row">
-            {profile.photo && (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={profile.photo} alt={profile.name} className="h-32 w-32 rounded-full object-cover" />
-            )}
-            <div className="flex-1 space-y-5">
-              <div>
-                <h1 className="mb-1 text-2xl font-bold">
-                  {profile.name}
-                  {age !== null && <span className="ml-2 text-lg font-normal text-muted-foreground">{age}</span>}
-                </h1>
-              </div>
-
-              <Section title={t("location")}>
-                <p>{[profile.region, profile.country].filter(Boolean).join(", ") || "—"}</p>
-              </Section>
-
-              {profile.profile && (
-                <Section title={t("about")}>
-                  <p className="whitespace-pre-line">{profile.profile}</p>
-                </Section>
-              )}
-
-              <Section title={t("values")}>
-                <Tags items={profile.values ?? []} className="bg-secondary text-secondary-foreground" />
-              </Section>
-
-              <Section title={t("meetingFormats")}>
-                <Tags items={profile.meetingFormats ?? []} className="bg-accent/30 text-foreground" />
-              </Section>
-
-              <Section title={t("interests")}>
-                <Tags items={profile.interests ?? []} className="bg-accent/30 text-foreground" />
-              </Section>
-
-              {profile.placesToVisit && (
-                <Section title={t("travelStyle")}>
-                  <p>{profile.placesToVisit}</p>
-                </Section>
-              )}
-
-              {instagram && (
-                <Section title={t("instagram")}>
-                  <a
-                    href={`https://instagram.com/${instagram}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-primary underline-offset-4 hover:underline"
-                  >
-                    @{instagram}
-                  </a>
-                </Section>
-              )}
-
-              {profile.announcement && (
-                <Section title={t("lookingFor")}>
-                  <p className="whitespace-pre-line">{profile.announcement}</p>
-                </Section>
-              )}
-
-              {!isOwn && instagram && (
-                <a
-                  href={`https://instagram.com/${instagram}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="theme-btn-primary mt-2"
-                >
-                  {t("writeToMatch")}
-                </a>
-              )}
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+    <div className="mx-auto min-h-screen max-w-xl space-y-4 px-4 pb-28 pt-4">
+      <BackButton />
+      {loading ? (
+        <p className="m-0 py-12 text-center text-body text-muted-foreground">{t("loading")}</p>
+      ) : !profile ? (
+        <p className="m-0 py-12 text-center text-body text-destructive">{t("notFound")}</p>
+      ) : (
+        <div className="overflow-hidden rounded-md border border-divider">
+          <ProfileCard theme={profile.theme} profile={profile} />
+        </div>
+      )}
       <FooterMenu />
-    </div>
-  );
-}
-
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <div>
-      <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-muted-foreground">{title}</h2>
-      {children}
     </div>
   );
 }

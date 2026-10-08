@@ -45,11 +45,16 @@ function changedFields(data: Partial<Profile>, saved: Partial<Profile>): Partial
   return changed as Partial<Profile>;
 }
 
+/** Re-editing a finished profile skips the onboarding-only «first meeting» screen. */
+const EDIT_STEPS = ONBOARDING_STEPS.filter((step) => step.id !== "firstMeeting");
+
 /**
  * Onboarding entry point. Loads the existing profile (if any), seeds name and
  * username from Telegram, and autosaves every completed step to POST /api/profile.
+ * With `onDone` it re-edits a finished profile and calls it at the end instead of going to /home;
+ * «Назад» on the first step then calls `onCancel`.
  */
-export function Wizard() {
+export function Wizard({ onDone, onCancel }: { onDone?: () => void; onCancel?: () => void } = {}) {
   const router = useRouter();
   const t = useTranslations("profile.wizard");
   const user = useSignal(initData.user);
@@ -120,7 +125,9 @@ export function Wizard() {
 
   const handleComplete = async (finalData: Profile) => {
     const ok = await saveProfile({ ...finalData, isComplete: true } as Partial<Profile>, { force: true });
-    if (ok) router.push("/home");
+    if (!ok) return;
+    if (onDone) onDone();
+    else router.push("/home");
   };
 
   if (!initialData) {
@@ -135,10 +142,11 @@ export function Wizard() {
         </div>
       )}
       <FlexibleWizard
-        steps={ONBOARDING_STEPS}
+        steps={onDone ? EDIT_STEPS : ONBOARDING_STEPS}
         initialData={initialData}
         onStepComplete={handleStepComplete}
         onComplete={handleComplete}
+        onCancel={onCancel}
         mode="full"
       />
     </>

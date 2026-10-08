@@ -57,5 +57,6 @@ export function toProfile(user: UserWithProfile, { includePrivate = false } = {}
     occupation: p?.occupation ?? "",
     // The column defaults to "default" (pre-template rows); expose only real template ids.
     theme: (PROFILE_THEMES as readonly string[]).includes(p?.theme ?? "") ? p!.theme : "",
+    ...(includePrivate ? { isComplete: p?.isComplete ?? false } : {}),
   };
 }

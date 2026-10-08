@@ -65,10 +65,13 @@ export async function init(options: {
     // miniApp not available in this environment
   }
 
-  try {
-    await viewport.mount();
-    viewport.bindCssVars();
-  } catch {
-    // viewport not available in this environment (or already bound)
-  }
+  // Not awaited: some Telegram clients never answer the viewport / safe-area
+  // requests, and blocking here would keep Root on its loader forever.
+  void Promise.resolve()
+    .then(() => viewport.mount({ timeout: 3000 }))
+    .then(() => viewport.bindCssVars())
+    .catch((error) => {
+      // viewport not available in this environment (or already bound)
+      console.warn("Viewport mount skipped:", error);
+    });
 }

@@ -1,6 +1,6 @@
 # Data, auth and API
 
-Verified on branch `feature/relational-schema`.
+Verified on `main` (2026-10-08).
 
 ## Store
 
@@ -50,15 +50,43 @@ Notification flags, `matchingOption` + `matchingCustomDate` +
 A round is a week (`weekStart` DATE unique, Monday UTC; `status open |
 closed`). A match belongs to a round, stores `user1Id < user2Id` (by uuid),
 `score`, `factors` Json snapshot, `status` (`pending | met | not_met |
-expired`), `notifiedAt`, `expiresAt` (+7 d). Unique on
+postponed | expired`), `notifiedAt`, `user1AcceptedAt` / `user2AcceptedAt`
+(«Хочу познакомиться» per side; both set = mutual), `expiresAt` (+7 d). Unique on
 `(roundId, user1Id, user2Id)`; the same pair can recur in later rounds only
 if the engine allows it (today it never re-pairs previous partners).
 
+Lifecycle (`lib/meetingsService.ts`, `lib/weekMatchService.ts`, `lib/weekCycle.ts`):
+Times come from `WEEK_SCHEDULE` in `config/constants.ts` (day + hour in
+`MEETINGS_TIMEZONE`; defaults: agree until Thursday 00:00, sign-up from
+Friday 00:00) and are expected to change.
+- Monday: the matching run creates `pending` pairs.
+- Phase `week` (Monday → `agreeDeadline`): each side may accept. A pair not
+  mutual by then becomes `not_met` (`closeUnagreedMatches()`: before every
+  matching run, and lazily for the caller in `/api/home`, `/api/meetings`,
+  `/api/meetings/current`, `/api/meetings/pending-feedback`).
+- Phase `feedback` (`agreeDeadline` → `signupStart`): the «Встречи» tab shows
+  the impression flow for this round's pair.
+- Phase `signup` (`signupStart` → next Monday): opt-in for the next round.
+- Feedback: «met» from either side → `met`; «not met» → `not_met` unless
+  someone already said met; «later» (no feedback row) → `postponed`, which
+  never expires and keeps feedback open.
+- `pending` past `expiresAt` → `expired` (hidden from every list).
+
 ### `MatchFeedback` (`match_feedback`)
-One row per participant per match: `met`, `rating 1..5?`, `text?`.
+One row per participant per match (unique `(matchId, authorId)`): `met`,
+`impressions text[]` (ids from `IMPRESSION_OPTIONS`, shown to the partner),
+`reason?` (one of `NOT_MET_REASONS`, private; `report` is logged as a
+complaint), `text?` (≤ 250), legacy `rating 1..5?` (no longer written).
+Only `met = true` rows are ever shown to the partner.
+
+### Access
+`getAccess()` in `lib/meetingsService.ts`: an active `subscriptions` row
+(`status active`, `endsAt` in the future) or `users.createdAt` within
+`TRIAL_DAYS` (30). `subscribed` is true only for the paid case (unlocks
+invitations). The matching run applies the same rule to candidates.
 
 ### `Plan`, `Subscription`, `Payment`
-Tables only, no API yet. `Plan { code, title, priceStars, periodWeeks }`,
+Tables only, no API yet (`/settings/subscription` is a mock picker). `Plan { code, title, priceStars, periodWeeks }`,
 `Subscription { userId, planId, startedAt, weeks, endsAt, status }`,
 `Payment { subscriptionId, amountStars, currency XTR, telegramChargeId
 unique, providerChargeId, payload, paidAt }`.
@@ -72,7 +100,10 @@ tables (including spreadsheet-era `previousMatches` pairs into a closed
 legacy round dated 2024-12-30) and drops the legacy tables. Verified end to
 end against PGlite with sample data; apply with `pnpm db:deploy`.
 `20261008120000_profile_occupation` adds `profiles.occupation`;
-`20261008130000_profile_goals` adds `profiles.goals`.
+`20261008130000_profile_goals` adds `profiles.goals`;
+`20261008150000_feedback_impressions` adds `match_feedback.impressions` and
+`reason`; `20261008170000_match_accept` adds `matches.user1AcceptedAt` and
+`user2AcceptedAt`.
 
 ## Authentication (`lib/auth.ts`)
 
@@ -87,7 +118,7 @@ goes through it. Dev accepts unsigned mock data; prod is strict.
 ### Profile
 | Method & path | Who | Response |
 |---|---|---|
-| `GET /api/profile` | user | own `Profile`; 404 until something was saved |
+| `GET /api/profile` | user | own `Profile` (with private `goals` and `isComplete`); 404 until something was saved |
 | `POST /api/profile` | user | partial upsert via `lib/profileService.ts`. Accepts the UI `Profile` fields (`name, dateOfBirth, country, region, goals, profile \| about, announcement, placesToVisit, instagram, photo, occupation, interests, values, meetingFormats`) plus `gender, theme, isComplete` (alias `isActive`), `referralCode` (applied once) and write-only `skipNextRound` (boolean, upserted into `user_settings`; sent by the onboarding "first meeting" screen). Country+region are upserted into `locations`; tag arrays replace that category's `profile_tags`. 400 on validation, 413 on photo > 2 MB |
 | `GET /api/profile/[userId]` | user | another user's `Profile` (complete + active; owner/admin see incomplete) |
 | `GET /api/users[?all=1]` | admin | complete profiles (or everyone) |
@@ -96,11 +127,21 @@ goes through it. Dev accepts unsigned mock data; prod is strict.
 builds it from `users` + `profiles` + `locations` + `tags` (tag categories
 `interest`/`value`/`format` → `interests`/`values`/`meetingFormats`).
 
-### Matches
-| Method & path | Who | Response |
-|---|---|---|
-| `GET /api/matches/[id]` | owner/admin (`id` = Telegram id) | partner `Profile` + `matchId, matchStatus, matchedAt, weekStart, score, myFeedback`, newest first |
-| `POST /api/matches/[id]/feedback` | participant (`id` = match id) | body `{ met, rating?, text? }`; upserts the caller's feedback; status → `met` if anyone met, `not_met` if everyone says no |
+### Meetings (people, feedback, weekly pair)
+All routes act for the caller (`ensureUser`), never for an id from the body. Types in `models/types.ts`.
+
+| Method & path | Response |
+|---|---|
+| `GET /api/home` | `HomeSummary`: `hasAccess`, `accessEndsAt`, last 4 meetings (`history`), met count + avatars, invited count + avatars, `awaitingFeedback` |
+| `GET /api/meetings` | full log `Meeting[]` (expired hidden), newest first |
+| `GET /api/meetings/[matchId]` | `MeetingDetails` (participant only): partner header, `me`, `myFeedback`, `partnerFeedback` (partner's «met» impression, visible right away) |
+| `POST /api/meetings/[matchId]/feedback` | body `{ outcome: "met", impressions[≥1], text? } \| { outcome: "not_met", reason, text? } \| { outcome: "later" }`; once per participant (409 on repeat or closed match); «met» notifies the partner via the bot |
+| `GET /api/meetings/current` | `MeetingsWeek`: `hasAccess`, `phase` (`week` / `feedback` / `signup` from `WEEK_SCHEDULE`, `MEETINGS_PHASE` overrides), `participating`, profile `location`, and in the `week` and `feedback` phases this round's `match: CurrentMatch` (common vibes, formats, deadline, accept flags, `contactUrl` once mutual, `canShareFeedback` 24 h after mutual) |
+| `PUT /api/meetings/participation` | body `{ participating }`; `true` clears pauses and the skip (402 without access), `false` sets `skipNextRound` |
+| `POST /api/meetings/[matchId]/accept` | «Хочу познакомиться»; idempotent; 409 after the deadline or on a closed match, 402 without access; the first click nudges the partner, the second sends both a direct contact through the bot. Returns `CurrentMatch` |
+| `GET /api/meetings/[matchId]/question` | `WeeklyQuestion` from the icebreaker bank (no romance), same for both sides; 403 until mutual |
+| `GET /api/meetings/pending-feedback` | `PendingFeedback \| null`: newest open match from the last 14 days without my feedback (the reminder above the tab bar) |
+| `GET /api/invitations` | `InvitationsSummary`: `canInvite` (paid subscription only), `inviteLink` (`TELEGRAM_MINI_APP_LINK` or `t.me/<bot>` + `?startapp=ref_<code>`), invited users |
 
 ### Settings (DB)
 | Method & path | Body |
@@ -120,11 +161,15 @@ Unchanged paths: `/api/matching` (admin: status/stats/config, `run`,
 
 ## Matching algorithm (`lib/matchingService.ts`)
 
+0. (Callers run `cleanupExpiredMatches()` first: unagreed pairs past their
+   deadline → `not_met`, pending past `expiresAt` → `expired`.)
 1. Upsert the `MatchRound` for the current week (Monday UTC).
 2. Reset settings whose pause expired.
 3. Candidates: `status active`, `profile.isComplete`, has `locationId`,
    `lastMatchedAt` older than `cooldownHours` (24) or null, settings absent
-   or `matchingOption active` and `skipNextRound false`.
+   or `matchingOption active` and `skipNextRound false`, and with access:
+   an active `subscriptions` row (`endsAt` in the future) or `createdAt`
+   within `TRIAL_DAYS` (30) — the same rule as `getAccess()` in `lib/meetingsService.ts`.
 4. Load all previous partners from `matches` for those users.
 5. Group by country (region inside, except `countriesWithoutRegions`);
    score every pair not previously matched and passing mutual age/gender

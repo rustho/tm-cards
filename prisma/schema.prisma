@@ -180,10 +180,13 @@ model Match {
   factors Json
 
   /// pending | met | not_met | postponed | expired. postponed = «встретимся позже»: never expires, feedback stays open.
-  status     String    @default("pending")
-  notifiedAt DateTime?
-  expiresAt  DateTime
-  createdAt  DateTime  @default(now())
+  status          String    @default("pending")
+  notifiedAt      DateTime?
+  /// «Хочу познакомиться» per side; both set = mutual, contacts are shared.
+  user1AcceptedAt DateTime?
+  user2AcceptedAt DateTime?
+  expiresAt       DateTime
+  createdAt       DateTime  @default(now())
 
   feedback MatchFeedback[]
 

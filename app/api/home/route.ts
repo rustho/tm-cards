@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { authenticate, authErrorResponse, ensureUser } from "@/lib/auth";
+import { closeUnagreedMatches } from "@/lib/weekCycle";
 import { HOME_HISTORY_LIMIT } from "@/config/constants";
 import { getAccess, meetingInclude, OPEN_STATUSES, personSelect, toMeeting, toPerson, visibleMatchesWhere } from "@/lib/meetingsService";
 import type { HomeSummary } from "@/models/types";
@@ -14,6 +15,7 @@ const PREVIEW_PEOPLE = 3;
 export async function GET(request: NextRequest) {
   try {
     const user = await ensureUser(await authenticate(request));
+    await closeUnagreedMatches(user.id);
 
     const [access, history, awaitingFeedback, metCount, metRecent, invitedCount, invitedRecent] = await Promise.all([
       getAccess(user),

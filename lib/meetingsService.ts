@@ -129,6 +129,22 @@ export async function getAccess(
   return { hasAccess: trialEndsAt > now, subscribed: false, accessEndsAt: trialEndsAt };
 }
 
+/** In the next round unless matching is paused in settings or this week is skipped. */
+export function isParticipating(settings: { matchingOption: string; skipNextRound: boolean } | null): boolean {
+  return !settings || (settings.matchingOption === "active" && !settings.skipNextRound);
+}
+
+/**
+ * «Участвую» clears any pause and the skip; «Пропускаю неделю» skips only the next round
+ * (the matching run resets `skipNextRound`).
+ */
+export async function setParticipation(userId: string, participating: boolean) {
+  const data = participating
+    ? { matchingOption: "active", matchingCustomDate: null, matchingResumeDate: null, skipNextRound: false }
+    : { skipNextRound: true };
+  return prisma.userSettings.upsert({ where: { userId }, update: data, create: { userId, ...data } });
+}
+
 export type FeedbackInput =
   | { outcome: "met"; impressions: ImpressionId[]; text: string }
   | { outcome: "not_met"; reason: NotMetReason; text: string }
