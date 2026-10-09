@@ -18,9 +18,11 @@ function zonedMidnight(utcDate: Date): Date {
 /**
  * When the round of `weekStart` (its Monday, a UTC DATE) stops accepting «Хочу познакомиться»:
  * WEEK_SCHEDULE.agreeDeadline in MEETINGS_TIMEZONE. Fixed offsets: fine for zones without DST.
+ * MEETINGS_PHASE=week (testing) keeps it open until the end of the round's week.
  */
 export function agreeDeadline(weekStart: Date): Date {
-  return new Date(zonedMidnight(weekStart).getTime() + offsetOf(WEEK_SCHEDULE.agreeDeadline));
+  const offset = process.env.MEETINGS_PHASE === "week" ? 7 * DAY_MS : offsetOf(WEEK_SCHEDULE.agreeDeadline);
+  return new Date(zonedMidnight(weekStart).getTime() + offset);
 }
 
 /** Phase of the weekly cycle at `now` (see WEEK_SCHEDULE); MEETINGS_PHASE overrides. */

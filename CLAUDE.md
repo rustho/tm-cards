@@ -176,7 +176,7 @@ anything new there.
 | `TELEGRAM_MINI_APP_LINK` | `t.me/<bot>/<app>` base of referral links (`?startapp=ref_<code>`); optional, defaults to `t.me/<bot>` (main Mini App) |
 | `CRON_SECRET` | `Authorization: Bearer` expected by `/api/cron/matching`; also a GitHub repo secret together with `APP_URL` |
 | `MATCHING_NOTIFICATIONS` | `"true"` to message both users when a match is created |
-| `MEETINGS_PHASE` | testing only: `week` / `feedback` / `signup` forces the «Встречи» tab phase instead of `WEEK_SCHEDULE` (`lib/weekCycle.ts`) |
+| `MEETINGS_PHASE` | testing only: `week` / `feedback` / `signup` forces the «Встречи» tab phase instead of `WEEK_SCHEDULE` (`lib/weekCycle.ts`); `week` also keeps «Хочу познакомиться» open until the end of the round's week |
 
 ## Gotchas
 
