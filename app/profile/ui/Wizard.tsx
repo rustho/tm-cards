@@ -51,7 +51,7 @@ const EDIT_STEPS = ONBOARDING_STEPS.filter((step) => step.id !== "firstMeeting")
 /**
  * Onboarding entry point. Loads the existing profile (if any), seeds name and
  * username from Telegram, and autosaves every completed step to POST /api/profile.
- * With `onDone` it re-edits a finished profile and calls it at the end instead of going to /home;
+ * With `onDone` it re-edits a finished profile and calls it at the end instead of going to /meetings;
  * «Назад» on the first step then calls `onCancel`.
  */
 export function Wizard({ onDone, onCancel }: { onDone?: () => void; onCancel?: () => void } = {}) {
@@ -125,9 +125,10 @@ export function Wizard({ onDone, onCancel }: { onDone?: () => void; onCancel?: (
 
   const handleComplete = async (finalData: Profile) => {
     const ok = await saveProfile({ ...finalData, isComplete: true } as Partial<Profile>, { force: true });
-    if (!ok) return;
+    if (!ok) return false;
     if (onDone) onDone();
-    else router.push("/home");
+    else router.replace("/meetings");
+    return true;
   };
 
   if (!initialData) {
@@ -137,7 +138,8 @@ export function Wizard({ onDone, onCancel }: { onDone?: () => void; onCancel?: (
   return (
     <>
       {saveError && (
-        <div className="mx-4 mt-2 rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
+        // Fixed above everything: the last step is a full-screen overlay (z-50) that would hide an inline banner.
+        <div className="fixed inset-x-4 top-2 z-[60] rounded-md border border-destructive/40 bg-card px-3 py-2 text-sm text-destructive shadow-md">
           {saveError}
         </div>
       )}

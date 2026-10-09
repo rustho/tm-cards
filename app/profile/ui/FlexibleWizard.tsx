@@ -21,7 +21,8 @@ export interface FlexibleWizardProps {
   mode?: "full" | "edit";
   initialStepIndex?: number; // 0-based index
   initialData: Partial<Profile>;
-  onComplete?: (data: Profile) => void;
+  /** May resolve to `false` when finishing failed (e.g. the save), so the last step can unlock. */
+  onComplete?: (data: Profile) => void | Promise<boolean | void>;
   onStepComplete?: (stepId: string, data: Partial<Profile>) => void;
   onCancel?: () => void;
 }
@@ -39,26 +40,22 @@ function FlexibleWizardInner({
   const currentStep = steps[currentStepIndex];
   const isLastStep = currentStepIndex === steps.length - 1;
 
-  const handleNext = async () => {
+  const handleNext = async (): Promise<boolean | void> => {
     const currentData = getValues();
 
-    if (onStepComplete && currentStep) {
+    const finishing = mode === "edit" || isLastStep;
+
+    // The final save already carries the last step's data; a separate step save would only add a slow round trip.
+    if (onStepComplete && currentStep && !(finishing && onComplete)) {
       onStepComplete(currentStep.id, currentData);
     }
 
-    if (mode === "edit") {
-      // In edit mode, finishing the step usually means we are done
-      if (onComplete) onComplete(currentData as Profile);
+    if (finishing) {
+      if (onComplete) return onComplete(currentData as Profile);
       return;
     }
 
-    if (currentStepIndex < steps.length - 1) {
-      goToNextStep();
-    } else {
-      if (onComplete) {
-        onComplete(currentData as Profile);
-      }
-    }
+    goToNextStep();
   };
 
   const handleBack = () => {

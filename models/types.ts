@@ -1,6 +1,7 @@
 // Common props interface for all step components
 export interface StepProps {
-  onNext: () => void;
+  /** Resolves when the step is handled; `false` means the final save failed and the step stays on screen. */
+  onNext: () => void | Promise<boolean | void>;
 }
 
 // Constants
