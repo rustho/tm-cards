@@ -41,8 +41,12 @@ export async function GET(request: NextRequest) {
   400/403/404/413 as appropriate.
 - Map DB rows with `toProfile()`; do not leak `previousMatches`,
   preferences or flags.
-- Ops routes (`/api/matching`, `/api/bot/setup`, `/api/cron/*`) return
+- Ops routes (`/api/bot/setup`, `/api/cron/*`) return
   `{ success, data | error, details? }`.
+- Admin routes (`/api/admin/*`) are written with `adminRoute(name, handler)`
+  from `lib/adminRoute.ts`: it calls `requireAdmin()`, returns the handler's
+  value as JSON and maps `AdminError` to its status. Admin actions that change
+  data log an `admin_*` event with `props.by` (`track()` in `lib/events.ts`).
 
 ## Client data access
 

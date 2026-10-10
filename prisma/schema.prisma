@@ -31,6 +31,10 @@ model User {
   /// active | hidden | banned
   status        String    @default("active")
   lastMatchedAt DateTime?
+  /// Last time the user opened the app; refreshed at most every few hours (lib/auth.ts).
+  lastSeenAt    DateTime?
+  /// Set when Telegram says the bot cannot reach the user (blocked / 403); cleared on /start or unblock.
+  botBlockedAt  DateTime?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -41,6 +45,8 @@ model User {
   matchesAsUser1 Match[]         @relation("MatchUser1")
   matchesAsUser2 Match[]         @relation("MatchUser2")
   feedback       MatchFeedback[]
+  events         Event[]
+  deliveries     BroadcastDelivery[]
 
   @@map("users")
 }
@@ -74,6 +80,8 @@ model Profile {
   theme         String   @default("default")
   /// Set when the onboarding wizard finishes; only complete profiles are matched or listed.
   isComplete    Boolean  @default(false)
+  /// When the onboarding wizard was first finished (funnel); kept if the profile is reopened.
+  completedAt   DateTime?
 
   tags ProfileTag[]
 
@@ -268,4 +276,66 @@ model Payment {
   paidAt           DateTime @default(now())
 
   @@map("payments")
+}
+
+/// Product analytics: one row per server-side event (lib/events.ts). Written off the response path.
+model Event {
+  id        String   @id @default(uuid())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// e.g. onboarding_step, onboarding_completed, week_signup, match_accepted, feedback_left, admin_message
+  name      String
+  props     Json?
+  createdAt DateTime @default(now())
+
+  @@index([name, createdAt])
+  @@index([userId, createdAt])
+  @@map("events")
+}
+
+/// Admin-editable settings, one JSON value per key (e.g. "matching" → MatchingConfig).
+model AppConfig {
+  key       String   @id
+  value     Json
+  /// Telegram id of the admin who saved it.
+  updatedBy String?
+  updatedAt DateTime @updatedAt
+
+  @@map("app_config")
+}
+
+/// A bot message to a segment of users, sent in batches (lib/broadcastService.ts).
+model Broadcast {
+  id             String    @id @default(uuid())
+  text           String
+  /// Adds the «Открыть TravelMate» button.
+  withAppButton  Boolean   @default(true)
+  /// Segment id from BROADCAST_SEGMENTS plus optional filters, as chosen in the admin.
+  segment        Json
+  /// sending | done | cancelled
+  status         String    @default("sending")
+  total          Int       @default(0)
+  /// Telegram id of the admin who created it.
+  createdBy      String
+  createdAt      DateTime  @default(now())
+  finishedAt     DateTime?
+
+  deliveries BroadcastDelivery[]
+
+  @@map("broadcasts")
+}
+
+model BroadcastDelivery {
+  broadcastId String
+  broadcast   Broadcast @relation(fields: [broadcastId], references: [id], onDelete: Cascade)
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// pending | sent | blocked | failed
+  status      String    @default("pending")
+  error       String?
+  sentAt      DateTime?
+
+  @@id([broadcastId, userId])
+  @@index([broadcastId, status])
+  @@map("broadcast_deliveries")
 }

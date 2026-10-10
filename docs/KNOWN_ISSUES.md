@@ -20,8 +20,8 @@ State after the `feature/relational-schema` branch. Remove entries when fixed.
 
 ## Functional gaps
 
-5. Matching config changed via `PUT /api/matching` is in-memory and resets
-   on redeploy. Persist it in a table if admins need to tune it.
+5. Broadcasts are sent while the admin screen is open (each call sends ~40 s);
+   there is no background worker yet. Closing the screen pauses a broadcast.
 6. `preferredAgeMin/Max`, `preferredGender`, `skipNextRound` (in
    `user_settings`) and `profiles.gender` exist and are used by the engine,
    but no UI sets them yet. `plans`/`subscriptions`/`payments` have no UI
@@ -33,8 +33,7 @@ State after the `feature/relational-schema` branch. Remove entries when fixed.
    URL can open the file. Profiles saved before the move keep a base64 data URL
    until `pnpm db:migrate-photos` runs.
 9. `app/settings/profile/ProfileSettings.tsx` headings and buttons are
-   hardcoded English; `AdminMenu` descriptions and `not-found` copy are
-   hardcoded too.
+   hardcoded English; `not-found` copy is hardcoded too.
 10. `en.json` is never served (`locales = ["ru"]`), yet `Root` calls the
     `setLocale` server action on every load.
 11. The UI `Profile` type (`models/types.ts`) is still the flat

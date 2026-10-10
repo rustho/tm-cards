@@ -1,6 +1,7 @@
 import type { Prisma } from "@prisma/client";
 import prisma from "@/lib/prisma";
 import { getBotUsername, notifyUser } from "@/lib/bot";
+import { track } from "@/lib/events";
 import { weekStartOf } from "@/lib/matchingService";
 import { OPEN_STATUSES, toPerson } from "@/lib/meetingsService";
 import { FEEDBACK_OPENS_AFTER_HOURS } from "@/config/constants";
@@ -164,8 +165,10 @@ export async function acceptMatch(matchId: string, userId: string): Promise<Curr
   });
 
   const { me, partner } = sides(updated, userId);
+  track("match_accepted", userId, { matchId });
   if (isMutual(updated)) {
     console.log(`🤝 Match ${matchId} is mutual`);
+    track("match_mutual", null, { matchId });
     void notifyUser(me.telegramId, `🎉 Вы оба хотите познакомиться! Напиши ${contactHtml(partner)} и договоритесь о встрече.`);
     void notifyUser(partner.telegramId, `🎉 ${contactHtml(me)} тоже хочет познакомиться! Напиши и договоритесь о встрече.`);
   } else {

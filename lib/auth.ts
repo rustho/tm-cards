@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
 import type { User } from "@prisma/client";
 import { parse, validate } from "@tma.js/init-data-node/web";
-import { ADMIN_TELEGRAM_IDS } from "@/config/constants";
+import { waitUntil } from "@vercel/functions";
+import { isAdminId } from "@/lib/admins";
+import { track } from "@/lib/events";
 import prisma from "@/lib/prisma";
 
 /**
@@ -99,7 +101,7 @@ export async function authenticate(request: Request): Promise<AuthUser> {
     firstName: user.first_name,
     lastName: user.last_name,
     languageCode: user.language_code,
-    isAdmin: ADMIN_TELEGRAM_IDS.includes(user.id),
+    isAdmin: isAdminId(user.id),
   };
 }
 
@@ -125,12 +127,15 @@ export function authErrorResponse(error: unknown): NextResponse | null {
 
 /** Users seen by this server instance; saves a DB round trip on every request after the first. */
 const USER_CACHE_TTL_MS = 10 * 60 * 1000;
+/** `users.lastSeenAt` is refreshed at most this often (one write off the response path). */
+const LAST_SEEN_STEP_MS = 6 * 60 * 60 * 1000;
 const userCache = new Map<string, { user: User; at: number }>();
 
 /**
  * Returns the User row for the authenticated Telegram account, creating it on
  * first contact. Telegram-derived fields are written only when they changed;
- * profile data is never touched here. Usually served from memory, otherwise one read.
+ * profile data is never touched here. Usually served from memory, otherwise one read
+ * (plus a deferred lastSeenAt write every few hours).
  */
 export async function ensureUser(user: AuthUser): Promise<User> {
   const telegramFields = {
@@ -157,7 +162,30 @@ export async function ensureUser(user: AuthUser): Promise<User> {
     });
   }
   userCache.set(user.id, { user: row, at: Date.now() });
+  touchLastSeen(row);
   return row;
+}
+
+/**
+ * Marks a visit (lastSeenAt + `app_visit` event) when the stored one is old enough; never awaited.
+ * The UPDATE re-checks the threshold, so parallel first requests produce one event.
+ */
+function touchLastSeen(row: User) {
+  const now = new Date();
+  const threshold = new Date(now.getTime() - LAST_SEEN_STEP_MS);
+  if (row.lastSeenAt && row.lastSeenAt > threshold) return;
+  row.lastSeenAt = now;
+  waitUntil(
+    prisma.user
+      .updateMany({
+        where: { id: row.id, OR: [{ lastSeenAt: null }, { lastSeenAt: { lte: threshold } }] },
+        data: { lastSeenAt: now },
+      })
+      .then(({ count }) => {
+        if (count > 0) track("app_visit", row.id);
+      })
+      .catch((error) => console.warn("⚠️ lastSeenAt not saved:", error instanceof Error ? error.message : error))
+  );
 }
 
 /** Call after writing the users row outside ensureUser (e.g. referrerId). */

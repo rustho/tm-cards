@@ -47,8 +47,9 @@ pnpm db:cleanup-tags  # one-off: drop legacy trait/hobby tags and links to inact
 pnpm db:migrate-photos  # one-off: base64 photos → Supabase Storage, reads .env.local (--dry-run to count)
 ```
 
-Fake data: `POST /api/matching?action=create-mock-users` (admin) creates
-complete profiles with real tags and locations.
+Fake data: «+10 тестовых анкет» on `/admin/matching` (development only;
+`POST /api/admin/matching?action=mock-users`) creates complete profiles with
+real tags and locations.
 
 ## Running
 
@@ -58,9 +59,9 @@ pnpm dev:https    # self-signed HTTPS; needs ./certificates (gitignored)
 ```
 
 In a plain browser `core/mockEnv.ts` fakes the Telegram launch
-(development only): user `ADMIN_TELEGRAM_IDS[0]`, platform `tdesktop`, light
-theme. To test as a non-admin, change the id in `mockEnv.ts`; `/` then
-redirects to `/meetings`. Eruda loads with `start_param=debug` on
+(development only): user `DEV_MOCK_TELEGRAM_ID` (`config/constants.ts`),
+platform `tdesktop`, light theme. It is an admin only if that id is in
+`ADMIN_TELEGRAM_IDS` in `.env.local`; remove it there to test as a non-admin. Eruda loads with `start_param=debug` on
 iOS/Android or always in dev.
 
 Admin API calls from a terminal need a real `Authorization: tma <initDataRaw>`
@@ -81,7 +82,8 @@ The bot never polls; `bot.start()` must not be used.
 
 ### Matching
 
-- Manual: `POST /api/matching?action=run` (admin).
+- Manual: «Запустить подбор» on `/admin/matching` (preview first with
+  «Предпросмотр»; nothing is written by a preview).
 - Weekly round, started by hand: GitHub → Actions → "Run matching" → Run
   workflow (`.github/workflows/run-matching.yml`). It calls
   `GET /api/cron/matching` with `Authorization: Bearer <CRON_SECRET>`. Set
@@ -89,8 +91,10 @@ The bot never polls; `bot.start()` must not be used.
   `CRON_SECRET` (same value) in GitHub. There is no schedule yet; to automate,
   add `{"crons":[{"path":"/api/cron/matching","schedule":"0 9 * * 1"}]}` to
   `vercel.json` (weekly fits the Hobby plan) and delete the workflow.
-- Notifications to both users on a new match: `MATCHING_NOTIFICATIONS=true`
-  (needs the bot and users who pressed /start).
+- Notifications to both users on a new match: the «Присылать уведомление о
+  новой паре» switch in the matching config (`MATCHING_NOTIFICATIONS=true` is
+  only its default before the config is first saved). Needs the bot and users
+  who pressed /start.
 
 ## Verification before you finish
 
@@ -121,7 +125,7 @@ the command opens a setup prompt.
 
 - Set `DATABASE_URL`, `DIRECT_URL`, `TELEGRAM_BOT_TOKEN`,
   `TELEGRAM_WEBHOOK_SECRET`, `APP_URL`, `MINI_APP_URL`, `CRON_SECRET`,
-  optionally `MATCHING_NOTIFICATIONS`.
+  `ADMIN_TELEGRAM_IDS`, optionally `MATCHING_NOTIFICATIONS`.
 - Run `pnpm db:deploy` against the production DB before the first deploy of
   a schema change.
 - After deploy, call `POST /api/bot/setup` once to point the webhook at the

@@ -1,4 +1,6 @@
-import { Bot, InlineKeyboard } from "grammy";
+import { Bot, GrammyError, InlineKeyboard } from "grammy";
+import prisma from "@/lib/prisma";
+import { track } from "@/lib/events";
 
 /**
  * grammY bot. Runs in webhook mode only (app/api/bot/webhook); never call
@@ -75,7 +77,17 @@ export function getBot(): Bot {
   const bot = new Bot(token);
 
   bot.command(["start", "app"], async (ctx) => {
+    if (ctx.message?.text?.startsWith("/start")) await markReachable(String(ctx.from?.id ?? ""), "bot_started");
     await ctx.reply(TEXTS.start, { reply_markup: openAppKeyboard() });
+  });
+
+  // Telegram reports when a user blocks (kicked) or unblocks (member) the bot in the private chat.
+  bot.on("my_chat_member", async (ctx) => {
+    if (ctx.chat.type !== "private") return;
+    const telegramId = String(ctx.from.id);
+    const status = ctx.myChatMember.new_chat_member.status;
+    if (status === "kicked") await markBlocked(telegramId);
+    else if (status === "member") await markReachable(telegramId, "bot_unblocked");
   });
 
   bot.command("help", async (ctx) => {
@@ -98,20 +110,64 @@ export function isBotConfigured(): boolean {
   return Boolean(process.env.TELEGRAM_BOT_TOKEN);
 }
 
+/** Remembers that the bot cannot write to this user (blocked, deactivated or never started). */
+async function markBlocked(telegramId: string) {
+  const { count } = await prisma.user
+    .updateMany({ where: { telegramId, botBlockedAt: null }, data: { botBlockedAt: new Date() } })
+    .catch(() => ({ count: 0 }));
+  if (count > 0) {
+    console.log(`🚫 Bot blocked by ${telegramId}`);
+    const user = await prisma.user.findUnique({ where: { telegramId }, select: { id: true } });
+    if (user) track("bot_blocked", user.id);
+  }
+}
+
+/** /start or unblock: the user can be messaged again. Users who never opened the app have no row and are skipped. */
+async function markReachable(telegramId: string, event: "bot_started" | "bot_unblocked") {
+  const user = await prisma.user.findUnique({ where: { telegramId }, select: { id: true, botBlockedAt: true } }).catch(() => null);
+  if (!user) return;
+  if (user.botBlockedAt) await prisma.user.update({ where: { id: user.id }, data: { botBlockedAt: null } });
+  track(event, user.id);
+}
+
+export type SendResult = { ok: true } | { ok: false; blocked: boolean; error: string };
+
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
 /**
- * Sends a private message to a user. Fails softly (returns false) when the
- * bot is not configured or the user has not started the bot.
+ * Sends a private HTML message. 403 (blocked / not started) marks the user
+ * unreachable; a 429 is retried once after Telegram's `retry_after`.
+ */
+export async function sendToUser(
+  telegramId: string,
+  text: string,
+  { withAppButton = true }: { withAppButton?: boolean } = {}
+): Promise<SendResult> {
+  if (!isBotConfigured()) return { ok: false, blocked: false, error: "Bot is not configured" };
+  const options = { parse_mode: "HTML" as const, reply_markup: withAppButton ? openAppKeyboard() : undefined };
+  for (let attempt = 0; ; attempt++) {
+    try {
+      await getBot().api.sendMessage(telegramId, text, options);
+      return { ok: true };
+    } catch (error) {
+      if (error instanceof GrammyError && error.error_code === 429 && attempt === 0) {
+        await sleep(((error.parameters.retry_after ?? 1) + 0.5) * 1000);
+        continue;
+      }
+      const message = error instanceof Error ? error.message : String(error);
+      const blocked = error instanceof GrammyError && error.error_code === 403;
+      if (blocked) await markBlocked(telegramId);
+      return { ok: false, blocked, error: message };
+    }
+  }
+}
+
+/**
+ * Sends a notification with the «Открыть TravelMate» button. Fails softly
+ * (returns false) when the bot is not configured or cannot reach the user.
  */
 export async function notifyUser(telegramId: string, text: string): Promise<boolean> {
-  if (!isBotConfigured()) return false;
-  try {
-    await getBot().api.sendMessage(telegramId, text, {
-      parse_mode: "HTML",
-      reply_markup: openAppKeyboard(),
-    });
-    return true;
-  } catch (error) {
-    console.warn(`⚠️ Could not notify ${telegramId}:`, error instanceof Error ? error.message : error);
-    return false;
-  }
+  const result = await sendToUser(telegramId, text);
+  if (!result.ok) console.warn(`⚠️ Could not notify ${telegramId}: ${result.error}`);
+  return result.ok;
 }

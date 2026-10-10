@@ -1,6 +1,7 @@
 import type { Prisma } from "@prisma/client";
 import prisma from "@/lib/prisma";
 import { ensureUser, forgetUser, type AuthUser } from "@/lib/auth";
+import { track } from "@/lib/events";
 import { TAG_CATEGORIES, userWithProfileInclude, type TagCategory, type UserWithProfile } from "@/lib/profileDto";
 import { validateDateOfBirth } from "@/lib/dateUtils";
 import { deleteProfilePhoto, isOwnPhotoUrl } from "@/lib/photoStorage";
@@ -174,6 +175,19 @@ export async function saveProfile(auth: AuthUser, input: Input): Promise<UserWit
   });
 
   if (removedPhoto) await deleteProfilePhoto(removedPhoto);
+
+  // --- funnel ---------------------------------------------------------------------
+  // `onboardingStep`: the wizard step that was just finished (sent with its autosave).
+  const step = optString(input, "onboardingStep", 40);
+  if (step && data.isComplete !== true) track("onboarding_step", user.id, { step });
+  if (data.isComplete === true) {
+    // First completion only: completedAt survives a later «Редактировать анкету».
+    const { count } = await prisma.profile.updateMany({
+      where: { userId: user.id, completedAt: null },
+      data: { completedAt: new Date() },
+    });
+    if (count > 0) track("onboarding_completed", user.id);
+  }
 
   // --- matching settings (onboarding "first meeting this week?") ------------------
   if (input.skipNextRound !== undefined) {

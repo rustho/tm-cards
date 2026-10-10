@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
     const url = `${appUrl.replace(/\/$/, "")}/api/bot/webhook`;
     await bot.api.setWebhook(url, {
       secret_token: process.env.TELEGRAM_WEBHOOK_SECRET || undefined,
-      allowed_updates: ["message", "callback_query"],
+      allowed_updates: ["message", "callback_query", "my_chat_member"],
       drop_pending_updates: true,
     });
     await bot.api.setMyCommands(BOT_COMMANDS);
