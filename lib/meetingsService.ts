@@ -12,6 +12,8 @@ import {
   type MeetingDetails,
   type MeetingStatus,
   type NotMetReason,
+  type Participation,
+  type ParticipationOption,
   type PersonPreview,
 } from "@/models/types";
 
@@ -133,6 +135,17 @@ export async function getAccess(
 /** In the next round unless matching is paused in settings or this week is skipped. */
 export function isParticipating(settings: { matchingOption: string; skipNextRound: boolean } | null): boolean {
   return !settings || (settings.matchingOption === "active" && !settings.skipNextRound);
+}
+
+/** user_settings row → what the «Профиль» menu shows; no row means the defaults (participating). */
+export function toParticipation(
+  settings: { matchingOption: string; matchingResumeDate: Date | null; skipNextRound: boolean } | null
+): Participation {
+  return {
+    option: (settings?.matchingOption ?? "active") as ParticipationOption,
+    resumeDate: settings?.matchingResumeDate?.toISOString() ?? null,
+    skipNextRound: settings?.skipNextRound ?? false,
+  };
 }
 
 /**

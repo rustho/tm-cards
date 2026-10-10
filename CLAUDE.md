@@ -12,12 +12,19 @@ TypeScript strict) for finding travel companions in South-East Asia
 
 1. **Icebreaker card game** (`/icebreaker`) — swipeable question cards, 102
    questions in 7 categories, fully client-side.
-2. **Questionnaire** (`/profile`, «Анкета» tab, `/settings/*`) — until
-   `isComplete` an 11-step react-hook-form wizard that autosaves each step to
-   PostgreSQL; afterwards my card in its template + city + meeting formats,
-   «Редактировать анкету» reopens the wizard prefilled (`MyProfileView`);
-   notification and matching-schedule settings. `/profile/[userId]` shows
-   someone's questionnaire with their card template.
+2. **Questionnaire** (`/profile`, «Анкета» tab) — until `isComplete` an
+   11-step react-hook-form wizard that autosaves each step to PostgreSQL;
+   afterwards my card in its template + city + meeting formats (`MyProfileView`).
+   «Редактировать анкету» → `/profile/edit`: field list with current values,
+   each opens one wizard step at `/profile/edit/[step]` (`Wizard editStep`,
+   «Сохранить» saves only what changed). `/profile/[userId]` shows someone's
+   questionnaire with their card template.
+   «Профиль» tab (`/settings`): avatar + access status, then one list —
+   «Редактировать анкету», «Локация» (→ `/profile/edit/location`),
+   «Участие во встречах» (`/settings/participation`: participate / pause a week /
+   pause until a date), «Уведомления от бота» (one switch, honoured by
+   `notifyUser()`), «Управление подпиской», «Как работает приложение»,
+   «Поддержка» (`SUPPORT_TELEGRAM_USERNAME`), «Админ-меню» for admins.
 3. **Weekly meetings** — tab bar «Люди / Приглашения / Встречи / Анкета /
    Профиль» (`components/FooterMenu.tsx`):
    - `/meetings`, by phase of `WEEK_SCHEDULE` (`config/constants.ts`, all
@@ -105,7 +112,7 @@ app/
                           useLimitedSelection.ts (capped multi-select), steps/Step*.tsx
   meetings/                «Встречи» tab + [matchId]/question
   home/                    «Люди» tab, meetings/ (log), meetings/[matchId] (feedback flow)
-  invitations/, profile/[userId], settings/{profile,notifications,matching-schedule,subscription}
+  invitations/, profile/[userId], profile/edit (+ [step]), settings/{participation,subscription,how-it-works}
 components/ui/            shadcn + XP primitives (button, card, switch, text-input, list-item, …), barrel index.ts
 components/profile-templates/  profile card designs (artwork in public/profile-templates + ImageTemplate overlay) + registry (ProfileCard)
 components/meetings/      meetings UI: WeekMatchView, MeetingList, StatCard, CelebrationScreen, Countdown, BottomAction, …
@@ -131,11 +138,11 @@ lib/pendingFeedback.ts, telegramLinks.ts  feedback-reminder cache, openTgLink (c
 lib/profileDto.ts         users+profiles+tags → UI Profile mapper (read side)
 lib/profileService.ts     profile upsert: location/tag resolution, referral, validation (write side)
 lib/photoStorage.ts      profile photos in Supabase Storage (server)
-lib/prisma.ts, dateUtils.ts, settingsService.ts (client), utils.ts (cn),
+lib/prisma.ts, dateUtils.ts (formatDayMonth), utils.ts (cn),
   imageUtils.ts           fileToResizedJpeg: client-side photo downscale (client)
 prisma/                   schema, migrations, seed.ts (tags + locations)
 config/constants.ts       DEV_MOCK_TELEGRAM_ID, MENU_ITEMS, APP_METADATA, schedule constants
-models/types.ts           Profile/User/settings types + option lists
+models/types.ts           Profile/User/AccountSettings types + option lists
 models/admin.ts           /api/admin/* response shapes, user filters, broadcast segments
 docs/                     agent docs; docs/guides (RHF, wizard context, theme); docs/archive (stale)
 ```

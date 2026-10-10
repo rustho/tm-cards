@@ -76,7 +76,8 @@ is the M:N table. `prisma/seed.ts` fills both from the constants in
 deactivates `trait`/`hobby` tags and interest tags no longer in `INTERESTS`; unknown labels sent by clients are added on the fly.
 
 ### `UserSettings` (`user_settings`, PK = `userId`)
-Notification flags, `matchingOption` + `matchingCustomDate` +
+Notification flags (only `notifyNewMatches` is used: «Уведомления от бота»,
+checked by `notifyUser()`), `matchingOption` + `matchingCustomDate` +
 `matchingResumeDate`, matching preferences `preferredAgeMin/Max`,
 `preferredGender`, `skipNextRound` (consumed by the next run).
 
@@ -182,8 +183,9 @@ All routes act for the caller (`ensureUser`), never for an id from the body. Typ
 ### Settings (DB)
 | Method & path | Body |
 |---|---|
-| `GET/PUT /api/settings/notifications` | 5 booleans |
-| `GET/PUT /api/settings/matching-schedule` | `{ option, customDate? }` |
+| `GET /api/settings` | → `AccountSettings`: `access { hasAccess, subscribed, accessEndsAt }`, `participation { option, resumeDate, skipNextRound }`, `notifications` |
+| `PUT /api/settings/notifications` | `{ enabled }` → `notifyNewMatches` |
+| `PUT /api/settings/participation` | `{ option: active \| pause_week \| pause_custom, resumeDate? (YYYY-MM-DD, future) }`; `active` = «Участвую» (clears pause and `skipNextRound`); legacy `pause_month`/`pause_indefinite` rows are still read |
 
 ### Reference
 `GET /api/reference` (user) → `{ tags: { interests, values, meetingFormats },

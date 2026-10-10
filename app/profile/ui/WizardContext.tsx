@@ -9,6 +9,8 @@ export interface WizardContextValue extends UseFormReturn<Partial<Profile>> {
   setCurrentStepIndex: (index: number) => void;
   goToNextStep: () => void;
   goToPreviousStep: () => void;
+  /** A single step of a finished profile (/profile/edit/<step>): steps show «Сохранить» instead of «Далее». */
+  editing: boolean;
 }
 
 const WizardContext = createContext<WizardContextValue | undefined>(undefined);
@@ -17,6 +19,7 @@ export interface WizardProviderProps {
   children: ReactNode;
   initialData: Partial<Profile>;
   initialStepIndex?: number;
+  editing?: boolean;
   onDataChange?: (data: Partial<Profile>) => void;
 }
 
@@ -24,6 +27,7 @@ export function WizardProvider({
   children,
   initialData,
   initialStepIndex = 0,
+  editing = false,
   onDataChange,
 }: WizardProviderProps) {
   const [currentStepIndex, setCurrentStepIndex] = useState(initialStepIndex);
@@ -60,6 +64,7 @@ export function WizardProvider({
     setCurrentStepIndex,
     goToNextStep,
     goToPreviousStep,
+    editing,
   };
 
   return (

@@ -180,9 +180,16 @@ export async function sendToUser(
 
 /**
  * Sends a notification with the «Открыть TravelMate» button. Fails softly
- * (returns false) when the bot is not configured or cannot reach the user.
+ * (returns false) when the bot is not configured or cannot reach the user,
+ * and skips users who turned off «Уведомления от бота» (`notifyNewMatches`).
+ * Admin replies and broadcasts go through sendToUser() and are not affected.
  */
 export async function notifyUser(telegramId: string, text: string): Promise<boolean> {
+  const settings = await prisma.userSettings.findFirst({
+    where: { user: { telegramId } },
+    select: { notifyNewMatches: true },
+  });
+  if (settings && !settings.notifyNewMatches) return false;
   const result = await sendToUser(telegramId, text);
   if (!result.ok) console.warn(`⚠️ Could not notify ${telegramId}: ${result.error}`);
   return result.ok;

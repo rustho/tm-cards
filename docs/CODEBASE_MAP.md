@@ -39,7 +39,7 @@ example code.
 | `error.tsx`, `not-found.tsx` | LIVE | |
 | `_assets/globals.css` | LIVE | XP foundation tokens (`--color-*`, `--radius-*`), shadcn aliases, legacy `--theme-*` aliases and `.theme-*` utilities; base `h1`–`h6`/`p` margins (new components use `m-0`) |
 | `/icebreaker` (`page.tsx`, `ui/{startGame,game,endGame}.tsx`, `constants/questions.ts`, `pageStyles.css`) | LIVE | card game; `questions.md` is the source text; easter egg: 5 taps → `/profile` |
-| `/profile` (`page.tsx`) → `ui/MyProfileView.tsx` or `ui/Wizard.tsx` | LIVE | «Анкета» tab: `GET /api/profile`; `isComplete` → `MyProfileView` (template card, city, formats, «Редактировать анкету» → the wizard with `onDone`/`onCancel`, without `firstMeeting`); otherwise the wizard, a full-height column (`h-[100dvh] px-4 pb-24`) above the fixed `FooterMenu`; the wizard loads `GET /api/profile`, seeds Telegram name/username, forwards `startapp=ref_<code>` as `referralCode`, autosaves steps via `POST /api/profile`, finishes with `isComplete: true` and `router.push("/home")` |
+| `/profile` (`page.tsx`) → `ui/MyProfileView.tsx` or `ui/Wizard.tsx` | LIVE | «Анкета» tab: `GET /api/profile`; `isComplete` → `MyProfileView` (template card, city, formats, «Редактировать анкету» → `/profile/edit`); otherwise the wizard, a full-height column (`h-[100dvh] px-4 pb-24`) above the fixed `FooterMenu`; the wizard loads `GET /api/profile`, seeds Telegram name/username, forwards `startapp=ref_<code>` as `referralCode`, autosaves steps via `POST /api/profile`, finishes with `isComplete: true` and `router.push("/home")` |
 | `ui/FlexibleWizard.tsx` | LIVE | step engine (`steps`, `mode full\|edit`, `ProgressHeader` with back, `WizardStepConfig.countsInProgress`) |
 | `ui/StepWindow.tsx` | LIVE | step shell: `WindowTitleBar` + scrollable body + full-width primary "Далее" `Button` (`title, onNext, nextDisabled, nextText, bodyClassName`) |
 | `ui/useLimitedSelection.ts` | LIVE | multi-select over a `string[]` field with a max → `{ selected, count, isSelected, isLocked, toggle }` |
@@ -48,16 +48,17 @@ example code.
 | `ui/steps/Step{Location,Name,DateOfBirth,Occupation,Values,Interests,Goal,MeetingFormat,About,Photo,Theme}.tsx` | LIVE | one file per step on `useWizardContext()` / `useLimitedSelection()`; all but `StepTheme` (own window + carousel of `PROFILE_TEMPLATES`) render inside `StepWindow` |
 | `ui/steps/StepReview.tsx` | — | optional "Спасибо, {name}!" interstitial with `autoAdvanceMs`; not in `ONBOARDING_STEPS` (header comment shows how to add it) |
 | `/profile/[userId]` | LIVE | someone's questionnaire rendered with their `ProfileCard` template |
-| `/profile/settings` | LIVE | client redirect → `/settings/profile` |
+| `/profile/edit` | LIVE | field list (`MenuList`) of `EDIT_STEPS` with current values |
+| `/profile/edit/[step]` | LIVE | one wizard step (`Wizard editStep`, `FlexibleWizard mode="edit"`, «Сохранить»); saves only changed fields, then `router.back()` |
+| `/profile/settings` | LIVE | client redirect → `/profile/edit` |
 | `/home` | LIVE | «Люди»: `GET /api/home` → feedback hint, «История встреч» (last 4), «Мои встречи» / «Приглашённые» counters, «Выбрать подписку» without access |
 | `/home/meetings`, `/home/meetings/[matchId]` | LIVE | full meeting log; feedback flow (outcome → impressions / reasons → «Супер!») and the partner's impression |
 | `/meetings`, `/meetings/[matchId]/question` | LIVE | «Встречи» by phase (`WEEK_SCHEDULE`): `week` → `WeekMatchView` (accept, timer, contact, question of the week); `feedback` → embedded `MeetingFeedbackFlow`; `signup` → opt-in toggle + city |
 | `/invitations` | LIVE | referral link + invited friends (paid subscription), rewards teaser otherwise |
 | `/settings/subscription` | MOCK | plan picker without payments |
-| `/settings` | LIVE | 4 links in a `Card` |
-| `/settings/profile` (`page.tsx`, `ProfileSettings.tsx`, `SuccessToast.tsx`) | LIVE | loads own profile, edits single steps through `FlexibleWizard` in `edit` mode, saves via `POST /api/profile` |
-| `/settings/notifications` | LIVE | shadcn `Switch` rows → `PUT /api/settings/notifications` |
-| `/settings/matching-schedule` | LIVE | radio rows → `PUT /api/settings/matching-schedule` |
+| `/settings` | LIVE | «Профиль» tab: avatar + access status, `MenuList` (questionnaire, location, participation, bot notifications switch, subscription, how it works, support, admin) from `/api/profile` + `/api/settings` |
+| `/settings/participation` | LIVE | participate / pause a week / pause until a date, saves on tap → `PUT /api/settings/participation` |
+| `/settings/how-it-works` | LIVE | static weekly-cycle explainer (days from `WEEK_SCHEDULE`) |
 
 ### API (`app/api/`)
 
@@ -70,7 +71,7 @@ example code.
 | `GET /api/meetings/[matchId]`, `POST …/feedback`, `POST …/accept`, `GET …/question` | participant | LIVE |
 | `PUT /api/meetings/participation`, `GET /api/invitations` | user | LIVE |
 | `GET /api/reference` | user | LIVE |
-| `GET/PUT /api/settings/notifications`, `/matching-schedule` | user | LIVE |
+| `GET /api/settings`, `PUT /api/settings/notifications`, `PUT /api/settings/participation` | user | LIVE |
 | `GET /api/me` | user | LIVE |
 | `/api/admin/*` (overview, funnel, users, users/[telegramId], …/message, matching, matching/rounds/[roundId], matching/matches/[matchId], broadcasts, broadcasts/audience, broadcasts/test, broadcasts/[id]) | admin | LIVE |
 | `GET /api/cron/matching` | `CRON_SECRET` | OPS |
@@ -83,7 +84,7 @@ example code.
 | Path | Status | Notes |
 |---|---|---|
 | `ui/button.tsx`, `ui/card.tsx`, `ui/switch.tsx` | LIVE | shadcn primitives (Tailwind 3 variants) |
-| `ui/*.tsx` (XP) | LIVE | `text-input`, `text-area`, `window-title-bar`, `window-control`, `progress-header`, `back-button`, `step-item`, `counter-badge`, `status-icon`, `country-card`, `unlock-divider`, `interest-chip`, `list-item`, `meeting-goal-card`, `answer-examples`, `age-summary`, `photo-uploader`, `selection-guidance`, `category-header` (`icon={false}` for a bare title) |
+| `ui/*.tsx` (XP) | LIVE | `text-input`, `text-area`, `window-title-bar`, `window-control`, `progress-header`, `back-button`, `step-item`, `counter-badge`, `status-icon`, `country-card`, `unlock-divider`, `interest-chip`, `list-item`, `meeting-goal-card`, `answer-examples`, `age-summary`, `photo-uploader`, `selection-guidance`, `category-header` (`icon={false}` for a bare title), `menu-list` (`MenuList` + `MenuRow`: settings-style rows with value, description or a trailing control) |
 | `ui/index.ts` | LIVE | barrel for all of `ui/`; there is no `components/index.ts` |
 | `profile-templates/index.tsx` | LIVE | registry: `PROFILE_TEMPLATES`, `getProfileTemplate(theme)`, `ProfileCard`; header comment explains adding a template. Used by `StepTheme` and `/profile/[userId]` |
 | `profile-templates/image/ImageTemplate.tsx` | LIVE | one component for all card designs: artwork `public/profile-templates/<theme>.webp` (labels drawn in) with the answers laid over it at fixed coordinates |
@@ -120,7 +121,6 @@ example code.
 | `lib/weekMatchService.ts` | LIVE | `getCurrentMatch`, `acceptMatch` (bot nudges / contacts), `getWeeklyQuestion` |
 | `lib/weekCycle.ts` | LIVE | `agreeDeadline`, `closeUnagreedMatches` |
 | `lib/pendingFeedback.ts`, `lib/telegramLinks.ts` | LIVE | client: reminder cache / invalidation; `openTgLink` |
-| `lib/settingsService.ts` | LIVE | client wrapper for settings routes |
 | `lib/dateUtils.ts` | LIVE | `calculateAge`, `validateDateOfBirth`, `formatDateForInput` |
 | `lib/utils.ts` | LIVE | `cn()` |
 | `lib/imageUtils.ts` | LIVE | `fileToResizedJpeg` (browser): downscale to a 1280px JPEG blob before upload |

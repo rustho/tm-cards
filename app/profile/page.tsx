@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import { useTranslations } from "next-intl";
 import type { Profile } from "@/models/types";
 import { useCachedApi } from "@/lib/apiCache";
@@ -10,23 +9,17 @@ import { MyProfileView } from "./ui/MyProfileView";
 import { Wizard } from "./ui/Wizard";
 
 /**
- * «Анкета» tab: my finished questionnaire («Редактировать анкету» reopens the wizard, prefilled),
+ * «Анкета» tab: my finished questionnaire («Редактировать анкету» → /profile/edit, field by field),
  * or the onboarding wizard until it is complete. Onboarding hides the footer (no tabs until the
- * questionnaire is done); re-editing keeps it and the wizard fills the screen above it (pb-24).
+ * questionnaire is done).
  */
 export default function ProfilePage() {
   const t = useTranslations("profile.wizard");
   // Cached copy first, then the server's (lib/apiCache.ts).
-  const { data, refreshing, refresh } = useCachedApi<Profile>("/api/profile", { allowNotFound: true });
+  const { data, refreshing } = useCachedApi<Profile>("/api/profile", { allowNotFound: true });
   // undefined = loading, null = no finished profile yet
   const profile: Profile | null | undefined =
     data === undefined ? (refreshing ? undefined : null) : data?.isComplete ? data : null;
-  const [editing, setEditing] = useState(false);
-  // Steps autosave, so leaving the editor (done or «Назад») always refetches the profile.
-  const stopEditing = () => {
-    setEditing(false);
-    refresh();
-  };
 
   if (profile === undefined) {
     return (
@@ -36,21 +29,20 @@ export default function ProfilePage() {
     );
   }
 
-  if (profile && !editing) {
+  if (profile) {
     return (
       <div className="mx-auto min-h-screen max-w-xl px-4 pb-28 pt-4">
-        <MyProfileView profile={profile} onEdit={() => setEditing(true)} />
+        <MyProfileView profile={profile} />
         <FooterMenu />
       </div>
     );
   }
 
   return (
-    <div className={`flex h-[100dvh] flex-col overflow-hidden px-4 ${editing ? "pb-24" : "pb-4"}`}>
+    <div className="flex h-[100dvh] flex-col overflow-hidden px-4 pb-4">
       <div className="mx-auto flex min-h-0 w-full max-w-4xl flex-1 flex-col">
-        <Wizard onDone={editing ? stopEditing : undefined} onCancel={editing ? stopEditing : undefined} />
+        <Wizard />
       </div>
-      {editing && <FooterMenu />}
     </div>
   );
 }

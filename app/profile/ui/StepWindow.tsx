@@ -4,6 +4,7 @@ import { ReactNode } from "react";
 import { useTranslations } from "next-intl";
 import { Button, WindowTitleBar } from "@/components/ui";
 import { cn } from "@/lib/utils";
+import { useWizardContext } from "./WizardContext";
 
 interface StepWindowProps {
   title: ReactNode;
@@ -17,7 +18,7 @@ interface StepWindowProps {
 /**
  * XP wizard step shell: a window (title bar + scrollable body) that fills the
  * available height, with the full-width primary "Далее" button below it.
- * Replaces the legacy `StepContainer` for rebuilt steps.
+ * In a single-step edit (`editing`) the button always reads «Сохранить».
  */
 export function StepWindow({
   title,
@@ -28,6 +29,7 @@ export function StepWindow({
   bodyClassName,
 }: StepWindowProps) {
   const t = useTranslations("common");
+  const { editing } = useWizardContext();
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-4">
@@ -51,7 +53,7 @@ export function StepWindow({
           if (!nextDisabled) onNext();
         }}
       >
-        {nextText ?? t("next")}
+        {editing ? t("save") : nextText ?? t("next")}
       </Button>
     </div>
   );

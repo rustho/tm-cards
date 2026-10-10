@@ -17,7 +17,7 @@
   `components/` directory under `@/components`.
 - Server-only: `lib/prisma.ts`, `lib/auth.ts`, `lib/bot.ts`,
   `lib/matchingService.ts`, `lib/profileDto.ts`. Never import them from
-  client components. Client fetch wrappers: `lib/api.ts`, `lib/settingsService.ts`.
+  client components. Client fetch wrappers: `lib/api.ts`, `lib/apiCache.ts`.
 
 ## API routes
 

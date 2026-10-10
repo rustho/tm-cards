@@ -123,6 +123,7 @@ export function FlexibleWizard({
     <WizardProvider
       initialData={initialData}
       initialStepIndex={initialStepIndex}
+      editing={mode === "edit"}
     >
       <FlexibleWizardInner
         steps={steps}
