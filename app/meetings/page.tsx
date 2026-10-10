@@ -1,11 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { Pause, Play } from "lucide-react";
-import type { MeetingsWeek } from "@/models/types";
+import type { MeetingsWeek, Profile } from "@/models/types";
 import { api } from "@/lib/api";
 import { useCachedApi } from "@/lib/apiCache";
 import { cn } from "@/lib/utils";
@@ -24,6 +24,7 @@ import { WeekMatchView } from "@/components/meetings/WeekMatchView";
  * - Access, `week` phase: this round's pair (`WeekMatchView`), or a note when there is none.
  * - Access, `feedback` phase (timer over, before sign-up): the impression flow for this round's pair.
  * Phases come from the server (WEEK_SCHEDULE in config/constants.ts).
+ * Without a finished questionnaire matching skips the user, so this tab sends them to onboarding.
  */
 export default function MeetingsTab() {
   const router = useRouter();
@@ -31,6 +32,12 @@ export default function MeetingsTab() {
   // Cached copy first (instant), then the server's; see lib/apiCache.ts.
   const { data: week, error, mutate } = useCachedApi<MeetingsWeek>("/api/meetings/current");
   const failed = !week && !!error;
+  const profile = useCachedApi<Profile>("/api/profile", { allowNotFound: true });
+
+  // Only on the server's answer: a stale cached copy must not bounce a finished user.
+  useEffect(() => {
+    if (!profile.refreshing && !profile.error && !profile.data?.isComplete) router.replace("/profile");
+  }, [profile.data, profile.error, profile.refreshing, router]);
   const [saving, setSaving] = useState(false);
 
   const toggle = async () => {

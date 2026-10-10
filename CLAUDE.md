@@ -35,9 +35,14 @@ TypeScript strict) for finding travel companions in South-East Asia
    `/api/cron/matching`; grammY bot in webhook mode that notifies users
    about matches, accepts and impressions.
 
-Admin gate: `config/constants.ts` → `ADMIN_TELEGRAM_IDS`. Admins see
-`AdminMenu` on `/`; everyone else is redirected to `/meetings`. The same
-list is enforced server-side by `requireAdmin()` in `lib/auth.ts`.
+Launch flow: `/` sends users to onboarding (`/profile`) until
+`profiles.isComplete`, then to `/meetings`; `/meetings` also bounces an
+incomplete profile to `/profile` (matching skips incomplete profiles).
+
+Admin gate: `config/constants.ts` → `ADMIN_TELEGRAM_IDS`. Admins get an
+«Админ-меню» item in the «Профиль» tab (`/settings`) that opens `AdminMenu`
+on `/admin`. The same list is enforced server-side by `requireAdmin()` in
+`lib/auth.ts`.
 
 ## Stack
 

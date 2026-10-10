@@ -5,15 +5,19 @@ import { useTranslations } from "next-intl";
 import { ChevronRight } from "lucide-react";
 import { FooterMenu } from "@/components/FooterMenu";
 import { Card } from "@/components/ui/card";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function Settings() {
   const t = useTranslations("settings");
+  const { isAdmin } = useAuth();
 
   const options = [
     { title: t("editProfile.title"), description: t("editProfile.description"), icon: "👤", href: "/settings/profile" },
     { title: t("notifications.title"), description: t("notifications.description"), icon: "🔔", href: "/settings/notifications" },
     { title: t("subscription.title"), description: t("subscription.description"), icon: "💎", href: "/settings/subscription" },
     { title: t("matchingSchedule.title"), description: t("matchingSchedule.description"), icon: "📅", href: "/settings/matching-schedule" },
+    // UI gate only; admin API routes re-check with requireAdmin().
+    ...(isAdmin ? [{ title: t("admin.title"), description: t("admin.description"), icon: "🧭", href: "/admin" }] : []),
   ];
 
   return (
