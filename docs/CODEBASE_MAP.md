@@ -30,7 +30,12 @@ example code.
 | `layout.tsx` | LIVE | server component: locale, `I18nProvider`, `Root`; imports normalize.css + `globals.css`; Inter font var |
 | `fonts.ts` | LIVE | `next/font/google` Inter 400/700 (latin+cyrillic) → `--font-inter` |
 | `page.tsx` | LIVE | `/` (launch): `/profile` until the profile `isComplete`, then `/meetings` |
-| `admin/page.tsx` | LIVE | `/admin`: `AdminMenu` + footer, admins only (linked from `/settings`) |
+| `admin/layout.tsx` | LIVE | gate for every `/admin/*` page (`useAuth().isAdmin` from `/api/me`) |
+| `admin/page.tsx` | LIVE | `/admin`: section links + KPIs from `/api/admin/overview` (linked from `/settings`) |
+| `admin/funnel/page.tsx` | LIVE | cohort funnel bars, wizard drop-off, weekly cohort table; period/source chips |
+| `admin/users/page.tsx`, `admin/users/[telegramId]/page.tsx` | LIVE | user search/filters; user card: access, status, bot message, meetings, events |
+| `admin/matching/page.tsx`, `admin/matching/[roundId]/page.tsx` | LIVE | preview/run matching, config, rounds; pairs of a round with cancel |
+| `admin/broadcasts/page.tsx`, `admin/broadcasts/[id]/page.tsx` | LIVE | composer (segment, country, text, test) + history; progress page drives the batched sending |
 | `error.tsx`, `not-found.tsx` | LIVE | |
 | `_assets/globals.css` | LIVE | XP foundation tokens (`--color-*`, `--radius-*`), shadcn aliases, legacy `--theme-*` aliases and `.theme-*` utilities; base `h1`–`h6`/`p` margins (new components use `m-0`) |
 | `/icebreaker` (`page.tsx`, `ui/{startGame,game,endGame}.tsx`, `constants/questions.ts`, `pageStyles.css`) | LIVE | card game; `questions.md` is the source text; easter egg: 5 taps → `/profile` |
@@ -61,13 +66,13 @@ example code.
 | `GET/POST /api/profile` | user | LIVE |
 | `POST /api/profile/photo` | user | LIVE |
 | `GET /api/profile/[userId]` | user | LIVE |
-| `GET /api/users` | admin | OPS |
 | `GET /api/home`, `GET /api/meetings`, `GET /api/meetings/current`, `GET /api/meetings/pending-feedback` | user | LIVE |
 | `GET /api/meetings/[matchId]`, `POST …/feedback`, `POST …/accept`, `GET …/question` | participant | LIVE |
 | `PUT /api/meetings/participation`, `GET /api/invitations` | user | LIVE |
 | `GET /api/reference` | user | LIVE |
 | `GET/PUT /api/settings/notifications`, `/matching-schedule` | user | LIVE |
-| `GET/POST/PUT /api/matching` | admin | OPS |
+| `GET /api/me` | user | LIVE |
+| `/api/admin/*` (overview, funnel, users, users/[telegramId], …/message, matching, matching/rounds/[roundId], matching/matches/[matchId], broadcasts, broadcasts/audience, broadcasts/test, broadcasts/[id]) | admin | LIVE |
 | `GET /api/cron/matching` | `CRON_SECRET` | OPS |
 | `POST /api/bot/webhook` | webhook secret | OPS |
 | `GET/POST /api/bot/setup` | admin | OPS |
@@ -86,7 +91,7 @@ example code.
 | `Root/Root.tsx` | LIVE | runs `mockEnv()` → `init()`; toggles `.dark` from `miniApp.isDark`; sets locale from `user.language_code`; "Loading" until ready |
 | `FooterMenu.tsx` | LIVE | floating bottom tab bar (Люди, Приглашения, Встречи, Анкета, Профиль) + «Как прошло знакомство?» reminder from `/api/meetings/pending-feedback` |
 | `meetings/*` | LIVE | meetings UI pieces (WeekMatchView, MeetingList, StatCard, CelebrationScreen, Countdown, BottomAction, LocationPicker, PixelPeople, FeedbackHintBanner) |
-| `AdminMenu.tsx` | LIVE | 4 cards (descriptions hardcoded English) |
+| `admin/*` | LIVE | `AdminUI` (AdminPage, Section, Panel, Stat, Badge, ConfirmButton, formatDate), `MatchCard`, `UserBadges`, `BroadcastProgress` |
 | `ErrorBoundary.tsx`, `ErrorPage.tsx` | LIVE | |
 
 ## `core/`, `config/`, `hooks/`
@@ -94,10 +99,10 @@ example code.
 | Path | Status | Notes |
 |---|---|---|
 | `core/init.ts` | LIVE | SDK v3 init: `setDebug`, `initSDK`, eruda, macOS workaround, mounts backButton/initData/miniApp/themeParams/viewport |
-| `core/mockEnv.ts` | DEV | `mockTelegramEnv` with user `ADMIN_TELEGRAM_IDS[0]`, light theme, unsigned init data |
+| `core/mockEnv.ts` | DEV | `mockTelegramEnv` with user `DEV_MOCK_TELEGRAM_ID`, light theme, unsigned init data |
 | `core/i18n/*` | LIVE | `defaultLocale "ru"`, `locales ["ru"]`, cookie `NEXT_LOCALE` |
-| `config/constants.ts` | LIVE | `ADMIN_TELEGRAM_IDS`, `MENU_ITEMS`, `APP_METADATA` |
-| `hooks/useAuth.ts` | LIVE | `{ user, userId, isAdmin, isAuthenticated }` |
+| `config/constants.ts` | LIVE | `DEV_MOCK_TELEGRAM_ID`, `MENU_ITEMS`, `APP_METADATA`, trial/week schedule constants |
+| `hooks/useAuth.ts` | LIVE | `{ user, userId, isAdmin, isAdminKnown, isAuthenticated }`; `isAdmin` from cached `GET /api/me` |
 | `hooks/useClientOnce.ts`, `useDidMount.ts` | LIVE | helpers (currently unused by Root) |
 
 ## `lib/`, `models/`

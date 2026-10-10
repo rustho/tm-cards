@@ -39,10 +39,16 @@ Launch flow: `/` sends users to onboarding (`/profile`) until
 `profiles.isComplete`, then to `/meetings`; `/meetings` also bounces an
 incomplete profile to `/profile` (matching skips incomplete profiles).
 
-Admin gate: `config/constants.ts` → `ADMIN_TELEGRAM_IDS`. Admins get an
-«Админ-меню» item in the «Профиль» tab (`/settings`) that opens `AdminMenu`
-on `/admin`. The same list is enforced server-side by `requireAdmin()` in
-`lib/auth.ts`.
+Admin gate: env `ADMIN_TELEGRAM_IDS` (comma-separated, read by `lib/admins.ts`).
+`requireAdmin()` in `lib/auth.ts` enforces it on every `/api/admin/*` route; the
+client learns it from `GET /api/me` (`useAuth().isAdmin`). Admins get an
+«Админ-меню» item in the «Профиль» tab (`/settings`) that opens the admin
+inside the Mini App (works stretched on desktop Telegram too):
+`/admin` (KPIs), `/admin/funnel` (cohort funnel, wizard drop-off, weekly
+cohorts; period + source filters), `/admin/users` (+ `[telegramId]` card: access, status, bot
+message, meetings, event log), `/admin/matching` (preview, run, config, rounds,
+cancel a pair), `/admin/broadcasts` (segment → test → send in batches).
+`app/admin/layout.tsx` gates all of them; building blocks in `components/admin/`.
 
 ## Stack
 
@@ -81,7 +87,8 @@ pnpm db:studio
   routing/config/Prisma changes. `.next/types` errors mean stale cache →
   `rm -rf .next`.
 - UI: `pnpm dev`, open `http://localhost:3000`. `core/mockEnv.ts` fakes a
-  Telegram launch with user `ADMIN_TELEGRAM_IDS[0]` (admin) in development.
+  Telegram launch with user `DEV_MOCK_TELEGRAM_ID` in development; put that id
+  into `ADMIN_TELEGRAM_IDS` in `.env.local` to see the admin.
   API calls work against the mock because `lib/auth.ts` accepts unsigned
   init data **in development only**.
 - Do not run `next lint` unattended.
@@ -102,7 +109,8 @@ app/
 components/ui/            shadcn + XP primitives (button, card, switch, text-input, list-item, …), barrel index.ts
 components/profile-templates/  profile card designs (artwork in public/profile-templates + ImageTemplate overlay) + registry (ProfileCard)
 components/meetings/      meetings UI: WeekMatchView, MeetingList, StatCard, CelebrationScreen, Countdown, BottomAction, …
-components/               Root, AdminMenu, FooterMenu (+ feedback reminder), ErrorBoundary, ErrorPage (no barrel; import by path)
+components/admin/         admin screens' building blocks (AdminUI, MatchCard, UserBadges, BroadcastProgress)
+components/               Root, FooterMenu (+ feedback reminder), ErrorBoundary, ErrorPage (no barrel; import by path)
 core/init.ts, mockEnv.ts  SDK v3 bootstrap and dev mock (called from Root)
 core/i18n/                next-intl wiring
 hooks/useAuth.ts          client view of the Telegram user (UI gating only)
@@ -110,7 +118,11 @@ lib/auth.ts               authenticate / requireAdmin / ensureUser (server)
 lib/api.ts                apiFetch / api.get|post|put with the tma header (client)
 lib/apiCache.ts           stale-while-revalidate GET cache (memory + localStorage per user), useCachedApi, prefetch from Root (client)
 lib/bot.ts                grammY bot, BOT_COMMANDS, notifyUser
-lib/matchingService.ts    matching engine (singleton)
+lib/matchingService.ts    matching engine (singleton); config in `app_config`, dry-run previewMatching()
+lib/events.ts             track(): product/audit events → `events`, written after the response (waitUntil)
+lib/admins.ts             ADMIN_TELEGRAM_IDS from env
+lib/adminService.ts, adminMatching.ts, adminFunnel.ts, adminRoute.ts  admin read side, user actions, segments, route wrapper (server)
+lib/broadcastService.ts   bot broadcasts: snapshot recipients, batched sending (server)
 lib/meetingsService.ts    access (subscription/trial), week phase, participation, feedback rules (server)
 lib/weekMatchService.ts   this week's pair: accept, contacts, question of the week (server)
 lib/weekCycle.ts          WEEK_SCHEDULE math: getWeekPhase, agreeDeadline, closing unagreed pairs (server)
@@ -121,8 +133,9 @@ lib/photoStorage.ts      profile photos in Supabase Storage (server)
 lib/prisma.ts, dateUtils.ts, settingsService.ts (client), utils.ts (cn),
   imageUtils.ts           fileToResizedJpeg: client-side photo downscale (client)
 prisma/                   schema, migrations, seed.ts (tags + locations)
-config/constants.ts       ADMIN_TELEGRAM_IDS, MENU_ITEMS, APP_METADATA
+config/constants.ts       DEV_MOCK_TELEGRAM_ID, MENU_ITEMS, APP_METADATA, schedule constants
 models/types.ts           Profile/User/settings types + option lists
+models/admin.ts           /api/admin/* response shapes, user filters, broadcast segments
 docs/                     agent docs; docs/guides (RHF, wizard context, theme); docs/archive (stale)
 ```
 
@@ -150,8 +163,7 @@ The client calls our API only through `lib/api.ts`, which attaches
 `requireAdmin()`), which validates the signature with `TELEGRAM_BOT_TOKEN`
 and returns `{ id, isAdmin, ... }`. Routes never trust ids from the body or
 URL: `POST /api/profile` writes the caller's own row, `/api/meetings/[matchId]/*`
-allow only the two participants, `/api/users` and `/api/matching` are
-admin-only. Details in `docs/DATA_AND_API.md`.
+allow only the two participants, `/api/admin/*` are admin-only. Details in `docs/DATA_AND_API.md`.
 
 ## Conventions (short; full list in docs/CONVENTIONS.md)
 
@@ -185,7 +197,8 @@ anything new there.
 | `APP_URL`, `MINI_APP_URL` | https URL of the deployment; webhook target and bot buttons |
 | `TELEGRAM_MINI_APP_LINK` | `t.me/<bot>/<app>` base of referral links (`?startapp=ref_<code>`); optional, defaults to `t.me/<bot>` (main Mini App) |
 | `CRON_SECRET` | `Authorization: Bearer` expected by `/api/cron/matching`; also a GitHub repo secret together with `APP_URL` |
-| `MATCHING_NOTIFICATIONS` | `"true"` to message both users when a match is created |
+| `ADMIN_TELEGRAM_IDS` | Telegram ids of admins, any non-digit separates them (quotes pasted into Vercel are fine); server only; without it nobody is admin |
+| `MATCHING_NOTIFICATIONS` | default of «Присылать уведомление о новой паре» until the matching config is saved in the admin |
 | `MEETINGS_PHASE` | testing only: `week` / `feedback` / `signup` forces the «Встречи» tab phase instead of `WEEK_SCHEDULE` (`lib/weekCycle.ts`); `week` also keeps «Хочу познакомиться» open until the end of the round's week |
 
 ## Gotchas
@@ -193,8 +206,13 @@ anything new there.
 - Opening a production build outside Telegram fails by design (no mock).
 - `lib/prisma.ts` returns a no-op proxy during `next build` without
   `DATABASE_URL`; at runtime every DB route needs the real URL.
-- The matching config edited through `PUT /api/matching` lives in memory and
-  resets on redeploy.
+- The matching config lives in `app_config` (key `matching`), edited on
+  `/admin/matching`; defaults in `defaultMatchingConfig()`.
+- Analytics/audit: call `track(name, userId, props)` from `lib/events.ts`
+  (add the name to `EventName` and to `admin.events` in both locales). It never
+  awaits the insert; do not await DB work for analytics on a request path.
+- The bot learns about blocks from `my_chat_member` updates and 403s
+  (`users.botBlockedAt`); after changing `allowed_updates` re-run `POST /api/bot/setup`.
 - `user_settings`/`profiles` rows are created lazily; `ensureUser()` creates
   the parent `users` row first and returns it. It memoises rows per server
   instance (10 min); call `forgetUser()` after writing `users` elsewhere.

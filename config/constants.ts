@@ -1,4 +1,8 @@
-export const ADMIN_TELEGRAM_IDS = [135052006, 648216801, 307925776, 5193126268];
+/**
+ * Telegram user of the browser mock (core/mockEnv.ts, development only). Put it into
+ * ADMIN_TELEGRAM_IDS in .env.local to see the admin menu locally.
+ */
+export const DEV_MOCK_TELEGRAM_ID = 135052006;
 
 export const MENU_ITEMS = [
   {

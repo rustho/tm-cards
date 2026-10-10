@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { authenticate, authErrorResponse, ensureUser } from "@/lib/auth";
+import { track } from "@/lib/events";
 import { getAccess, isParticipating, setParticipation } from "@/lib/meetingsService";
 
 export const dynamic = "force-dynamic";
@@ -21,6 +22,7 @@ export async function PUT(request: NextRequest) {
     }
 
     const settings = await setParticipation(user.id, body.participating);
+    track(body.participating ? "week_signup" : "week_skip", user.id);
     console.log(`${body.participating ? "▶️" : "⏸️"} User ${user.telegramId} ${body.participating ? "joins" : "skips"} the next round`);
     return NextResponse.json({ participating: isParticipating(settings) });
   } catch (error) {

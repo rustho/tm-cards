@@ -1,6 +1,7 @@
 import type { Prisma, User } from "@prisma/client";
 import prisma from "@/lib/prisma";
 import { notifyUser } from "@/lib/bot";
+import { track } from "@/lib/events";
 import { TRIAL_DAYS } from "@/config/constants";
 import {
   IMPRESSION_OPTIONS,
@@ -194,6 +195,7 @@ export async function submitFeedback(matchId: string, viewerId: string, input: F
     throw new FeedbackError("Feedback already left", 409);
   }
 
+  track("feedback_left", viewerId, { matchId, outcome: input.outcome, ...(input.outcome === "not_met" ? { reason: input.reason } : {}) });
   if (input.outcome === "later") {
     if (match.status !== "pending") throw new FeedbackError("Meeting cannot be postponed", 409);
     return prisma.match.update({ where: { id: matchId }, data: { status: "postponed" }, include: meetingInclude });

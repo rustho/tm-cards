@@ -1,5 +1,5 @@
 import { emitEvent, isTMA, mockTelegramEnv } from "@tma.js/sdk-react";
-import { ADMIN_TELEGRAM_IDS } from "@/config/constants";
+import { DEV_MOCK_TELEGRAM_ID } from "@/config/constants";
 
 /**
  * Mocks the Telegram environment when the app is opened in a plain browser.
@@ -64,7 +64,7 @@ export async function mockEnv(): Promise<void> {
           [
             "user",
             JSON.stringify({
-              id: ADMIN_TELEGRAM_IDS[0],
+              id: DEV_MOCK_TELEGRAM_ID,
               first_name: "Dev",
               last_name: "Admin",
               username: "dev_admin",

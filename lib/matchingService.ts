@@ -9,8 +9,9 @@ import { closeUnagreedMatches } from "./weekCycle";
 /**
  * Matching engine. Once per weekly round it pairs complete, active profiles
  * within the same country/region by a compatibility score and stores the
- * result in `matches`. Triggered by POST /api/matching?action=run (admin) or
- * GET /api/cron/matching (Vercel Cron).
+ * result in `matches`. Triggered from the admin (POST /api/admin/matching) or
+ * GET /api/cron/matching. The config is stored in `app_config` under "matching"
+ * and edited in the admin; a dry run (`preview`) computes pairs without writing.
  */
 
 export interface MatchingConfig {
@@ -44,6 +45,18 @@ export interface CompatibilityResult {
   factors: Array<{ factor: string; score: number }>;
 }
 
+export interface PreviewPair {
+  a: { telegramId: string; name: string; place: string };
+  b: { telegramId: string; name: string; place: string };
+  score: number;
+}
+
+export interface PreviewResult {
+  eligibleUsers: number;
+  pairs: PreviewPair[];
+  unmatched: { telegramId: string; name: string; place: string }[];
+}
+
 interface ScoredPair {
   a: Candidate;
   b: Candidate;
@@ -63,6 +76,40 @@ export interface RunResult {
 }
 
 const MATCH_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+const CONFIG_KEY = "matching";
+
+export function defaultMatchingConfig(): MatchingConfig {
+  return {
+    maxMatchesPerRun: 50,
+    minCompatibilityScore: 0.3,
+    cooldownHours: 24,
+    enableNotifications: process.env.MATCHING_NOTIFICATIONS === "true",
+    countriesWithoutRegions: ["Singapore", "Monaco", "Luxembourg", "Сингапур"],
+  };
+}
+
+/** Keeps only known keys with sane values; throws on a wrong type. */
+export function sanitizeMatchingConfig(input: Record<string, unknown>, base: MatchingConfig): MatchingConfig {
+  const next = { ...base };
+  const num = (key: "maxMatchesPerRun" | "minCompatibilityScore" | "cooldownHours", min: number, max: number) => {
+    if (input[key] === undefined) return;
+    const value = Number(input[key]);
+    if (!Number.isFinite(value) || value < min || value > max) throw new Error(`${key} must be between ${min} and ${max}`);
+    next[key] = key === "minCompatibilityScore" ? value : Math.round(value);
+  };
+  num("maxMatchesPerRun", 1, 10000);
+  num("minCompatibilityScore", 0, 100);
+  num("cooldownHours", 0, 24 * 60);
+  if (input.enableNotifications !== undefined) {
+    if (typeof input.enableNotifications !== "boolean") throw new Error("enableNotifications must be a boolean");
+    next.enableNotifications = input.enableNotifications;
+  }
+  if (input.countriesWithoutRegions !== undefined) {
+    if (!Array.isArray(input.countriesWithoutRegions)) throw new Error("countriesWithoutRegions must be an array");
+    next.countriesWithoutRegions = input.countriesWithoutRegions.map(String).map((c) => c.trim()).filter(Boolean);
+  }
+  return next;
+}
 
 /** Monday 00:00 UTC of the week containing `date`. */
 export function weekStartOf(date: Date): Date {
@@ -83,7 +130,7 @@ function ageOf(dateOfBirth: Date | null): number | undefined {
 
 class MatchingService {
   private static instance: MatchingService;
-  private config: MatchingConfig;
+  private config: MatchingConfig = defaultMatchingConfig();
   private isRunning = false;
   private lastRun: RunResult | null = null;
 
@@ -92,14 +139,30 @@ class MatchingService {
     return MatchingService.instance;
   }
 
-  constructor() {
-    this.config = {
-      maxMatchesPerRun: 50,
-      minCompatibilityScore: 0.3,
-      cooldownHours: 24,
-      enableNotifications: process.env.MATCHING_NOTIFICATIONS === "true",
-      countriesWithoutRegions: ["Singapore", "Monaco", "Luxembourg", "Сингапур"],
-    };
+  /** Saved config (app_config) over the defaults; also refreshes the in-memory copy. */
+  async loadConfig(): Promise<MatchingConfig> {
+    const row = await prisma.appConfig.findUnique({ where: { key: CONFIG_KEY } });
+    const stored = (row?.value ?? {}) as Record<string, unknown>;
+    try {
+      this.config = sanitizeMatchingConfig(stored, defaultMatchingConfig());
+    } catch (error) {
+      console.warn("⚠️ Stored matching config is invalid, using defaults:", error);
+      this.config = defaultMatchingConfig();
+    }
+    return { ...this.config };
+  }
+
+  async saveConfig(input: Record<string, unknown>, updatedBy: string): Promise<MatchingConfig> {
+    const next = sanitizeMatchingConfig(input, await this.loadConfig());
+    const value = next as unknown as Prisma.InputJsonValue;
+    await prisma.appConfig.upsert({
+      where: { key: CONFIG_KEY },
+      update: { value, updatedBy },
+      create: { key: CONFIG_KEY, value, updatedBy },
+    });
+    this.config = next;
+    console.log("⚙️ Matching configuration saved:", next);
+    return { ...next };
   }
 
   calculateCompatibilityScore(a: Candidate, b: Candidate): CompatibilityResult {
@@ -211,13 +274,16 @@ class MatchingService {
    * Active users with a complete profile and a location, past cooldown, not paused or skipping,
    * and with access: an active subscription or still inside the trial (same rule as getAccess).
    */
-  private async getCandidates(): Promise<Candidate[]> {
+  private async getCandidates({ dryRun = false } = {}): Promise<Candidate[]> {
     const now = new Date();
 
-    await prisma.userSettings.updateMany({
-      where: { matchingOption: { not: "active" }, matchingResumeDate: { lte: now } },
-      data: { matchingOption: "active", matchingResumeDate: null, matchingCustomDate: null },
-    });
+    // Pauses that are over count as active; a real run also clears them.
+    if (!dryRun) {
+      await prisma.userSettings.updateMany({
+        where: { matchingOption: { not: "active" }, matchingResumeDate: { lte: now } },
+        data: { matchingOption: "active", matchingResumeDate: null, matchingCustomDate: null },
+      });
+    }
 
     const cooldown = new Date(now.getTime() - this.config.cooldownHours * 60 * 60 * 1000);
     const users = await prisma.user.findMany({
@@ -226,7 +292,13 @@ class MatchingService {
         profile: { isComplete: true, locationId: { not: null } },
         OR: [{ lastMatchedAt: { lt: cooldown } }, { lastMatchedAt: null }],
         AND: [
-          { OR: [{ settings: null }, { settings: { matchingOption: "active" } }] },
+          {
+            OR: [
+              { settings: null },
+              { settings: { matchingOption: "active" } },
+              { settings: { matchingResumeDate: { lte: now } } },
+            ],
+          },
           { OR: [{ settings: null }, { settings: { skipNextRound: false } }] },
           {
             OR: [
@@ -254,6 +326,41 @@ class MatchingService {
     return users.map((u) => this.toCandidate(u, partners.get(u.id) ?? new Set()));
   }
 
+  /** Pools by country (or region) and pairs them; best scores first, capped by maxMatchesPerRun. */
+  private planPairs(candidates: Candidate[]): ScoredPair[] {
+    const allPairs: ScoredPair[] = [];
+    const byCountry = this.groupBy(candidates, (u) => u.country);
+    for (const [country, countryUsers] of Object.entries(byCountry)) {
+      if (this.config.countriesWithoutRegions.includes(country)) {
+        allPairs.push(...this.findPairsInGroup(countryUsers));
+      } else {
+        for (const regionUsers of Object.values(this.groupBy(countryUsers, (u) => u.region))) {
+          allPairs.push(...this.findPairsInGroup(regionUsers));
+        }
+      }
+    }
+    allPairs.sort((x, y) => y.score - x.score);
+    return allPairs.slice(0, this.config.maxMatchesPerRun);
+  }
+
+  /** What a run would do now, without writing anything. */
+  async previewMatching(): Promise<PreviewResult> {
+    await this.loadConfig();
+    const candidates = await this.getCandidates({ dryRun: true });
+    const pairs = this.planPairs(candidates);
+    const person = (c: Candidate) => ({
+      telegramId: c.telegramId,
+      name: c.name,
+      place: [c.region, c.country].filter(Boolean).join(", "),
+    });
+    const matched = new Set(pairs.flatMap((p) => [p.a.userId, p.b.userId]));
+    return {
+      eligibleUsers: candidates.length,
+      pairs: pairs.map(({ a, b, score }) => ({ a: person(a), b: person(b), score })),
+      unmatched: candidates.filter((c) => !matched.has(c.userId)).map(person),
+    };
+  }
+
   async runMatching(): Promise<RunResult> {
     const startedAt = new Date().toISOString();
     const result: RunResult = {
@@ -274,6 +381,7 @@ class MatchingService {
     console.log("🚀 Matching run started");
 
     try {
+      await this.loadConfig();
       const weekStart = weekStartOf(new Date());
       const round = await prisma.matchRound.upsert({
         where: { weekStart },
@@ -286,19 +394,7 @@ class MatchingService {
       result.eligibleUsers = candidates.length;
       console.log(`👥 ${candidates.length} candidates for round ${result.roundWeekStart}`);
 
-      const allPairs: ScoredPair[] = [];
-      const byCountry = this.groupBy(candidates, (u) => u.country);
-      for (const [country, countryUsers] of Object.entries(byCountry)) {
-        if (this.config.countriesWithoutRegions.includes(country)) {
-          allPairs.push(...this.findPairsInGroup(countryUsers));
-        } else {
-          for (const regionUsers of Object.values(this.groupBy(countryUsers, (u) => u.region))) {
-            allPairs.push(...this.findPairsInGroup(regionUsers));
-          }
-        }
-      }
-      allPairs.sort((x, y) => y.score - x.score);
-      const pairs = allPairs.slice(0, this.config.maxMatchesPerRun);
+      const pairs = this.planPairs(candidates);
 
       for (const { a, b } of pairs) {
         const [user1Id, user2Id] = [a.userId, b.userId].sort();
@@ -422,31 +518,6 @@ class MatchingService {
     }
   }
 
-  async getMatchingStats() {
-    const dayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
-    const [totalUsers, completeProfiles, totalMatches, pendingMatches, matchesToday, rounds, avg] = await Promise.all([
-      prisma.user.count(),
-      prisma.profile.count({ where: { isComplete: true } }),
-      prisma.match.count(),
-      prisma.match.count({ where: { status: "pending" } }),
-      prisma.match.count({ where: { createdAt: { gte: dayAgo } } }),
-      prisma.matchRound.count(),
-      prisma.match.aggregate({ _avg: { score: true } }),
-    ]);
-    return {
-      totalUsers,
-      completeProfiles,
-      totalMatches,
-      pendingMatches,
-      matchesToday,
-      rounds,
-      avgScore: avg._avg.score ?? 0,
-      isRunning: this.isRunning,
-      lastRun: this.lastRun,
-      config: this.config,
-    };
-  }
-
   /** Unagreed pairs past their deadline → not_met; pending past expiry → expired. Returns the expired count. */
   async cleanupExpiredMatches(): Promise<number> {
     await closeUnagreedMatches();
@@ -458,17 +529,8 @@ class MatchingService {
     return result.count;
   }
 
-  updateConfig(newConfig: Partial<MatchingConfig>) {
-    this.config = { ...this.config, ...newConfig };
-    console.log("⚙️ Matching configuration updated:", this.config);
-  }
-
-  getConfig(): MatchingConfig {
-    return { ...this.config };
-  }
-
   getStatus() {
-    return { isRunning: this.isRunning, lastRun: this.lastRun, config: this.config };
+    return { isRunning: this.isRunning, lastRun: this.lastRun };
   }
 }
 

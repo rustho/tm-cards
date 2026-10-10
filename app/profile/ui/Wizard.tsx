@@ -106,18 +106,22 @@ export function Wizard({ onDone, onCancel }: { onDone?: () => void; onCancel?: (
   // Saves are chained so they reach the server in order: otherwise a slow older
   // save can finish last and overwrite newer data. Each sends only changed fields.
   const saveQueue = useRef<Promise<unknown>>(Promise.resolve());
+  const reportedSteps = useRef(new Set<string>());
 
-  const saveProfile = (data: Partial<Profile>, { force = false } = {}): Promise<boolean> => {
+  const saveProfile = (data: Partial<Profile>, { force = false, step }: { force?: boolean; step?: string } = {}): Promise<boolean> => {
     const run = async () => {
       const changes = changedFields(data, savedRef.current);
-      if (!force && Object.keys(changes).length === 0) return true;
+      // A step's first pass during onboarding is always reported (funnel), even with nothing to save.
+      const reportStep = step && !savedRef.current.isComplete && !reportedSteps.current.has(step) ? step : undefined;
+      if (!force && !reportStep && Object.keys(changes).length === 0) return true;
       setSaveError(null);
       try {
         const result = await api.post<{ profile: Profile }>(
           "/api/profile",
-          referralCode ? { ...changes, referralCode } : changes
+          { ...changes, ...(referralCode ? { referralCode } : {}), ...(reportStep ? { onboardingStep: reportStep } : {}) }
         );
         savedRef.current = { ...savedRef.current, ...changes };
+        if (reportStep) reportedSteps.current.add(reportStep);
         writeCache("/api/profile", result.profile);
         return true;
       } catch (error) {
@@ -131,8 +135,8 @@ export function Wizard({ onDone, onCancel }: { onDone?: () => void; onCancel?: (
     return result;
   };
 
-  const handleStepComplete = (_stepId: string, data: Partial<Profile>) => {
-    void saveProfile(data);
+  const handleStepComplete = (stepId: string, data: Partial<Profile>) => {
+    void saveProfile(data, { step: stepId });
   };
 
   const handleComplete = async (finalData: Profile) => {

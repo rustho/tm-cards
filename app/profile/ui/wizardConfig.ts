@@ -12,6 +12,7 @@ import { StepAbout } from "./steps/StepAbout";
 import { StepTheme } from "./steps/StepTheme";
 import { StepFirstMeeting } from "./steps/StepFirstMeeting";
 
+/** Step ids are also listed in ONBOARDING_STEP_IDS (models/admin.ts) for the admin funnel; keep the order in sync. */
 export const ONBOARDING_STEPS: WizardStepConfig[] = [
   {
     id: "location",
