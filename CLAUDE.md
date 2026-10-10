@@ -44,7 +44,8 @@ Admin gate: env `ADMIN_TELEGRAM_IDS` (comma-separated, read by `lib/admins.ts`).
 client learns it from `GET /api/me` (`useAuth().isAdmin`). Admins get an
 «Админ-меню» item in the «Профиль» tab (`/settings`) that opens the admin
 inside the Mini App (works stretched on desktop Telegram too):
-`/admin` (KPIs), `/admin/users` (+ `[telegramId]` card: access, status, bot
+`/admin` (KPIs), `/admin/funnel` (cohort funnel, wizard drop-off, weekly
+cohorts; period + source filters), `/admin/users` (+ `[telegramId]` card: access, status, bot
 message, meetings, event log), `/admin/matching` (preview, run, config, rounds,
 cancel a pair), `/admin/broadcasts` (segment → test → send in batches).
 `app/admin/layout.tsx` gates all of them; building blocks in `components/admin/`.
@@ -120,7 +121,7 @@ lib/bot.ts                grammY bot, BOT_COMMANDS, notifyUser
 lib/matchingService.ts    matching engine (singleton); config in `app_config`, dry-run previewMatching()
 lib/events.ts             track(): product/audit events → `events`, written after the response (waitUntil)
 lib/admins.ts             ADMIN_TELEGRAM_IDS from env
-lib/adminService.ts, adminMatching.ts, adminRoute.ts  admin read side, user actions, segments, route wrapper (server)
+lib/adminService.ts, adminMatching.ts, adminFunnel.ts, adminRoute.ts  admin read side, user actions, segments, route wrapper (server)
 lib/broadcastService.ts   bot broadcasts: snapshot recipients, batched sending (server)
 lib/meetingsService.ts    access (subscription/trial), week phase, participation, feedback rules (server)
 lib/weekMatchService.ts   this week's pair: accept, contacts, question of the week (server)
@@ -196,7 +197,7 @@ anything new there.
 | `APP_URL`, `MINI_APP_URL` | https URL of the deployment; webhook target and bot buttons |
 | `TELEGRAM_MINI_APP_LINK` | `t.me/<bot>/<app>` base of referral links (`?startapp=ref_<code>`); optional, defaults to `t.me/<bot>` (main Mini App) |
 | `CRON_SECRET` | `Authorization: Bearer` expected by `/api/cron/matching`; also a GitHub repo secret together with `APP_URL` |
-| `ADMIN_TELEGRAM_IDS` | comma-separated Telegram ids of admins (server only); without it nobody is admin |
+| `ADMIN_TELEGRAM_IDS` | Telegram ids of admins, any non-digit separates them (quotes pasted into Vercel are fine); server only; without it nobody is admin |
 | `MATCHING_NOTIFICATIONS` | default of «Присылать уведомление о новой паре» until the matching config is saved in the admin |
 | `MEETINGS_PHASE` | testing only: `week` / `feedback` / `signup` forces the «Встречи» tab phase instead of `WEEK_SCHEDULE` (`lib/weekCycle.ts`); `week` also keeps «Хочу познакомиться» open until the end of the round's week |
 

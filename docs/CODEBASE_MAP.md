@@ -32,6 +32,7 @@ example code.
 | `page.tsx` | LIVE | `/` (launch): `/profile` until the profile `isComplete`, then `/meetings` |
 | `admin/layout.tsx` | LIVE | gate for every `/admin/*` page (`useAuth().isAdmin` from `/api/me`) |
 | `admin/page.tsx` | LIVE | `/admin`: section links + KPIs from `/api/admin/overview` (linked from `/settings`) |
+| `admin/funnel/page.tsx` | LIVE | cohort funnel bars, wizard drop-off, weekly cohort table; period/source chips |
 | `admin/users/page.tsx`, `admin/users/[telegramId]/page.tsx` | LIVE | user search/filters; user card: access, status, bot message, meetings, events |
 | `admin/matching/page.tsx`, `admin/matching/[roundId]/page.tsx` | LIVE | preview/run matching, config, rounds; pairs of a round with cancel |
 | `admin/broadcasts/page.tsx`, `admin/broadcasts/[id]/page.tsx` | LIVE | composer (segment, country, text, test) + history; progress page drives the batched sending |
@@ -71,7 +72,7 @@ example code.
 | `GET /api/reference` | user | LIVE |
 | `GET/PUT /api/settings/notifications`, `/matching-schedule` | user | LIVE |
 | `GET /api/me` | user | LIVE |
-| `/api/admin/*` (overview, users, users/[telegramId], …/message, matching, matching/rounds/[roundId], matching/matches/[matchId], broadcasts, broadcasts/audience, broadcasts/test, broadcasts/[id]) | admin | LIVE |
+| `/api/admin/*` (overview, funnel, users, users/[telegramId], …/message, matching, matching/rounds/[roundId], matching/matches/[matchId], broadcasts, broadcasts/audience, broadcasts/test, broadcasts/[id]) | admin | LIVE |
 | `GET /api/cron/matching` | `CRON_SECRET` | OPS |
 | `POST /api/bot/webhook` | webhook secret | OPS |
 | `GET/POST /api/bot/setup` | admin | OPS |

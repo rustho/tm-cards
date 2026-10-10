@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useTranslations } from "next-intl";
-import { ChevronRight, Megaphone, Shuffle, Users } from "lucide-react";
+import { ChevronRight, Filter, Megaphone, Shuffle, Users } from "lucide-react";
 import { useCachedApi } from "@/lib/apiCache";
 import { AdminPage, LoadError, Loading, Section, Stat } from "@/components/admin/AdminUI";
 import type { AdminOverview } from "@/models/admin";
@@ -13,6 +13,7 @@ export default function AdminHome() {
   const { data, error, refresh } = useCachedApi<AdminOverview>("/api/admin/overview");
 
   const sections = [
+    { href: "/admin/funnel", icon: Filter, title: t("nav.funnel"), description: t("nav.funnelDesc") },
     { href: "/admin/users", icon: Users, title: t("nav.users"), description: t("nav.usersDesc") },
     { href: "/admin/matching", icon: Shuffle, title: t("nav.matching"), description: t("nav.matchingDesc") },
     { href: "/admin/broadcasts", icon: Megaphone, title: t("nav.broadcasts"), description: t("nav.broadcastsDesc") },

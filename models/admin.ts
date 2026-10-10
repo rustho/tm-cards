@@ -210,3 +210,54 @@ export interface BroadcastDetails extends BroadcastDto {
 
 /** Telegram message limit; the {name} placeholder is replaced per recipient. */
 export const MESSAGE_MAX_LENGTH = 4000;
+
+// --- funnel ------------------------------------------------------------------------
+
+export const FUNNEL_PERIODS = ["7", "30", "90", "365", "all"] as const;
+export type FunnelPeriod = (typeof FUNNEL_PERIODS)[number];
+
+export const FUNNEL_SOURCES = ["all", "referral", "organic"] as const;
+export type FunnelSource = (typeof FUNNEL_SOURCES)[number];
+
+/** Funnel steps in order; every count is "users of the cohort who ever reached it". */
+export const FUNNEL_STEPS = ["users", "started", "completed", "matched", "accepted", "mutual", "met", "subscribed"] as const;
+export type FunnelStep = (typeof FUNNEL_STEPS)[number];
+
+/** Steps plus side metrics that are not a conversion stage (feedback: either verdict). */
+export type FunnelCounts = Record<FunnelStep, number> & { feedback: number; referred: number; blocked: number };
+
+/** Wizard step ids in order. Keep in sync with ONBOARDING_STEPS (app/profile/ui/wizardConfig.ts). */
+export const ONBOARDING_STEP_IDS = [
+  "location",
+  "name",
+  "dateOfBirth",
+  "occupation",
+  "values",
+  "interests",
+  "goal",
+  "meetingFormat",
+  "about",
+  "photo",
+  "theme",
+  "firstMeeting",
+] as const;
+
+export interface FunnelDto {
+  period: FunnelPeriod;
+  source: FunnelSource;
+  /** Cohort = users who signed up in [from, to); `from` null for all time. Test (mock_) users are left out. */
+  from: string | null;
+  to: string;
+  totals: FunnelCounts;
+  /** Sign-up weeks (Monday, UTC), newest first. */
+  weeks: (FunnelCounts & { week: string })[];
+  /** Median hours from sign-up to the finished questionnaire. */
+  medianHoursToComplete: number | null;
+  wizard: {
+    /** First `onboarding_step` event ever: step data exists only from then on. */
+    since: string | null;
+    /** Cohort users who signed up after `since` (the base for step percentages). */
+    users: number;
+    steps: { step: string; users: number }[];
+  };
+}

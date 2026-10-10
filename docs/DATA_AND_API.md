@@ -190,6 +190,7 @@ Shapes in `models/admin.ts`. Errors are `{ error }` with a status.
 | Method & path | Response / body |
 |---|---|
 | `GET /api/admin/overview` | `AdminOverview`: user counts (total, new/active 7 d, complete, blocked), this week's pairs/mutual/met, next-round participants |
+| `GET /api/admin/funnel?period=7\|30\|90\|365\|all&source=all\|referral\|organic` | `FunnelDto` (`lib/adminFunnel.ts`): cohort = sign-ups in the period without `mock_` users; steps users → started → completed → matched → accepted → mutual → met → subscribed (non-`manual` plan) from the core tables, plus feedback/referred/blocked; median sign-up→completion; wizard drop-off from `onboarding_step` events (base: sign-ups after the first such event); per-week cohorts. Timestamps are compared `AT TIME ZONE 'UTC'` |
 | `GET /api/admin/users?q=&filter=&offset=` | `AdminUserList`, 50 per page; `q` matches Telegram id, @username, names; `filter` one of `USER_FILTERS` |
 | `GET /api/admin/users/[telegramId]` | `AdminUserDetails`: profile, access, subscriptions, referrer, last 30 meetings, last 60 events |
 | `POST /api/admin/users/[telegramId]` | `{ action: "setStatus", status } \| { action: "grantAccess", weeks } \| { action: "revokeAccess" }` → updated card. Granted access = subscription on the hidden zero-price `manual` plan, appended to the current one |
