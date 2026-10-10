@@ -29,7 +29,8 @@ example code.
 |---|---|---|
 | `layout.tsx` | LIVE | server component: locale, `I18nProvider`, `Root`; imports normalize.css + `globals.css`; Inter font var |
 | `fonts.ts` | LIVE | `next/font/google` Inter 400/700 (latin+cyrillic) → `--font-inter` |
-| `page.tsx` | LIVE | `/`: admin → `AdminMenu`; others → `router.replace("/meetings")` in an effect |
+| `page.tsx` | LIVE | `/` (launch): `/profile` until the profile `isComplete`, then `/meetings` |
+| `admin/page.tsx` | LIVE | `/admin`: `AdminMenu` + footer, admins only (linked from `/settings`) |
 | `error.tsx`, `not-found.tsx` | LIVE | |
 | `_assets/globals.css` | LIVE | XP foundation tokens (`--color-*`, `--radius-*`), shadcn aliases, legacy `--theme-*` aliases and `.theme-*` utilities; base `h1`–`h6`/`p` margins (new components use `m-0`) |
 | `/icebreaker` (`page.tsx`, `ui/{startGame,game,endGame}.tsx`, `constants/questions.ts`, `pageStyles.css`) | LIVE | card game; `questions.md` is the source text; easter egg: 5 taps → `/profile` |

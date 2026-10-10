@@ -11,7 +11,8 @@ import { Wizard } from "./ui/Wizard";
 
 /**
  * «Анкета» tab: my finished questionnaire («Редактировать анкету» reopens the wizard, prefilled),
- * or the onboarding wizard until it is complete. The wizard fills the screen above the fixed footer (pb-24).
+ * or the onboarding wizard until it is complete. Onboarding hides the footer (no tabs until the
+ * questionnaire is done); re-editing keeps it and the wizard fills the screen above it (pb-24).
  */
 export default function ProfilePage() {
   const t = useTranslations("profile.wizard");
@@ -29,9 +30,8 @@ export default function ProfilePage() {
 
   if (profile === undefined) {
     return (
-      <div className="flex min-h-screen items-center justify-center pb-24" aria-label={t("loading")}>
+      <div className="flex min-h-screen items-center justify-center" aria-label={t("loading")}>
         <div className="size-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-        <FooterMenu />
       </div>
     );
   }
@@ -46,11 +46,11 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="flex h-[100dvh] flex-col overflow-hidden px-4 pb-24">
+    <div className={`flex h-[100dvh] flex-col overflow-hidden px-4 ${editing ? "pb-24" : "pb-4"}`}>
       <div className="mx-auto flex min-h-0 w-full max-w-4xl flex-1 flex-col">
         <Wizard onDone={editing ? stopEditing : undefined} onCancel={editing ? stopEditing : undefined} />
       </div>
-      <FooterMenu />
+      {editing && <FooterMenu />}
     </div>
   );
 }

@@ -373,6 +373,10 @@
       "comingSoon": "Payment with Telegram Stars is coming soon",
       "pay": "Pay"
     },
+    "admin": {
+      "title": "Admin menu",
+      "description": "Questions, users and service screens"
+    },
     "matchingSchedule": {
       "title": "Matching Schedule",
       "description": "Set when you want to receive matches",
