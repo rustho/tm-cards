@@ -660,6 +660,19 @@
         "admin": "admin {id}",
         "broadcast": "broadcast"
       }
+    },
+    "bot": {
+      "title": "Bot",
+      "ok": "webhook works",
+      "broken": "bot receives nothing",
+      "noWebhook": "No webhook: the bot does not see /start or user messages; the chat log only has our messages.",
+      "wrongUrl": "Webhook points elsewhere: {url}",
+      "missingUpdates": "Webhook is not subscribed to all update types (needs message and my_chat_member).",
+      "pending": "queued: {count}",
+      "lastError": "Last Telegram error {date}: {error}",
+      "connect": "Connect webhook",
+      "reconnect": "Reconnect",
+      "connecting": "Connecting…"
     }
   },
   "common": {

@@ -15,7 +15,12 @@ function fail(error: unknown) {
   );
 }
 
-/** GET /api/bot/setup — current webhook info. Admin only. */
+function expectedWebhookUrl(): string | null {
+  const appUrl = process.env.APP_URL;
+  return appUrl?.startsWith("https://") ? `${appUrl.replace(/\/$/, "")}/api/bot/webhook` : null;
+}
+
+/** GET /api/bot/setup — bot, current webhook info and the URL it should point to. Admin only. */
 export async function GET(request: NextRequest) {
   try {
     await requireAdmin(request);
@@ -23,7 +28,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ success: false, error: "TELEGRAM_BOT_TOKEN is not set" }, { status: 503 });
     }
     const [me, webhook] = await Promise.all([getBot().api.getMe(), getBot().api.getWebhookInfo()]);
-    return NextResponse.json({ success: true, data: { bot: me, webhook } });
+    return NextResponse.json({ success: true, data: { bot: me, webhook, expectedUrl: expectedWebhookUrl() } });
   } catch (error) {
     return fail(error);
   }
@@ -39,17 +44,17 @@ export async function POST(request: NextRequest) {
     if (!isBotConfigured()) {
       return NextResponse.json({ success: false, error: "TELEGRAM_BOT_TOKEN is not set" }, { status: 503 });
     }
-    const appUrl = process.env.APP_URL;
-    if (!appUrl || !appUrl.startsWith("https://")) {
+    const url = expectedWebhookUrl();
+    if (!url) {
       return NextResponse.json({ success: false, error: "APP_URL must be an https URL" }, { status: 400 });
     }
 
     const bot = getBot();
-    const url = `${appUrl.replace(/\/$/, "")}/api/bot/webhook`;
     await bot.api.setWebhook(url, {
       secret_token: process.env.TELEGRAM_WEBHOOK_SECRET || undefined,
       allowed_updates: ["message", "callback_query", "my_chat_member"],
-      drop_pending_updates: true,
+      // Keep updates queued while the webhook was missing: they are user messages for the chat log.
+      drop_pending_updates: false,
     });
     await bot.api.setMyCommands(BOT_COMMANDS);
     const webhook = await bot.api.getWebhookInfo();

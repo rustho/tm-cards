@@ -73,8 +73,10 @@ header; copy it from the browser's network tab.
    random `TELEGRAM_WEBHOOK_SECRET`.
 2. Expose the app over https (`cloudflared tunnel --url http://localhost:3000`
    or a Vercel preview) and set `APP_URL` / `MINI_APP_URL` to that URL.
-3. As an admin, call `POST /api/bot/setup` (from the Mini App session or
-   with the tma header). It registers `${APP_URL}/api/bot/webhook` and the
+3. As an admin, press «Подключить webhook» in the «Бот» block on `/admin`
+   (it calls `POST /api/bot/setup`; the block also shows a missing or wrong
+   webhook, queued updates and Telegram's last delivery error). Do it from the
+   production app, never from a local dev server sharing the token. It registers `${APP_URL}/api/bot/webhook` and the
    command list. `GET /api/bot/setup` shows the current webhook info.
 4. Set the same URL as the Mini App URL in BotFather.
 
@@ -128,7 +130,7 @@ the command opens a setup prompt.
   `ADMIN_TELEGRAM_IDS`, optionally `MATCHING_NOTIFICATIONS`.
 - Run `pnpm db:deploy` against the production DB before the first deploy of
   a schema change.
-- After deploy, call `POST /api/bot/setup` once to point the webhook at the
-  new URL.
+- After deploy, check the «Бот» block on `/admin`; if the webhook is missing or
+  wrong, press «Подключить webhook» (`POST /api/bot/setup`, keeps queued updates).
 - Since July 2026 Mini App methods are restricted to the Mini App's own
   domain: keep one production domain and avoid redirects.

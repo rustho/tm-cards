@@ -222,6 +222,8 @@ anything new there.
 - Telegram has no chat-history API: the admin «Переписка с ботом» shows only
   `bot_messages`, logged since that table shipped. Send through `sendToUser()`
   (or `notifyUser()`) and pass `context` so the log knows who sent it.
+- No webhook = the bot receives nothing (no /start replies, no incoming chat
+  log). The «Бот» block on `/admin` shows it and reconnects.
 - The bot learns about blocks from `my_chat_member` updates and 403s
   (`users.botBlockedAt`); after changing `allowed_updates` re-run `POST /api/bot/setup`.
 - `user_settings`/`profiles` rows are created lazily; `ensureUser()` creates

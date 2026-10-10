@@ -659,6 +659,19 @@
         "admin": "админ {id}",
         "broadcast": "рассылка"
       }
+    },
+    "bot": {
+      "title": "Бот",
+      "ok": "webhook работает",
+      "broken": "бот не получает сообщения",
+      "noWebhook": "Webhook не подключён: бот не видит /start и сообщения пользователей, в переписку попадают только наши сообщения.",
+      "wrongUrl": "Webhook указывает на другой адрес: {url}",
+      "missingUpdates": "Webhook подписан не на все типы апдейтов (нужны message и my_chat_member).",
+      "pending": "в очереди: {count}",
+      "lastError": "Последняя ошибка Telegram {date}: {error}",
+      "connect": "Подключить webhook",
+      "reconnect": "Переподключить",
+      "connecting": "Подключаем…"
     }
   },
   "common": {

@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import { ChevronRight, Filter, Megaphone, Shuffle, Users } from "lucide-react";
 import { useCachedApi } from "@/lib/apiCache";
 import { AdminPage, LoadError, Loading, Section, Stat } from "@/components/admin/AdminUI";
+import { BotStatus } from "@/components/admin/BotStatus";
 import type { AdminOverview } from "@/models/admin";
 
 /** `/admin`: headline numbers and the admin sections. Opened from «Профиль» → «Админ-меню». */
@@ -33,6 +34,10 @@ export default function AdminHome() {
           </Link>
         ))}
       </nav>
+
+      <Section title={t("bot.title")}>
+        <BotStatus />
+      </Section>
 
       {!data ? (
         error ? <LoadError onRetry={refresh} /> : <Loading />
