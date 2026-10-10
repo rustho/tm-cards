@@ -5,7 +5,8 @@ import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { initData, useLaunchParams, useSignal } from "@tma.js/sdk-react";
 import { Profile } from "@/models/types";
-import { api, ApiError } from "@/lib/api";
+import { api } from "@/lib/api";
+import { fetchCached, readCache, writeCache } from "@/lib/apiCache";
 import { FlexibleWizard } from "./FlexibleWizard";
 import { ONBOARDING_STEPS } from "./wizardConfig";
 
@@ -70,14 +71,21 @@ export function Wizard({ onDone, onCancel }: { onDone?: () => void; onCancel?: (
   useEffect(() => {
     let cancelled = false;
     (async () => {
+      // Prefill from the cache when there is one; the fresh copy only refreshes the diff base.
+      const fresh = fetchCached<Profile>("/api/profile", { allowNotFound: true });
       let existing: Partial<Profile> = {};
+      const cached = readCache<Profile | null>("/api/profile");
       try {
-        existing = await api.get<Profile>("/api/profile");
+        existing = (cached !== undefined ? cached : await fresh) ?? {};
       } catch (error) {
-        if (!(error instanceof ApiError && error.status === 404)) {
-          console.error("Failed to load profile:", error);
-        }
+        console.error("Failed to load profile:", error);
       }
+      fresh
+        .then((data) => {
+          // Only while nothing has been saved yet: later saves already moved the diff base on.
+          if (!cancelled && data && savedRef.current === existing) savedRef.current = data;
+        })
+        .catch(() => {});
       if (cancelled) return;
       savedRef.current = existing;
       setInitialData({
@@ -105,8 +113,12 @@ export function Wizard({ onDone, onCancel }: { onDone?: () => void; onCancel?: (
       if (!force && Object.keys(changes).length === 0) return true;
       setSaveError(null);
       try {
-        await api.post("/api/profile", referralCode ? { ...changes, referralCode } : changes);
+        const result = await api.post<{ profile: Profile }>(
+          "/api/profile",
+          referralCode ? { ...changes, referralCode } : changes
+        );
         savedRef.current = { ...savedRef.current, ...changes };
+        writeCache("/api/profile", result.profile);
         return true;
       } catch (error) {
         console.error("Failed to save profile:", error);

@@ -10,8 +10,8 @@ export const runtime = "nodejs";
 /** GET /api/meetings — the caller's full meeting log (expired matches hidden), newest first. */
 export async function GET(request: NextRequest) {
   try {
-    const user = await ensureUser(await authenticate(request));
-    await closeUnagreedMatches(user.id);
+    const auth = await authenticate(request);
+    const [user] = await Promise.all([ensureUser(auth), closeUnagreedMatches(auth.id)]);
     const matches = await prisma.match.findMany({
       where: visibleMatchesWhere(user.id),
       include: meetingInclude,

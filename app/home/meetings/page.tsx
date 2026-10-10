@@ -1,9 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import type { Meeting } from "@/models/types";
-import { api } from "@/lib/api";
+import { useCachedApi } from "@/lib/apiCache";
 import { FooterMenu } from "@/components/FooterMenu";
 import { BackButton } from "@/components/ui/back-button";
 import { MeetingList } from "@/components/meetings/MeetingList";
@@ -11,22 +10,8 @@ import { MeetingList } from "@/components/meetings/MeetingList";
 /** Full meeting log, opened from «Мои встречи» on the home tab. */
 export default function MeetingsLog() {
   const t = useTranslations("meetings");
-  const [meetings, setMeetings] = useState<Meeting[] | null>(null);
-  const [failed, setFailed] = useState(false);
-
-  useEffect(() => {
-    let cancelled = false;
-    api
-      .get<Meeting[]>("/api/meetings")
-      .then((data) => !cancelled && setMeetings(data))
-      .catch((error) => {
-        console.error("Error fetching meetings:", error);
-        if (!cancelled) setFailed(true);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  const { data: meetings, error } = useCachedApi<Meeting[]>("/api/meetings");
+  const failed = !meetings && !!error;
 
   return (
     <div className="min-h-screen">
@@ -42,7 +27,7 @@ export default function MeetingsLog() {
           <MeetingList title={t("allTitle")} meetings={meetings} />
         )}
       </div>
-      <FooterMenu />
+      <FooterMenu showReminder />
     </div>
   );
 }

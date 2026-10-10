@@ -1,13 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { shareURL } from "@tma.js/sdk-react";
 import { BadgePercent, Crown, Mail, UserRound } from "lucide-react";
 import type { InvitationsSummary } from "@/models/types";
 import { REFERRAL_BONUS_WEEKS, REFERRAL_FRIEND_DISCOUNT_PERCENT } from "@/config/constants";
-import { api } from "@/lib/api";
+import { useCachedApi } from "@/lib/apiCache";
 import { FooterMenu } from "@/components/FooterMenu";
 import { Avatar, Button } from "@/components/ui";
 import { BottomAction } from "@/components/meetings/BottomAction";
@@ -20,22 +20,8 @@ const rewards = { weeks: REFERRAL_BONUS_WEEKS, discount: REFERRAL_FRIEND_DISCOUN
  */
 export default function Invitations() {
   const t = useTranslations("invitations");
-  const [summary, setSummary] = useState<InvitationsSummary | null>(null);
-  const [failed, setFailed] = useState(false);
-
-  useEffect(() => {
-    let cancelled = false;
-    api
-      .get<InvitationsSummary>("/api/invitations")
-      .then((data) => !cancelled && setSummary(data))
-      .catch((error) => {
-        console.error("Error fetching invitations:", error);
-        if (!cancelled) setFailed(true);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  const { data: summary, error } = useCachedApi<InvitationsSummary>("/api/invitations");
+  const failed = !summary && !!error;
 
   return (
     <div className="min-h-screen">

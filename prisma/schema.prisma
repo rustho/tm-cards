@@ -3,6 +3,8 @@
 
 generator client {
   provider = "prisma-client-js"
+  // include/select with relations becomes one SQL query (LATERAL JOINs) instead of one per level.
+  previewFeatures = ["relationJoins"]
 }
 
 datasource db {

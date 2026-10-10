@@ -14,7 +14,8 @@ example code.
 | `tsconfig.json` | LIVE | strict, aliases `@/*`, `@public/*` |
 | `tailwind.config.ts` | LIVE | `darkMode: ["class"]`, shadcn HSL tokens + brand palette, `tailwindcss-animate` |
 | `postcss.config.js` | LIVE | tailwind + autoprefixer |
-| `.github/workflows/run-matching.yml` | OPS | manual (`workflow_dispatch`) GitHub Actions run → `/api/cron/matching`; no schedule and no `vercel.json` yet |
+| `.github/workflows/run-matching.yml` | OPS | manual (`workflow_dispatch`) GitHub Actions run → `/api/cron/matching`; no schedule yet |
+| `vercel.json` | OPS | `regions: ["hnd1"]`: functions next to the Tokyo DB |
 | `prisma/schema.prisma`, `prisma/migrations/` | LIVE | relational model (users, profiles, locations, tags, profile_tags, user_settings, match_rounds, matches, match_feedback, plans, subscriptions, payments); 8 migrations: `20261008090000_relational_model` backfills from the legacy tables, then `…_profile_occupation` and `…_profile_goals` add columns |
 | `prisma/seed.ts` | DEV | idempotent tags + locations seed (`pnpm db:seed`); deactivates `trait`/`hobby` tags, interest tags not in `INTERESTS` and unavailable locations |
 | `.env.example` | DEV | documents every variable |

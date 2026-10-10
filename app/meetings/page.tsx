@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { Pause, Play } from "lucide-react";
 import type { MeetingsWeek } from "@/models/types";
 import { api } from "@/lib/api";
+import { useCachedApi } from "@/lib/apiCache";
 import { cn } from "@/lib/utils";
 import { FooterMenu } from "@/components/FooterMenu";
 import { Button } from "@/components/ui/button";
@@ -27,35 +28,22 @@ import { WeekMatchView } from "@/components/meetings/WeekMatchView";
 export default function MeetingsTab() {
   const router = useRouter();
   const t = useTranslations("meetingsTab");
-  const [week, setWeek] = useState<MeetingsWeek | null>(null);
-  const [failed, setFailed] = useState(false);
+  // Cached copy first (instant), then the server's; see lib/apiCache.ts.
+  const { data: week, error, mutate } = useCachedApi<MeetingsWeek>("/api/meetings/current");
+  const failed = !week && !!error;
   const [saving, setSaving] = useState(false);
-
-  useEffect(() => {
-    let cancelled = false;
-    api
-      .get<MeetingsWeek>("/api/meetings/current")
-      .then((data) => !cancelled && setWeek(data))
-      .catch((error) => {
-        console.error("Error fetching meetings week:", error);
-        if (!cancelled) setFailed(true);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
 
   const toggle = async () => {
     if (!week) return;
     if (!week.hasAccess) return router.push("/settings/subscription");
     const participating = !week.participating;
     setSaving(true);
-    setWeek({ ...week, participating });
+    mutate({ ...week, participating });
     try {
       await api.put("/api/meetings/participation", { participating });
     } catch (error) {
       console.error("Error updating participation:", error);
-      setWeek({ ...week });
+      mutate(week);
     } finally {
       setSaving(false);
     }
@@ -76,7 +64,7 @@ export default function MeetingsTab() {
         ) : week.hasAccess && week.phase === "week" && week.match ? (
           <WeekMatchView initial={week.match} />
         ) : week.hasAccess && week.phase === "feedback" && week.match ? (
-          <BottomActionAboveFooter reminderHidden>
+          <BottomActionAboveFooter>
             <MeetingFeedbackFlow matchId={week.match.matchId} embedded />
           </BottomActionAboveFooter>
         ) : week.hasAccess && week.phase !== "signup" ? (
@@ -128,7 +116,7 @@ export default function MeetingsTab() {
           </BottomAction>
         )}
       </div>
-      <FooterMenu hideReminder={week?.phase === "feedback" && Boolean(week.match)} />
+      <FooterMenu />
     </div>
   );
 }

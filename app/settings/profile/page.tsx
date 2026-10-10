@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { ProfileSettings } from "./ProfileSettings";
 import { Profile } from "@/models/types";
-import { api, ApiError } from "@/lib/api";
+import { api } from "@/lib/api";
+import { useCachedApi, writeCache } from "@/lib/apiCache";
 import { FooterMenu } from "@/components/FooterMenu";
 
 const EMPTY_PROFILE: Profile = {
@@ -31,36 +32,19 @@ const EMPTY_PROFILE: Profile = {
 /** Loads the current user's profile and persists edits through POST /api/profile. */
 export default function ProfileSettingsPage() {
   const t = useTranslations("settings.editProfile");
-  const [profile, setProfile] = useState<Profile | null>(null);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    let cancelled = false;
-    api
-      .get<Profile>("/api/profile")
-      .then((data) => !cancelled && setProfile(data))
-      .catch((err) => {
-        if (cancelled) return;
-        if (err instanceof ApiError && err.status === 404) {
-          setProfile(EMPTY_PROFILE);
-        } else {
-          console.error("Failed to load profile:", err);
-          setError(t("loadFailed"));
-        }
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [t]);
+  const { data, error: loadError } = useCachedApi<Profile>("/api/profile", { allowNotFound: true });
+  const profile = data === null ? EMPTY_PROFILE : data;
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const error = saveError ?? (profile === undefined && loadError ? t("loadFailed") : null);
 
   const handleProfileUpdate = async (updated: Profile) => {
-    setProfile(updated);
+    writeCache("/api/profile", updated);
     try {
       const result = await api.post<{ success: boolean; profile: Profile }>("/api/profile", updated);
-      setProfile(result.profile);
+      writeCache("/api/profile", result.profile);
     } catch (err) {
       console.error("Failed to save profile:", err);
-      setError(t("saveFailed"));
+      setSaveError(t("saveFailed"));
     }
   };
 

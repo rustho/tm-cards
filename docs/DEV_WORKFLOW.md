@@ -112,6 +112,13 @@ the command opens a setup prompt.
 
 ## Deployment (Vercel)
 
+- `vercel.json` pins functions to `hnd1` (Tokyo), next to the Supabase DB in
+  `ap-northeast-1`. Every query through the transaction pooler with
+  `?pgbouncer=true` costs ~4 round trips (`BEGIN`, `DEALLOCATE ALL`, query,
+  `COMMIT`), so the function region decides latency. Move both together.
+- Prisma runs with the `relationJoins` preview feature: nested
+  `include`/`select` is one SQL query.
+
 - Set `DATABASE_URL`, `DIRECT_URL`, `TELEGRAM_BOT_TOKEN`,
   `TELEGRAM_WEBHOOK_SECRET`, `APP_URL`, `MINI_APP_URL`, `CRON_SECRET`,
   optionally `MATCHING_NOTIFICATIONS`.

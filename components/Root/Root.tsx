@@ -14,6 +14,7 @@ import { ErrorPage } from "@/components/ErrorPage";
 import { setLocale } from "@/core/i18n/locale";
 import { init } from "@/core/init";
 import { mockEnv } from "@/core/mockEnv";
+import { prefetch } from "@/lib/apiCache";
 import { cn } from "@/lib/utils";
 
 import "./styles.css";
@@ -33,6 +34,18 @@ function RootInner({ children }: PropsWithChildren) {
       void setLocale(user.language_code);
     }
   }, [user]);
+
+  // Warm every tab in parallel, so switching tabs renders without waiting for the DB.
+  useEffect(() => {
+    if (!user?.id) return;
+    prefetch([
+      "/api/meetings/current",
+      "/api/home",
+      ["/api/profile", { allowNotFound: true }],
+      "/api/invitations",
+      "/api/reference",
+    ]);
+  }, [user?.id]);
 
   const isIos = ["macos", "ios"].includes(lp.tgWebAppPlatform);
 

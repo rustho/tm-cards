@@ -1,18 +1,19 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { CalendarDays, ChevronRight, MapPin, UserRound, UsersRound } from "lucide-react";
-import type { CurrentMatch } from "@/models/types";
+import { ChevronRight, MapPin } from "lucide-react";
+import type { CurrentMatch, MeetingsWeek } from "@/models/types";
 import { api } from "@/lib/api";
+import { updateCache } from "@/lib/apiCache";
 import { cn } from "@/lib/utils";
 import { openTgLink } from "@/lib/telegramLinks";
 import { Avatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { CelebrationScreen } from "./CelebrationScreen";
-import { CountdownBoxes, CountdownPill } from "./Countdown";
+import { CountdownBoxes } from "./Countdown";
 
 type Overlay = "waiting" | "mutual" | "questionLocked" | null;
 
@@ -25,6 +26,8 @@ export const WeekMatchView = ({ initial }: { initial: CurrentMatch }) => {
   const router = useRouter();
   const t = useTranslations("weekMatch");
   const [match, setMatch] = useState(initial);
+  // The tab renders a cached copy first; take the fresh one when it arrives.
+  useEffect(() => setMatch(initial), [initial]);
   const [overlay, setOverlay] = useState<Overlay>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(false);
@@ -38,6 +41,7 @@ export const WeekMatchView = ({ initial }: { initial: CurrentMatch }) => {
     try {
       const updated = await api.post<CurrentMatch>(`/api/meetings/${match.matchId}/accept`, {});
       setMatch(updated);
+      updateCache<MeetingsWeek>("/api/meetings/current", (week) => ({ ...week, match: updated }));
       setOverlay(updated.partnerAccepted ? "mutual" : "waiting");
     } catch (e) {
       console.error("Error accepting match:", e);
@@ -116,13 +120,12 @@ export const WeekMatchView = ({ initial }: { initial: CurrentMatch }) => {
         href={`/profile/${match.partner.id}`}
         className="flex items-center justify-center gap-2 rounded-md border border-divider bg-card px-4 py-3.5 text-option text-primary"
       >
-        <UserRound className="size-5" aria-hidden />
-        <span className="flex-1 text-center">{t("openProfile")}</span>
+        <span>{t("openProfile")}</span>
         <ChevronRight className="size-5" aria-hidden />
       </Link>
 
       {match.vibes.length > 0 && (
-        <Section icon={<UsersRound className="size-6 text-primary" aria-hidden />} title={t("vibes")}>
+        <Section title={t("vibes")}>
           {match.vibes.map((v) => (
             <Chip key={v.label} emoji={v.emoji} label={v.label} common />
           ))}
@@ -130,7 +133,7 @@ export const WeekMatchView = ({ initial }: { initial: CurrentMatch }) => {
       )}
 
       {match.formats.length > 0 && (
-        <Section icon={<CalendarDays className="size-6 text-primary" aria-hidden />} title={t("formats")}>
+        <Section title={t("formats")} className="text-primary">
           {match.formats.map((f) => (
             <Chip key={f.label} emoji={f.emoji} label={f.label} common={f.common} />
           ))}
@@ -150,7 +153,8 @@ export const WeekMatchView = ({ initial }: { initial: CurrentMatch }) => {
       <section className="space-y-3 rounded-md border border-divider bg-card p-4 text-center">
         {match.iAccepted && !match.partnerAccepted ? (
           <>
-            <CountdownPill deadline={match.deadline} icon />
+            <p className="m-0 text-body text-muted-foreground">{t("timeLeft")}</p>
+            <CountdownBoxes deadline={match.deadline} plain />
             <p className="m-0 flex items-center justify-center gap-3 text-option">
               <span aria-hidden>⏳</span>
               {t("waitingPartner")}
@@ -158,8 +162,8 @@ export const WeekMatchView = ({ initial }: { initial: CurrentMatch }) => {
           </>
         ) : (
           <>
-            <CountdownPill deadline={match.deadline} />
             <p className="m-0 text-body text-muted-foreground">{t("timeLeft")}</p>
+            <CountdownBoxes deadline={match.deadline} plain />
             {mutual ? (
               <>
                 <Button variant="primary" size="block" disabled={!match.contactUrl} onClick={write}>
@@ -195,13 +199,10 @@ export const WeekMatchView = ({ initial }: { initial: CurrentMatch }) => {
   );
 };
 
-function Section({ icon, title, children }: { icon: React.ReactNode; title: string; children: React.ReactNode }) {
+function Section({ title, className, children }: { title: string; className?: string; children: React.ReactNode }) {
   return (
     <section className="space-y-3 rounded-md border border-divider bg-card p-4">
-      <h2 className="m-0 flex items-center gap-3 text-option font-semibold">
-        {icon}
-        {title}
-      </h2>
+      <h2 className={cn("m-0 text-option font-semibold", className)}>{title}</h2>
       <div className="flex flex-wrap gap-2">{children}</div>
     </section>
   );

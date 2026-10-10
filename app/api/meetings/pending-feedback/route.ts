@@ -17,8 +17,8 @@ const DAY_MS = 24 * 60 * 60 * 1000;
  */
 export async function GET(request: NextRequest) {
   try {
-    const user = await ensureUser(await authenticate(request));
-    await closeUnagreedMatches(user.id);
+    const auth = await authenticate(request);
+    const [user] = await Promise.all([ensureUser(auth), closeUnagreedMatches(auth.id)]);
     const match = await prisma.match.findFirst({
       where: {
         ...visibleMatchesWhere(user.id),

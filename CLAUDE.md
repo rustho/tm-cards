@@ -49,7 +49,7 @@ list is enforced server-side by `requireAdmin()` in `lib/auth.ts`.
 | Auth | `@tma.js/init-data-node/web` validates `Authorization: tma <initDataRaw>` on every API route (`lib/auth.ts`) |
 | Telegram SDK | `@tma.js/sdk-react` **v3** (snake_case user fields, `tgWebApp*` launch params) |
 | Bot | **grammY** webhook (`/api/bot/webhook`), setup via `/api/bot/setup` |
-| Scheduling | None yet. Matching is weekly and started by hand: **GitHub Actions** `workflow_dispatch` (`.github/workflows/run-matching.yml`) → `GET /api/cron/matching` with `CRON_SECRET`. Later: a `vercel.json` cron |
+| Scheduling | None yet. Matching is weekly and started by hand: **GitHub Actions** `workflow_dispatch` (`.github/workflows/run-matching.yml`) → `GET /api/cron/matching` with `CRON_SECRET`. Later: a cron in `vercel.json` (today it only pins functions to `hnd1`, next to the Tokyo DB) |
 | Forms | react-hook-form 7 through `app/profile/ui/WizardContext.tsx` |
 | UI | **shadcn/ui**-style primitives in `components/ui/` (Button, Card, Switch, TextInput, TextArea, WindowTitleBar, ListItem, InterestChip, …; barrel `components/ui/index.ts`) on Tailwind 3 + lucide-react icons; wizard steps wrap them in `app/profile/ui/StepWindow.tsx`; profile card designs in `components/profile-templates/`; **XP Foundations** tokens (colors, Inter, type/spacing/radius scales) in `app/_assets/globals.css` + `tailwind.config.ts`, see `docs/guides/THEME_SYSTEM_GUIDE.md`. Telegram UI (TGUI) is **removed** |
 | i18n | next-intl, `public/locales/{ru,en}.json`, only `ru` is served |
@@ -103,6 +103,7 @@ core/i18n/                next-intl wiring
 hooks/useAuth.ts          client view of the Telegram user (UI gating only)
 lib/auth.ts               authenticate / requireAdmin / ensureUser (server)
 lib/api.ts                apiFetch / api.get|post|put with the tma header (client)
+lib/apiCache.ts           stale-while-revalidate GET cache (memory + localStorage per user), useCachedApi, prefetch from Root (client)
 lib/bot.ts                grammY bot, BOT_COMMANDS, notifyUser
 lib/matchingService.ts    matching engine (singleton)
 lib/meetingsService.ts    access (subscription/trial), week phase, participation, feedback rules (server)
@@ -190,7 +191,11 @@ anything new there.
 - The matching config edited through `PUT /api/matching` lives in memory and
   resets on redeploy.
 - `user_settings`/`profiles` rows are created lazily; `ensureUser()` creates
-  the parent `users` row first and returns it.
+  the parent `users` row first and returns it. It memoises rows per server
+  instance (10 min); call `forgetUser()` after writing `users` elsewhere.
+- Latency is DB round trips: Supabase is in Tokyo, each pooled query costs ~4
+  of them. Run independent queries in one `Promise.all`, keep nesting in a
+  single `include` (`relationJoins`), and never add a write to a GET path.
 - Dates: `profiles.dateOfBirth` is a DATE; the API accepts `YYYY-MM-DD` or
   `DD.MM.YYYY` and returns `YYYY-MM-DD`.
 - The `20261008090000_relational_model` migration backfills and then drops
@@ -199,7 +204,8 @@ anything new there.
   but never served.
 - `FooterMenu` is not in the layout; pages include it and add `pb-24`
   (`pb-48` with a `BottomAction aboveFooter`). It is a floating bar, plus the
-  «Как прошло знакомство?» reminder when a meeting waits for feedback.
+  «Как прошло знакомство?» reminder when a meeting waits for feedback — only
+  where the page passes `showReminder` (`/home`, `/home/meetings`).
 - Weekly cycle: `WEEK_SCHEDULE` in `MEETINGS_TIMEZONE` (Asia/Bangkok for
   now), both in `config/constants.ts`; set `MEETINGS_PHASE=week|feedback|signup`
   to test the «Встречи» tab on any weekday.
