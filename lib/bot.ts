@@ -1,6 +1,7 @@
 import { Bot, GrammyError, InlineKeyboard } from "grammy";
 import prisma from "@/lib/prisma";
 import { track } from "@/lib/events";
+import { logIncoming, logOutgoing, withSendContext, type SendContext } from "@/lib/botLog";
 
 /**
  * grammY bot. Runs in webhook mode only (app/api/bot/webhook); never call
@@ -76,6 +77,20 @@ export function getBot(): Bot {
 
   const bot = new Bot(token);
 
+  // Chat log (lib/botLog.ts): every outgoing message, whoever sends it…
+  bot.api.config.use(async (prev, method, payload, signal) => {
+    const result = await prev(method, payload, signal);
+    if (method === "sendMessage") {
+      logOutgoing(payload as { chat_id: number | string; text: string }, result as Parameters<typeof logOutgoing>[1]);
+    }
+    return result;
+  });
+  // …and every incoming private message, before the handlers below.
+  bot.use(async (ctx, next) => {
+    if (ctx.message) logIncoming(ctx.message);
+    await next();
+  });
+
   bot.command(["start", "app"], async (ctx) => {
     if (ctx.message?.text?.startsWith("/start")) await markReachable(String(ctx.from?.id ?? ""), "bot_started");
     await ctx.reply(TEXTS.start, { reply_markup: openAppKeyboard() });
@@ -137,17 +152,18 @@ const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 /**
  * Sends a private HTML message. 403 (blocked / not started) marks the user
  * unreachable; a 429 is retried once after Telegram's `retry_after`.
+ * `context` says who sends it for the chat log (default: a notification).
  */
 export async function sendToUser(
   telegramId: string,
   text: string,
-  { withAppButton = true }: { withAppButton?: boolean } = {}
+  { withAppButton = true, context = { source: "notification" } }: { withAppButton?: boolean; context?: SendContext } = {}
 ): Promise<SendResult> {
   if (!isBotConfigured()) return { ok: false, blocked: false, error: "Bot is not configured" };
   const options = { parse_mode: "HTML" as const, reply_markup: withAppButton ? openAppKeyboard() : undefined };
   for (let attempt = 0; ; attempt++) {
     try {
-      await getBot().api.sendMessage(telegramId, text, options);
+      await withSendContext(context, () => getBot().api.sendMessage(telegramId, text, options));
       return { ok: true };
     } catch (error) {
       if (error instanceof GrammyError && error.error_code === 429 && attempt === 0) {

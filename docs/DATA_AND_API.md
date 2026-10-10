@@ -49,6 +49,14 @@ response. Names (`EventName`): `app_visit`, `onboarding_step {step}`
 `bot_blocked`, `bot_unblocked`, and the admin audit log `admin_*` (`props.by`
 = admin Telegram id).
 
+### `BotMessage` (`bot_messages`)
+Private chat log with the bot, keyed by `telegramId` (no FK: people can write
+to the bot before opening the app). `direction in | out`, `source user | bot |
+notification | admin | broadcast`, `text` (outgoing is Telegram HTML; media
+in → `[photo] caption`), `ok` + `error` for rejected sends (429 retries are not
+logged), `sentBy` (admin), `broadcastId`, `telegramMessageId`. Written by
+`lib/botLog.ts` after the response; Telegram cannot return older history.
+
 ### `AppConfig` (`app_config`)
 `key` → `value Json`, `updatedBy`. Key `matching` holds `MatchingConfig`.
 
@@ -194,6 +202,7 @@ Shapes in `models/admin.ts`. Errors are `{ error }` with a status.
 | `GET /api/admin/users?q=&filter=&offset=` | `AdminUserList`, 50 per page; `q` matches Telegram id, @username, names; `filter` one of `USER_FILTERS` |
 | `GET /api/admin/users/[telegramId]` | `AdminUserDetails`: profile, access, subscriptions, referrer, last 30 meetings, last 60 events |
 | `POST /api/admin/users/[telegramId]` | `{ action: "setStatus", status } \| { action: "grantAccess", weeks } \| { action: "revokeAccess" }` → updated card. Granted access = subscription on the hidden zero-price `manual` plan, appended to the current one |
+| `GET /api/admin/users/[telegramId]/messages[?before=ISO]` | `BotDialogDto`: the chat with the bot, 50 per page, newest last, `hasMore` |
 | `POST /api/admin/users/[telegramId]/message` | `{ text, withAppButton? }` → `{ ok }` or `{ ok: false, blocked, error }`; logged as `admin_message` |
 | `GET /api/admin/matching` | `{ config, isRunning, rounds }` (last 20 rounds with counts) |
 | `PUT /api/admin/matching` | partial `MatchingConfig` → saved full config (400 on bad values) |

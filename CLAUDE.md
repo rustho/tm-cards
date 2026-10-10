@@ -45,8 +45,8 @@ client learns it from `GET /api/me` (`useAuth().isAdmin`). Admins get an
 «Админ-меню» item in the «Профиль» tab (`/settings`) that opens the admin
 inside the Mini App (works stretched on desktop Telegram too):
 `/admin` (KPIs), `/admin/funnel` (cohort funnel, wizard drop-off, weekly
-cohorts; period + source filters), `/admin/users` (+ `[telegramId]` card: access, status, bot
-message, meetings, event log), `/admin/matching` (preview, run, config, rounds,
+cohorts; period + source filters), `/admin/users` (+ `[telegramId]` card: access, status, chat
+with the bot + reply, meetings, event log), `/admin/matching` (preview, run, config, rounds,
 cancel a pair), `/admin/broadcasts` (segment → test → send in batches).
 `app/admin/layout.tsx` gates all of them; building blocks in `components/admin/`.
 
@@ -123,6 +123,7 @@ lib/events.ts             track(): product/audit events → `events`, written af
 lib/admins.ts             ADMIN_TELEGRAM_IDS from env
 lib/adminService.ts, adminMatching.ts, adminFunnel.ts, adminRoute.ts  admin read side, user actions, segments, route wrapper (server)
 lib/broadcastService.ts   bot broadcasts: snapshot recipients, batched sending (server)
+lib/botLog.ts             chat log (`bot_messages`): incoming via bot middleware, outgoing via an API transformer; withSendContext() labels the sender
 lib/meetingsService.ts    access (subscription/trial), week phase, participation, feedback rules (server)
 lib/weekMatchService.ts   this week's pair: accept, contacts, question of the week (server)
 lib/weekCycle.ts          WEEK_SCHEDULE math: getWeekPhase, agreeDeadline, closing unagreed pairs (server)
@@ -211,6 +212,9 @@ anything new there.
 - Analytics/audit: call `track(name, userId, props)` from `lib/events.ts`
   (add the name to `EventName` and to `admin.events` in both locales). It never
   awaits the insert; do not await DB work for analytics on a request path.
+- Telegram has no chat-history API: the admin «Переписка с ботом» shows only
+  `bot_messages`, logged since that table shipped. Send through `sendToUser()`
+  (or `notifyUser()`) and pass `context` so the log knows who sent it.
 - The bot learns about blocks from `my_chat_member` updates and 403s
   (`users.botBlockedAt`); after changing `allowed_updates` re-run `POST /api/bot/setup`.
 - `user_settings`/`profiles` rows are created lazily; `ensureUser()` creates

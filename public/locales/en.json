@@ -424,7 +424,8 @@
       "matches": "Meetings ({count})",
       "noMatches": "No pairs yet.",
       "events": "Events",
-      "noEvents": "No events."
+      "noEvents": "No events.",
+      "dialog": "Chat with the bot"
     },
     "events": {
       "app_visit": "Opened the app",
@@ -625,6 +626,21 @@
       "wizardHint": "How many people finished each step. Steps are recorded since {date}, so the base is users who came after that date.",
       "cohortsTitle": "Cohorts by sign-up week",
       "cohortWeek": "Week"
+    },
+    "dialog": {
+      "loadFailed": "Could not load the chat.",
+      "loading": "Loading…",
+      "older": "Show earlier",
+      "empty": "No messages yet.",
+      "hint": "Telegram does not provide chat history, so this shows only what went through the bot since the log was enabled.",
+      "notDelivered": "not delivered: {error}",
+      "from": {
+        "user": "user",
+        "bot": "bot",
+        "notification": "notification",
+        "admin": "admin {id}",
+        "broadcast": "broadcast"
+      }
     }
   },
   "common": {

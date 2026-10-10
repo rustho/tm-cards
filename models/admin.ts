@@ -261,3 +261,25 @@ export interface FunnelDto {
     steps: { step: string; users: number }[];
   };
 }
+
+// --- bot chat log --------------------------------------------------------------------
+
+export interface BotMessageDto {
+  id: string;
+  direction: "in" | "out";
+  source: "user" | "bot" | "notification" | "admin" | "broadcast";
+  /** As sent: outgoing messages are Telegram HTML. */
+  text: string;
+  ok: boolean;
+  error: string | null;
+  sentBy: string | null;
+  broadcastId: string | null;
+  createdAt: string;
+}
+
+export interface BotDialogDto {
+  /** Newest last. */
+  messages: BotMessageDto[];
+  /** Older messages exist: ask again with `before` = the first message's createdAt. */
+  hasMore: boolean;
+}
