@@ -14,8 +14,8 @@ const ITEMS = [
   { href: "/home", icon: Users, key: "people" },
   { href: "/invitations", icon: Send, key: "invitations" },
   { href: "/meetings", icon: Play, key: "meetings" },
-  // Exact: /profile/<id> is someone else's questionnaire, not my wizard.
-  { href: "/profile", icon: Pencil, key: "questionnaire", exact: true },
+  // Not a prefix: /profile/<id> is someone else's questionnaire; /profile/edit is mine.
+  { href: "/profile", icon: Pencil, key: "questionnaire", match: (p: string) => p === "/profile" || p.startsWith("/profile/edit") },
   { href: "/settings", icon: User, key: "account" },
 ] as const;
 
@@ -60,7 +60,8 @@ export const FooterMenu = ({ showReminder = false }: { showReminder?: boolean })
         )}
         <ul className="m-0 flex list-none rounded-[2rem] bg-card px-1 py-3 shadow-[0_8px_30px_rgba(0,0,0,0.08)]">
           {ITEMS.map(({ href, icon: Icon, key, ...item }) => {
-            const active = pathname === href || (!("exact" in item) && pathname.startsWith(`${href}/`));
+            const active =
+              "match" in item ? item.match(pathname) : pathname === href || pathname.startsWith(`${href}/`);
             return (
               <li key={href} className="min-w-0 flex-1">
                 <Link

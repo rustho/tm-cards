@@ -233,30 +233,27 @@ export type ProfileData = Profile & {
 };
 
 // Settings Types
-export interface NotificationSettings {
-  newMatches: boolean;
-  messages: boolean;
-  profileViews: boolean;
-  gameInvites: boolean;
-  weeklyDigest: boolean;
+/**
+ * Weekly-meetings participation as the «Профиль» menu sees it. `active` with `skipNextRound` means
+ * «Пропускаю неделю» was pressed on /meetings. `pause_month` / `pause_indefinite` are legacy values
+ * still stored for some users; new writes only use `active`, `pause_week` and `pause_custom`.
+ */
+export type ParticipationOption = "active" | "pause_week" | "pause_month" | "pause_custom" | "pause_indefinite";
+export type ParticipationChoice = Extract<ParticipationOption, "active" | "pause_week" | "pause_custom">;
+
+export interface Participation {
+  option: ParticipationOption;
+  /** ISO; when matching picks the user up again (null for `active` and an indefinite pause). */
+  resumeDate: string | null;
+  skipNextRound: boolean;
 }
 
-export interface MatchingScheduleSettings {
-  option:
-    | "active"
-    | "pause_week"
-    | "pause_month"
-    | "pause_custom"
-    | "pause_indefinite";
-  customDate?: string | null;
-  resumeDate?: string | null;
-  lastUpdated: string;
-}
-
-export interface UserSettings {
-  userId: string;
-  notifications: NotificationSettings;
-  matchingSchedule: MatchingScheduleSettings;
+/** GET /api/settings — everything the «Профиль» menu shows besides the profile itself. */
+export interface AccountSettings {
+  access: { hasAccess: boolean; subscribed: boolean; accessEndsAt: string | null };
+  participation: Participation;
+  /** «Уведомления от бота» (`user_settings.notifyNewMatches`), honoured by notifyUser(). */
+  notifications: boolean;
 }
 
 /** Match status as the meetings UI sees it (`expired` matches are never sent). */

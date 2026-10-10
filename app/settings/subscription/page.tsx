@@ -3,6 +3,9 @@
 import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { Check } from "lucide-react";
+import type { AccountSettings } from "@/models/types";
+import { useCachedApi } from "@/lib/apiCache";
+import { formatDayMonth } from "@/lib/dateUtils";
 import { cn } from "@/lib/utils";
 import { BackButton } from "@/components/ui/back-button";
 import { Button } from "@/components/ui/button";
@@ -14,10 +17,13 @@ const MOCK_PLANS = [
   { id: "quarter", weeks: 12, stars: 600 },
 ] as const;
 
-/** Subscription picker (mock): choose a plan; payment is not wired yet. */
+/** Current access (subscription / trial) and the plan picker (mock): payment is not wired yet. */
 export default function Subscription() {
   const t = useTranslations("settings.subscription");
+  const tAccess = useTranslations("settings.access");
   const [plan, setPlan] = useState<(typeof MOCK_PLANS)[number]["id"]>("month");
+  const access = useCachedApi<AccountSettings>("/api/settings").data?.access;
+  const date = access?.accessEndsAt ? formatDayMonth(access.accessEndsAt) : "";
 
   return (
     <div className="mx-auto min-h-screen max-w-xl space-y-6 px-4 pb-32 pt-4">
@@ -26,6 +32,17 @@ export default function Subscription() {
         <h1 className="m-0 text-[28px] font-bold leading-9">{t("title")}</h1>
         <p className="m-0 text-body text-muted-foreground">{t("subtitle")}</p>
       </div>
+
+      {access && (
+        <p
+          className={cn(
+            "m-0 rounded-md border border-divider bg-card px-4 py-3 text-counter",
+            access.hasAccess ? "text-success" : "text-destructive"
+          )}
+        >
+          {access.hasAccess ? tAccess(access.subscribed ? "subscribed" : "trial", { date }) : tAccess("expired")}
+        </p>
+      )}
 
       <ul className="m-0 list-none space-y-2 p-0">
         {[t("features.meetings"), t("features.feedback"), t("features.invites")].map((feature) => (

@@ -290,6 +290,25 @@
     "mine": {
       "formats": "What I'd like to do at a meeting",
       "edit": "Edit profile"
+    },
+    "edit": {
+      "title": "Questionnaire",
+      "subtitle": "Tap an item to change just that.",
+      "empty": "Not set",
+      "photoSet": "Added",
+      "fields": {
+        "location": "Location",
+        "name": "Name",
+        "dateOfBirth": "Date of birth",
+        "occupation": "Occupation",
+        "values": "Values",
+        "interests": "Interests",
+        "goal": "Goals",
+        "meetingFormat": "Meeting format",
+        "about": "About",
+        "photo": "Photo",
+        "theme": "Card design"
+      }
     }
   },
   "questions": {
@@ -661,32 +680,49 @@
     "general": "Something went wrong"
   },
   "settings": {
-    "title": "Settings",
-    "editProfile": {
-      "title": "Edit Profile",
-      "description": "Update your profile information",
-      "loading": "Loading profile...",
-      "loadFailed": "Could not load the profile.",
-      "saveFailed": "Could not save changes."
+    "title": "Profile",
+    "loadFailed": "Could not load settings.",
+    "access": {
+      "subscribed": "Subscribed until {date}",
+      "trial": "Trial until {date}",
+      "expired": "Trial has ended"
     },
-    "notifications": {
-      "title": "Notification Settings",
-      "description": "Manage your notification preferences",
-      "newMatches": "New Matches",
-      "newMatchesDesc": "Get notified when you have new matches",
-      "messages": "Messages",
-      "messagesDesc": "Get notified when you receive messages",
-      "profileViews": "Profile Views",
-      "profileViewsDesc": "Get notified when someone views your profile",
-      "gameInvites": "Game Invites",
-      "gameInvitesDesc": "Get notified when someone invites you to play games",
-      "weeklyDigest": "Weekly Digest",
-      "weeklyDigestDesc": "Receive weekly summary of your activity",
-      "saveChanges": "Save Changes",
-      "saving": "Saving...",
-      "savedSuccessfully": "Notification settings saved successfully!",
-      "saveFailed": "Failed to save settings. Please try again.",
-      "loading": "Loading..."
+    "items": {
+      "editProfile": "Edit questionnaire",
+      "location": "Location",
+      "participation": "Meetings participation",
+      "notifications": "Bot notifications",
+      "subscription": "Manage subscription",
+      "howItWorks": "How it works",
+      "support": "Support",
+      "admin": "Admin menu"
+    },
+    "values": {
+      "participating": "In",
+      "skipping": "Skipping a week",
+      "pausedUntil": "Paused until {date}",
+      "paused": "Paused",
+      "choose": "Choose"
+    },
+    "notificationsFailed": "Could not save the notification setting.",
+    "participation": {
+      "title": "Meetings participation",
+      "subtitle": "A pair is matched every Monday. Take a pause and meetings resume on the day you pick.",
+      "options": {
+        "active": "I'm in",
+        "pause_week": "Pause for a week",
+        "pause_custom": "Pause until a date"
+      },
+      "descriptions": {
+        "active": "Match me every week",
+        "pause_week": "Skip the next round, back in 7 days",
+        "pause_custom": "Pick the day to come back"
+      },
+      "resumeDate": "Back from",
+      "resumesOn": "Meetings resume on {date}.",
+      "pausedIndefinitely": "Meetings are paused with no end date. Choose «I'm in» to come back.",
+      "skipping": "You are skipping this week's round. «I'm in» brings you back for the next one.",
+      "saveFailed": "Could not save. Please try again."
     },
     "subscription": {
       "title": "Subscription",
@@ -705,40 +741,34 @@
       "comingSoon": "Payment with Telegram Stars is coming soon",
       "pay": "Pay"
     },
-    "admin": {
-      "title": "Admin menu",
-      "description": "Questions, users and service screens"
-    },
-    "matchingSchedule": {
-      "title": "Matching Schedule",
-      "description": "Set when you want to receive matches",
-      "aboutTitle": "About Matching Schedule",
-      "aboutDesc": "Control when you receive new matches. You can pause matching temporarily or indefinitely and resume anytime.",
-      "options": {
-        "active": "Active Matching",
-        "activeDesc": "Continue receiving matches as usual",
-        "pauseWeek": "Pause for 1 Week",
-        "pauseWeekDesc": "Resume matching automatically next week",
-        "pauseMonth": "Pause for 1 Month",
-        "pauseMonthDesc": "Resume matching automatically next month",
-        "pauseCustom": "Pause Until Specific Date",
-        "pauseCustomDesc": "Choose when to resume matching",
-        "pauseIndefinite": "Pause Indefinitely",
-        "pauseIndefiniteDesc": "Manually resume when ready"
-      },
-      "selectResumeDate": "Select resume date:",
-      "matchingWillResume": "Matching will resume on:",
-      "indefiniteNote": "Note: You'll need to manually change this setting to resume matching.",
-      "saveSchedule": "Save Schedule",
-      "saving": "Saving...",
-      "resumeNow": "Resume Matching Now",
-      "savedSuccessfully": "Matching schedule updated successfully!",
-      "saveFailed": "Failed to save schedule. Please try again."
-    },
-    "common": {
-      "loading": "Loading...",
-      "save": "Save",
-      "cancel": "Cancel"
+    "howItWorks": {
+      "title": "How it works",
+      "steps": {
+        "profile": {
+          "title": "Questionnaire",
+          "text": "We match you by your questionnaire: city, interests, values and meeting format. Edit it any time."
+        },
+        "match": {
+          "title": "A pair every Monday",
+          "text": "On Monday we find you one person in your city. The bot sends a notification."
+        },
+        "agree": {
+          "title": "«I want to meet»",
+          "text": "If the person appeals to you, press «I want to meet» before {day, select, 1 {Monday} 2 {Tuesday} 3 {Wednesday} 4 {Thursday} 5 {Friday} 6 {Saturday} other {Sunday}}. Once both agree, contacts open up — arrange the meeting."
+        },
+        "feedback": {
+          "title": "Impressions",
+          "text": "After the meeting share your impression — it makes the next matches better."
+        },
+        "signup": {
+          "title": "Sign-up for next week",
+          "text": "From {day, select, 1 {Monday} 2 {Tuesday} 3 {Wednesday} 4 {Thursday} 5 {Friday} 6 {Saturday} other {Sunday}} choose «I'm in» or «Skip a week» on the «Meetings» tab. Longer pauses live in «Profile»."
+        },
+        "access": {
+          "title": "Access",
+          "text": "The first {trialDays} days are free, then by subscription."
+        }
+      }
     }
   },
   "profileCard": {

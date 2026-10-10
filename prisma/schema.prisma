@@ -137,6 +137,8 @@ model UserSettings {
   userId String @id
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  /// «Уведомления от бота» in the «Профиль» menu; notifyUser() skips the user when false.
+  /// The other notify* flags are legacy and unused.
   notifyNewMatches   Boolean @default(true)
   notifyMessages     Boolean @default(true)
   notifyProfileViews Boolean @default(false)

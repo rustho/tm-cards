@@ -64,3 +64,6 @@ export const PENDING_FEEDBACK_DAYS = 14;
 
 /** «Поделиться впечатлением» appears on the match screen this long after both said «Хочу познакомиться». */
 export const FEEDBACK_OPENS_AFTER_HOURS = 24;
+
+/** «Поддержка» in the «Профиль» menu opens a chat with this Telegram username. */
+export const SUPPORT_TELEGRAM_USERNAME = "rustho";

@@ -26,14 +26,14 @@ State after the `feature/relational-schema` branch. Remove entries when fixed.
    `user_settings`) and `profiles.gender` exist and are used by the engine,
    but no UI sets them yet. `plans`/`subscriptions`/`payments` have no UI
    either.
-7. Notification preferences are stored but only `newMatches` has a sender
-   (`MATCHING_NOTIFICATIONS`); messages, profile views, game invites and the
-   weekly digest have no producer.
+7. Only `user_settings.notifyNewMatches` is used («Уведомления от бота»,
+   checked by `notifyUser()`); `notifyMessages`, `notifyProfileViews`,
+   `notifyGameInvites`, `notifyWeeklyDigest` are legacy columns nobody reads.
+   Broadcasts and admin replies ignore the switch.
 8. Photos live in a public Supabase Storage bucket: anyone with the (random)
    URL can open the file. Profiles saved before the move keep a base64 data URL
    until `pnpm db:migrate-photos` runs.
-9. `app/settings/profile/ProfileSettings.tsx` headings and buttons are
-   hardcoded English; `not-found` copy is hardcoded too.
+9. `not-found` copy is hardcoded.
 10. `en.json` is never served (`locales = ["ru"]`), yet `Root` calls the
     `setLocale` server action on every load.
 11. The UI `Profile` type (`models/types.ts`) is still the flat

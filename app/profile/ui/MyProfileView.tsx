@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { MEETING_FORMAT_OPTIONS, type Profile } from "@/models/types";
 import { ProfileCard } from "@/components/profile-templates";
@@ -7,8 +8,8 @@ import { Button } from "@/components/ui/button";
 
 const FORMAT_EMOJI = new Map<string, string>(MEETING_FORMAT_OPTIONS.map((o) => [o.label, o.emoji]));
 
-/** «Анкета» tab once the wizard is done: my card in its template, city, meeting formats, «Редактировать». */
-export function MyProfileView({ profile, onEdit }: { profile: Profile; onEdit: () => void }) {
+/** «Анкета» tab once the wizard is done: my card in its template, city, meeting formats, «Редактировать» (→ /profile/edit). */
+export function MyProfileView({ profile }: { profile: Profile }) {
   const t = useTranslations("profile.mine");
   const location = [profile.country, profile.region].filter(Boolean).join(", ");
 
@@ -39,8 +40,8 @@ export function MyProfileView({ profile, onEdit }: { profile: Profile; onEdit: (
         </section>
       )}
 
-      <Button variant="primary" size="block" onClick={onEdit}>
-        {t("edit")}
+      <Button asChild variant="primary" size="block">
+        <Link href="/profile/edit">{t("edit")}</Link>
       </Button>
     </div>
   );

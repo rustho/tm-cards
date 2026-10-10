@@ -86,3 +86,10 @@ export function isAdult(dateOfBirth: string): boolean {
     return false;
   }
 } 
+/** "9 ноября" (Russian day + month) for an ISO timestamp or YYYY-MM-DD; "" when it does not parse. */
+export function formatDayMonth(date: string): string {
+  const parsed = new Date(/^\d{4}-\d{2}-\d{2}$/.test(date) ? `${date}T00:00:00Z` : date);
+  return isNaN(parsed.getTime())
+    ? ""
+    : parsed.toLocaleDateString("ru-RU", { day: "numeric", month: "long", timeZone: "UTC" });
+}

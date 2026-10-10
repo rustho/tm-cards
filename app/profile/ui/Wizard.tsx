@@ -46,16 +46,17 @@ function changedFields(data: Partial<Profile>, saved: Partial<Profile>): Partial
   return changed as Partial<Profile>;
 }
 
-/** Re-editing a finished profile skips the onboarding-only «first meeting» screen. */
-const EDIT_STEPS = ONBOARDING_STEPS.filter((step) => step.id !== "firstMeeting");
+/** Steps a finished profile can edit one by one (/profile/edit): all but the onboarding-only «first meeting». */
+export const EDIT_STEPS = ONBOARDING_STEPS.filter((step) => step.id !== "firstMeeting");
 
 /**
  * Onboarding entry point. Loads the existing profile (if any), seeds name and
  * username from Telegram, and autosaves every completed step to POST /api/profile.
- * With `onDone` it re-edits a finished profile and calls it at the end instead of going to /meetings;
- * «Назад» on the first step then calls `onCancel`.
+ * With `editStep` (one of EDIT_STEPS) it opens only that step of a finished profile: «Далее»
+ * saves it and calls `onDone`, «Назад» calls `onCancel`. Otherwise it is the full onboarding
+ * and ends on /meetings.
  */
-export function Wizard({ onDone, onCancel }: { onDone?: () => void; onCancel?: () => void } = {}) {
+export function Wizard({ editStep, onDone, onCancel }: { editStep?: string; onDone?: () => void; onCancel?: () => void } = {}) {
   const router = useRouter();
   const t = useTranslations("profile.wizard");
   const user = useSignal(initData.user);
@@ -140,7 +141,8 @@ export function Wizard({ onDone, onCancel }: { onDone?: () => void; onCancel?: (
   };
 
   const handleComplete = async (finalData: Profile) => {
-    const ok = await saveProfile({ ...finalData, isComplete: true } as Partial<Profile>, { force: true });
+    // A single-step edit of a finished profile saves only what changed (nothing → no request).
+    const ok = await saveProfile({ ...finalData, isComplete: true } as Partial<Profile>, { force: !editStep });
     if (!ok) return false;
     if (onDone) onDone();
     else router.replace("/meetings");
@@ -160,12 +162,13 @@ export function Wizard({ onDone, onCancel }: { onDone?: () => void; onCancel?: (
         </div>
       )}
       <FlexibleWizard
-        steps={onDone ? EDIT_STEPS : ONBOARDING_STEPS}
+        steps={editStep ? EDIT_STEPS : ONBOARDING_STEPS}
+        initialStepIndex={editStep ? Math.max(0, EDIT_STEPS.findIndex((step) => step.id === editStep)) : 0}
         initialData={initialData}
         onStepComplete={handleStepComplete}
         onComplete={handleComplete}
         onCancel={onCancel}
-        mode="full"
+        mode={editStep ? "edit" : "full"}
       />
     </>
   );
