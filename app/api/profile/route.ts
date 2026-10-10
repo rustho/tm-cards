@@ -41,8 +41,7 @@ export async function POST(request: NextRequest) {
     const authError = authErrorResponse(error);
     if (authError) return authError;
     if (error instanceof ProfileValidationError) {
-      const status = error.message === "Photo is too large" ? 413 : 400;
-      return NextResponse.json({ error: error.message }, { status });
+      return NextResponse.json({ error: error.message }, { status: 400 });
     }
     console.error("Error saving profile:", error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });

@@ -57,6 +57,7 @@ example code.
 | Route | Auth | Status |
 |---|---|---|
 | `GET/POST /api/profile` | user | LIVE |
+| `POST /api/profile/photo` | user | LIVE |
 | `GET /api/profile/[userId]` | user | LIVE |
 | `GET /api/users` | admin | OPS |
 | `GET /api/home`, `GET /api/meetings`, `GET /api/meetings/current`, `GET /api/meetings/pending-feedback` | user | LIVE |
@@ -115,7 +116,8 @@ example code.
 | `lib/settingsService.ts` | LIVE | client wrapper for settings routes |
 | `lib/dateUtils.ts` | LIVE | `calculateAge`, `validateDateOfBirth`, `formatDateForInput` |
 | `lib/utils.ts` | LIVE | `cn()` |
-| `lib/imageUtils.ts` | LIVE | `fileToResizedDataUrl` (browser): downscale to 1280px JPEG before the photo is saved |
+| `lib/imageUtils.ts` | LIVE | `fileToResizedJpeg` (browser): downscale to a 1280px JPEG blob before upload |
+| `lib/photoStorage.ts` | LIVE | server: Supabase Storage REST (upload, delete, own-URL check, bucket creation) for profile photos |
 | `models/types.ts` | LIVE | `StepProps`, `User`, `Profile`, `ProfileData`, settings types, option lists (`VALUE_OPTIONS`/`VALUES`, `INTEREST_GROUPS`/`INTERESTS`, `GOAL_OPTIONS`, `MEETING_FORMAT_OPTIONS`, `LOCATIONS: LocationOption[]`, `PROFILE_THEMES`/`DEFAULT_PROFILE_THEME`) |
 
 ## `public/`

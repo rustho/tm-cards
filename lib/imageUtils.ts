@@ -3,11 +3,10 @@
  */
 
 /**
- * Reads an image file and re-encodes it as a JPEG data URL whose longer side
- * is at most `maxSide` px. Keeps phone photos well under the 2 MB limit of
- * POST /api/profile (lib/profileService.ts).
+ * Reads an image file and re-encodes it as a JPEG whose longer side is at
+ * most `maxSide` px, ready for POST /api/profile/photo (limit 2 MB).
  */
-export async function fileToResizedDataUrl(file: File, maxSide = 1280, quality = 0.85): Promise<string> {
+export async function fileToResizedJpeg(file: File, maxSide = 1280, quality = 0.85): Promise<Blob> {
   const url = URL.createObjectURL(file);
   try {
     const img = await new Promise<HTMLImageElement>((resolve, reject) => {
@@ -23,7 +22,9 @@ export async function fileToResizedDataUrl(file: File, maxSide = 1280, quality =
     const ctx = canvas.getContext("2d");
     if (!ctx) throw new Error("Canvas is not available");
     ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-    return canvas.toDataURL("image/jpeg", quality);
+    return await new Promise<Blob>((resolve, reject) =>
+      canvas.toBlob((blob) => (blob ? resolve(blob) : reject(new Error("Encoding failed"))), "image/jpeg", quality)
+    );
   } finally {
     URL.revokeObjectURL(url);
   }

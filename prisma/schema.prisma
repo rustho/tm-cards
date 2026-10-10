@@ -64,7 +64,7 @@ model Profile {
   about         String?
   announcement  String?
   placesToVisit String[]
-  /// Base64 data URL for now; move to object storage later.
+  /// Public Supabase Storage URL (lib/photoStorage.ts); legacy rows may hold a base64 data URL until `pnpm db:migrate-photos`.
   photo         String?
   /// e.g. { "instagram": "handle" }
   socials       Json?

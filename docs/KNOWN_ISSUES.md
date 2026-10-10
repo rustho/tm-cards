@@ -29,9 +29,9 @@ State after the `feature/relational-schema` branch. Remove entries when fixed.
 7. Notification preferences are stored but only `newMatches` has a sender
    (`MATCHING_NOTIFICATIONS`); messages, profile views, game invites and the
    weekly digest have no producer.
-8. `photo` is stored as a base64 data URL (≤ 2 MB) in Postgres and returned
-   in list responses (`/api/home`, `/api/meetings`, `/api/users`). Move to object storage
-   before the user base grows.
+8. Photos live in a public Supabase Storage bucket: anyone with the (random)
+   URL can open the file. Profiles saved before the move keep a base64 data URL
+   until `pnpm db:migrate-photos` runs.
 9. `app/settings/profile/ProfileSettings.tsx` headings and buttons are
    hardcoded English; `AdminMenu` descriptions and `not-found` copy are
    hardcoded too.

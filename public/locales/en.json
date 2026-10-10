@@ -251,7 +251,8 @@
         "upload": "Upload photo",
         "change": "Change photo",
         "hint": "Pick an image where you are\nclearly visible and there\nare no other people",
-        "error": "Couldn't process this photo, try another one"
+        "error": "Couldn't upload this photo, try again or pick another one",
+        "uploading": "Uploading photo…"
       },
       "review": {
         "title": "Thank you, {name}!",
