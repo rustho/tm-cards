@@ -28,8 +28,8 @@ set once from `startapp=ref_<code>`), `status` (`active | hidden | banned`),
 `name`, `dateOfBirth` (DATE), `gender`, `locationId` → `locations`,
 `occupation` (varchar 80), `goals` (text[] of `GOAL_OPTIONS` ids, max 2,
 private: `toProfile()` returns it only with `{ includePrivate: true }`, which
-only `/api/profile` passes; legacy `goal` unused), `about`, `announcement`, `placesToVisit String[]`, `photo` (base64 data URL
-for now), `socials Json` (`{ instagram }`), `theme` (one of `PROFILE_THEMES`,
+only `/api/profile` passes; legacy `goal` unused), `about`, `announcement`, `placesToVisit String[]`, `photo` (public Supabase Storage URL,
+see `lib/photoStorage.ts`; legacy base64 rows until `pnpm db:migrate-photos`), `socials Json` (`{ instagram }`), `theme` (one of `PROFILE_THEMES`,
 validated on write), `isComplete` (set when
 the wizard finishes; only complete profiles are matched or listed).
 
@@ -119,7 +119,8 @@ goes through it. Dev accepts unsigned mock data; prod is strict.
 | Method & path | Who | Response |
 |---|---|---|
 | `GET /api/profile` | user | own `Profile` (with private `goals` and `isComplete`); 404 until something was saved |
-| `POST /api/profile` | user | partial upsert via `lib/profileService.ts`. Accepts the UI `Profile` fields (`name, dateOfBirth, country, region, goals, profile \| about, announcement, placesToVisit, instagram, photo, occupation, interests, values, meetingFormats`) plus `gender, theme, isComplete` (alias `isActive`), `referralCode` (applied once) and write-only `skipNextRound` (boolean, upserted into `user_settings`; sent by the onboarding "first meeting" screen). Country+region are upserted into `locations`; tag arrays replace that category's `profile_tags`. 400 on validation, 413 on photo > 2 MB |
+| `POST /api/profile` | user | partial upsert via `lib/profileService.ts`. Accepts the UI `Profile` fields (`name, dateOfBirth, country, region, goals, profile \| about, announcement, placesToVisit, instagram, photo, occupation, interests, values, meetingFormats`) plus `gender, theme, isComplete` (alias `isActive`), `referralCode` (applied once) and write-only `skipNextRound` (boolean, upserted into `user_settings`; sent by the onboarding "first meeting" screen). Country+region are upserted into `locations`; tag arrays replace that category's `profile_tags`. `photo` accepts only the caller's own Storage URL, an empty value (clears it and deletes the file) or the unchanged stored value. 400 on validation |
+| `POST /api/profile/photo` | user | raw image body (JPEG/PNG/WebP by magic bytes, ≤ 2 MB). Uploads to the public bucket `SUPABASE_STORAGE_BUCKET` as `<users.id>/<uuid>.<ext>` with the service key, writes the URL to `profiles.photo`, deletes the previous file, returns `{ url }`. 413 too large, 400 bad format, 503 without `SUPABASE_URL`/`SUPABASE_SERVICE_ROLE_KEY` |
 | `GET /api/profile/[userId]` | user | another user's `Profile` (complete + active; owner/admin see incomplete) |
 | `GET /api/users[?all=1]` | admin | complete profiles (or everyone) |
 

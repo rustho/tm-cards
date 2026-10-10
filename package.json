@@ -15,7 +15,10 @@
     "db:studio": "prisma studio",
     "health:check": "curl -s http://localhost:3000/api/health",
     "db:seed": "tsx prisma/seed.ts",
-    "db:cleanup-tags": "tsx prisma/cleanup-legacy-tags.ts"
+    "db:cleanup-tags": "tsx prisma/cleanup-legacy-tags.ts",
+    "db:migrate-photos": "tsx --env-file=.env.local prisma/migrate-photos-to-storage.ts",
+    "db:test-subscription": "tsx --env-file=.env.local prisma/grant-test-subscription.ts",
+    "matching:run": "tsx --env-file=.env.local prisma/run-matching.ts"
   },
   "dependencies": {
     "@prisma/client": "^5.22.0",

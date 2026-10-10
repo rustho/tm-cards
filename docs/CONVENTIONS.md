@@ -107,8 +107,8 @@ instead of hand-written `setValue` toggles (see `StepValues.tsx`).
   both locale files.
 - Text → `TextInput` / `TextArea`; single choice → `CountryCard`; multi
   choice → `ListItem`, `InterestChip` or `MeetingGoalCard` with
-  `useLimitedSelection`; photo → `PhotoUploader` + `fileToResizedDataUrl`
-  (`lib/imageUtils.ts`). All from `@/components/ui`.
+  `useLimitedSelection`; photo → `PhotoUploader` + `fileToResizedJpeg`
+  (`lib/imageUtils.ts`) uploaded via `POST /api/profile/photo`. All from `@/components/ui`.
 - The last step (`theme`, design picker) has `countsInProgress: false` in
   `wizardConfig.ts`, so the progress header counts 10 steps, not 11.
 

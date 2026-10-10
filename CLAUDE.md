@@ -66,6 +66,7 @@ pnpm db:migrate                   # prisma migrate dev (needs DIRECT_URL)
 pnpm db:deploy                    # prisma migrate deploy (CI/prod)
 pnpm db:seed                      # tags + locations reference data (idempotent)
 pnpm db:cleanup-tags              # one-off: drop legacy trait/hobby tags (irreversible)
+pnpm db:migrate-photos            # one-off: base64 photos → Supabase Storage (--dry-run to count)
 pnpm db:studio
 ```
 
@@ -110,8 +111,9 @@ lib/weekCycle.ts          WEEK_SCHEDULE math: getWeekPhase, agreeDeadline, closi
 lib/pendingFeedback.ts, telegramLinks.ts  feedback-reminder cache, openTgLink (client)
 lib/profileDto.ts         users+profiles+tags → UI Profile mapper (read side)
 lib/profileService.ts     profile upsert: location/tag resolution, referral, validation (write side)
+lib/photoStorage.ts      profile photos in Supabase Storage (server)
 lib/prisma.ts, dateUtils.ts, settingsService.ts (client), utils.ts (cn),
-  imageUtils.ts           fileToResizedDataUrl: client-side photo downscale (client)
+  imageUtils.ts           fileToResizedJpeg: client-side photo downscale (client)
 prisma/                   schema, migrations, seed.ts (tags + locations)
 config/constants.ts       ADMIN_TELEGRAM_IDS, MENU_ITEMS, APP_METADATA
 models/types.ts           Profile/User/settings types + option lists
@@ -123,7 +125,7 @@ docs/                     agent docs; docs/guides (RHF, wizard context, theme); 
 PostgreSQL with a relational model (see `docs/DATA_AND_API.md`). `users`
 (Telegram id externally, uuid internally, with `referralCode` and
 `referrerId`) have one `profiles` row (name, date of birth, location FK,
-occupation, private `goals[]`, about, photo, socials, card `theme`,
+occupation, private `goals[]`, about, photo (Supabase Storage URL), socials, card `theme`,
 `isComplete`) and M:N `tags` (categories `interest`, `value`, `format`)
 through `profile_tags`; `locations` and `tags` are reference lists seeded by
 `prisma/seed.ts` from `models/types.ts`. `user_settings` holds notification flags, matching pause
@@ -170,6 +172,8 @@ anything new there.
 | Var | Purpose |
 |---|---|
 | `DATABASE_URL`, `DIRECT_URL` | Prisma runtime / migrations |
+| `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` | Supabase Storage for profile photos (server-only key); without them `POST /api/profile/photo` returns 503 |
+| `SUPABASE_STORAGE_BUCKET` | public photo bucket, default `profile-photos` |
 | `TELEGRAM_BOT_TOKEN` | init-data validation **and** the bot. Required in production; optional in dev (unsigned data accepted) |
 | `TELEGRAM_WEBHOOK_SECRET` | checked by grammY on every webhook update |
 | `APP_URL`, `MINI_APP_URL` | https URL of the deployment; webhook target and bot buttons |

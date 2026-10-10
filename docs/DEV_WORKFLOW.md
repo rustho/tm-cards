@@ -44,6 +44,7 @@ backup first, then:
 pnpm db:deploy   # applies both
 pnpm db:seed     # tags + locations reference lists
 pnpm db:cleanup-tags  # one-off: drop legacy trait/hobby tags and links to inactive tags (irreversible)
+pnpm db:migrate-photos  # one-off: base64 photos → Supabase Storage, reads .env.local (--dry-run to count)
 ```
 
 Fake data: `POST /api/matching?action=create-mock-users` (admin) creates

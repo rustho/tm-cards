@@ -3,6 +3,7 @@ import prisma from "@/lib/prisma";
 import { ensureUser, type AuthUser } from "@/lib/auth";
 import { TAG_CATEGORIES, userWithProfileInclude, type TagCategory, type UserWithProfile } from "@/lib/profileDto";
 import { validateDateOfBirth } from "@/lib/dateUtils";
+import { deleteProfilePhoto, isOwnPhotoUrl } from "@/lib/photoStorage";
 import { GOAL_IDS, MAX_GOALS, PROFILE_THEMES } from "@/models/types";
 
 /**
@@ -18,7 +19,7 @@ export class ProfileValidationError extends Error {
   }
 }
 
-const MAX_PHOTO_LENGTH = 2_000_000;
+const MAX_PHOTO_URL_LENGTH = 500;
 const MAX_TAGS_PER_CATEGORY = 20;
 
 type Input = Record<string, unknown>;
@@ -116,11 +117,20 @@ export async function saveProfile(auth: AuthUser, input: Input): Promise<UserWit
     }
   }
 
+  // The file itself goes through POST /api/profile/photo; here only our own
+  // Storage URL (unchanged echo from the form) or an empty value is accepted.
+  let removedPhoto: string | null = null;
   if (input.photo !== undefined) {
-    if (typeof input.photo === "string" && input.photo.length > MAX_PHOTO_LENGTH) {
-      throw new ProfileValidationError("Photo is too large");
+    const current = (await prisma.profile.findUnique({ where: { userId: user.id }, select: { photo: true } }))?.photo;
+    // Echo of the stored value (may still be a legacy data URL) is a no-op.
+    if (input.photo !== current) {
+      const photo = optString(input, "photo", MAX_PHOTO_URL_LENGTH);
+      if (photo && !isOwnPhotoUrl(user.id, photo)) {
+        throw new ProfileValidationError("photo must be uploaded through /api/profile/photo");
+      }
+      if (current && current !== photo) removedPhoto = current;
+      data.photo = photo;
     }
-    data.photo = optString(input, "photo", MAX_PHOTO_LENGTH);
   }
 
   const instagram = optString(input, "instagram", 100);
@@ -161,6 +171,8 @@ export async function saveProfile(auth: AuthUser, input: Input): Promise<UserWit
     update: data,
     create: { ...(data as Omit<Prisma.ProfileUncheckedCreateInput, "userId">), userId: user.id },
   });
+
+  if (removedPhoto) await deleteProfilePhoto(removedPhoto);
 
   // --- matching settings (onboarding "first meeting this week?") ------------------
   if (input.skipNextRound !== undefined) {
