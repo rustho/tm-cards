@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { TextArea } from "@/components/ui/text-area";
 import { AdminPage, ConfirmButton, ErrorText, LoadError, Loading, Panel, Section, errorMessage, formatDate } from "@/components/admin/AdminUI";
+import { BotDialog } from "@/components/admin/BotDialog";
 import { MatchCard } from "@/components/admin/MatchCard";
 import { UserBadges } from "@/components/admin/UserBadges";
 import { cn } from "@/lib/utils";
@@ -26,6 +27,7 @@ export default function AdminUserCard({ params }: { params: { telegramId: string
   const { data: user, error, refresh, mutate } = useCachedApi<AdminUserDetails>(url);
   const [busy, setBusy] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [dialogVersion, setDialogVersion] = useState(0);
 
   const act = async (body: AdminUserAction) => {
     setBusy(true);
@@ -168,8 +170,16 @@ export default function AdminUserCard({ params }: { params: { telegramId: string
         <ErrorText>{actionError}</ErrorText>
       </Section>
 
-      <Section title={t("message")}>
-        <MessageForm telegramId={user.telegramId} blocked={user.botBlocked} onSent={refresh} />
+      <Section title={t("dialog")}>
+        <BotDialog telegramId={user.telegramId} version={dialogVersion} />
+        <MessageForm
+          telegramId={user.telegramId}
+          blocked={user.botBlocked}
+          onSent={() => {
+            refresh();
+            setDialogVersion((v) => v + 1);
+          }}
+        />
       </Section>
 
       <Section title={t("matches", { count: user.matches.length })}>

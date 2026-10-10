@@ -91,7 +91,7 @@ example code.
 | `Root/Root.tsx` | LIVE | runs `mockEnv()` → `init()`; toggles `.dark` from `miniApp.isDark`; sets locale from `user.language_code`; "Loading" until ready |
 | `FooterMenu.tsx` | LIVE | floating bottom tab bar (Люди, Приглашения, Встречи, Анкета, Профиль) + «Как прошло знакомство?» reminder from `/api/meetings/pending-feedback` |
 | `meetings/*` | LIVE | meetings UI pieces (WeekMatchView, MeetingList, StatCard, CelebrationScreen, Countdown, BottomAction, LocationPicker, PixelPeople, FeedbackHintBanner) |
-| `admin/*` | LIVE | `AdminUI` (AdminPage, Section, Panel, Stat, Badge, ConfirmButton, formatDate), `MatchCard`, `UserBadges`, `BroadcastProgress` |
+| `admin/*` | LIVE | `AdminUI` (AdminPage, Section, Panel, Stat, Badge, ConfirmButton, formatDate), `BotDialog` (chat bubbles from `bot_messages`), `MatchCard`, `UserBadges`, `BroadcastProgress` |
 | `ErrorBoundary.tsx`, `ErrorPage.tsx` | LIVE | |
 
 ## `core/`, `config/`, `hooks/`

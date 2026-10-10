@@ -22,6 +22,7 @@ export const POST = adminRoute<{ telegramId: string }>("message", async (request
   });
   const result = await sendToUser(params.telegramId, personalize(text, user?.profile?.name || user?.firstName), {
     withAppButton: body.withAppButton !== false,
+    context: { source: "admin", by: admin.id },
   });
   track("admin_message", userId, { by: admin.id, text, ok: result.ok, ...(result.ok ? {} : { error: result.error }) });
   console.log(`✉️ ${admin.id} → ${params.telegramId}: ${result.ok ? "sent" : result.error}`);

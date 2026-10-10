@@ -195,6 +195,7 @@ export async function processBroadcast(id: string, budgetMs: number): Promise<Br
       const started = Date.now();
       const result = await sendToUser(recipient.telegramId, personalize(broadcast.text, recipient.name), {
         withAppButton: broadcast.withAppButton,
+        context: { source: "broadcast", broadcastId: id },
       });
       await prisma.broadcastDelivery.update({
         where: { broadcastId_userId: { broadcastId: id, userId: recipient.userId } },

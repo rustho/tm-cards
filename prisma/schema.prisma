@@ -339,3 +339,27 @@ model BroadcastDelivery {
   @@index([broadcastId, status])
   @@map("broadcast_deliveries")
 }
+
+/// Log of the private chat with the bot (lib/botLog.ts): incoming messages from the webhook,
+/// every outgoing sendMessage. Telegram has no history API, so this is the only copy.
+/// Keyed by Telegram id (no FK): people can write to the bot before they open the app.
+model BotMessage {
+  id                String   @id @default(uuid())
+  telegramId        String
+  /// in | out
+  direction         String
+  /// user (incoming) | bot (command replies) | notification | admin | broadcast
+  source            String
+  text              String
+  /// false when Telegram rejected the message (`error` says why)
+  ok                Boolean  @default(true)
+  error             String?
+  /// Telegram id of the admin who sent it (source admin)
+  sentBy            String?
+  broadcastId       String?
+  telegramMessageId Int?
+  createdAt         DateTime @default(now())
+
+  @@index([telegramId, createdAt])
+  @@map("bot_messages")
+}

@@ -10,5 +10,6 @@ export const POST = adminRoute("broadcast test", async (request, { admin }) => {
   const body = await jsonBody(request);
   return sendToUser(admin.id, personalize(parseMessage(body.text), admin.firstName), {
     withAppButton: body.withAppButton !== false,
+    context: { source: "admin", by: admin.id },
   });
 });
