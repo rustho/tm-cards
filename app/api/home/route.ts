@@ -14,8 +14,8 @@ const PREVIEW_PEOPLE = 3;
 /** GET /api/home — the «Люди» tab for the caller: access, latest meetings, counters. */
 export async function GET(request: NextRequest) {
   try {
-    const user = await ensureUser(await authenticate(request));
-    await closeUnagreedMatches(user.id);
+    const auth = await authenticate(request);
+    const [user] = await Promise.all([ensureUser(auth), closeUnagreedMatches(auth.id)]);
 
     const [access, history, awaitingFeedback, metCount, metRecent, invitedCount, invitedRecent] = await Promise.all([
       getAccess(user),

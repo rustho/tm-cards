@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import type { User } from "@prisma/client";
 import { parse, validate } from "@tma.js/init-data-node/web";
 import { ADMIN_TELEGRAM_IDS } from "@/config/constants";
 import prisma from "@/lib/prisma";
@@ -122,21 +123,44 @@ export function authErrorResponse(error: unknown): NextResponse | null {
   return null;
 }
 
+/** Users seen by this server instance; saves a DB round trip on every request after the first. */
+const USER_CACHE_TTL_MS = 10 * 60 * 1000;
+const userCache = new Map<string, { user: User; at: number }>();
+
 /**
  * Returns the User row for the authenticated Telegram account, creating it on
- * first contact. Telegram-derived fields are refreshed on every call; profile
- * data is never touched here.
+ * first contact. Telegram-derived fields are written only when they changed;
+ * profile data is never touched here. Usually served from memory, otherwise one read.
  */
-export async function ensureUser(user: AuthUser) {
+export async function ensureUser(user: AuthUser): Promise<User> {
   const telegramFields = {
     username: user.username ?? null,
     firstName: user.firstName,
     lastName: user.lastName ?? null,
     languageCode: user.languageCode ?? null,
   };
-  return prisma.user.upsert({
-    where: { telegramId: user.id },
-    update: telegramFields,
-    create: { telegramId: user.id, ...telegramFields },
-  });
+  const upToDate = (row: User) =>
+    row.username === telegramFields.username &&
+    row.firstName === telegramFields.firstName &&
+    row.lastName === telegramFields.lastName &&
+    row.languageCode === telegramFields.languageCode;
+
+  const cached = userCache.get(user.id);
+  if (cached && Date.now() - cached.at < USER_CACHE_TTL_MS && upToDate(cached.user)) return cached.user;
+
+  let row = await prisma.user.findUnique({ where: { telegramId: user.id } });
+  if (!row || !upToDate(row)) {
+    row = await prisma.user.upsert({
+      where: { telegramId: user.id },
+      update: telegramFields,
+      create: { telegramId: user.id, ...telegramFields },
+    });
+  }
+  userCache.set(user.id, { user: row, at: Date.now() });
+  return row;
+}
+
+/** Call after writing the users row outside ensureUser (e.g. referrerId). */
+export function forgetUser(telegramId: string) {
+  userCache.delete(telegramId);
 }

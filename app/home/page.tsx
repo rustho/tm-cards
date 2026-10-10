@@ -1,10 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import type { HomeSummary } from "@/models/types";
-import { api } from "@/lib/api";
+import { useCachedApi } from "@/lib/apiCache";
 import { FooterMenu } from "@/components/FooterMenu";
 import { Button } from "@/components/ui/button";
 import { MeetingList } from "@/components/meetings/MeetingList";
@@ -17,22 +16,8 @@ import { FeedbackHintBanner } from "@/components/meetings/FeedbackHintBanner";
  */
 export default function Home() {
   const t = useTranslations("home");
-  const [summary, setSummary] = useState<HomeSummary | null>(null);
-  const [failed, setFailed] = useState(false);
-
-  useEffect(() => {
-    let cancelled = false;
-    api
-      .get<HomeSummary>("/api/home")
-      .then((data) => !cancelled && setSummary(data))
-      .catch((error) => {
-        console.error("Error fetching home summary:", error);
-        if (!cancelled) setFailed(true);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  const { data: summary, error } = useCachedApi<HomeSummary>("/api/home");
+  const failed = !summary && !!error;
 
   return (
     <div className="min-h-screen">
@@ -73,7 +58,7 @@ export default function Home() {
           </>
         )}
       </div>
-      <FooterMenu />
+      <FooterMenu showReminder />
     </div>
   );
 }

@@ -1,9 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import { ChevronDown, MapPin } from "lucide-react";
 import { api } from "@/lib/api";
+import { invalidateCache, updateCache, useCachedApi } from "@/lib/apiCache";
+import type { MeetingsWeek } from "@/models/types";
 
 type Place = { country: string; region: string };
 type ReferenceData = { locations: { country: string; regions: string[] }[] };
@@ -14,20 +16,16 @@ const key = (p: Place) => `${p.country}|${p.region}`;
 export const LocationPicker = ({ initial }: { initial: Place | null }) => {
   const t = useTranslations("meetingsTab");
   const [place, setPlace] = useState<Place | null>(initial);
-  const [options, setOptions] = useState<Place[]>([]);
-
-  useEffect(() => {
-    api
-      .get<ReferenceData>("/api/reference")
-      .then((data) =>
-        setOptions(
-          data.locations.flatMap(({ country, regions }) =>
-            regions.length ? regions.map((region) => ({ country, region })) : [{ country, region: "" }]
-          )
-        )
-      )
-      .catch((error) => console.error("Error fetching locations:", error));
-  }, []);
+  // The tab renders a cached copy first; take the fresh city when it arrives.
+  useEffect(() => setPlace(initial), [initial?.country, initial?.region]); // eslint-disable-line react-hooks/exhaustive-deps
+  const { data } = useCachedApi<ReferenceData>("/api/reference");
+  const options = useMemo<Place[]>(
+    () =>
+      (data?.locations ?? []).flatMap(({ country, regions }) =>
+        regions.length ? regions.map((region) => ({ country, region })) : [{ country, region: "" }]
+      ),
+    [data]
+  );
 
   const change = async (value: string) => {
     const next = options.find((o) => key(o) === value);
@@ -36,6 +34,8 @@ export const LocationPicker = ({ initial }: { initial: Place | null }) => {
     setPlace(next);
     try {
       await api.post("/api/profile", next);
+      updateCache<MeetingsWeek>("/api/meetings/current", (week) => ({ ...week, location: next }));
+      invalidateCache("/api/profile");
     } catch (error) {
       console.error("Error saving location:", error);
       setPlace(previous);

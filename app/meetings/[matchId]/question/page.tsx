@@ -1,10 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import type { WeeklyQuestion } from "@/models/types";
-import { api } from "@/lib/api";
+import { useCachedApi } from "@/lib/apiCache";
 import { Button } from "@/components/ui/button";
 import { BottomAction } from "@/components/meetings/BottomAction";
 
@@ -13,22 +12,8 @@ export default function WeeklyQuestionPage() {
   const { matchId } = useParams<{ matchId: string }>();
   const router = useRouter();
   const t = useTranslations("weekMatch");
-  const [question, setQuestion] = useState<WeeklyQuestion | null>(null);
-  const [failed, setFailed] = useState(false);
-
-  useEffect(() => {
-    let cancelled = false;
-    api
-      .get<WeeklyQuestion>(`/api/meetings/${matchId}/question`)
-      .then((data) => !cancelled && setQuestion(data))
-      .catch((error) => {
-        console.error("Error fetching weekly question:", error);
-        if (!cancelled) setFailed(true);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [matchId]);
+  const { data: question, error } = useCachedApi<WeeklyQuestion>(`/api/meetings/${matchId}/question`);
+  const failed = !question && !!error;
 
   return (
     <div className="mx-auto flex min-h-screen max-w-xl flex-col px-4 pb-28 pt-6">

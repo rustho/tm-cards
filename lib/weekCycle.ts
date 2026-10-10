@@ -43,24 +43,25 @@ export function getWeekPhase(now = new Date()): WeekPhase {
 /**
  * Pairs that did not both press «Хочу познакомиться» before their round's deadline
  * become `not_met`. Runs before matching for everyone, and lazily for one user on read.
+ * A single UPDATE (Prisma's updateMany with a relation filter costs a transaction and
+ * extra round trips); filtering by Telegram id lets routes run it alongside ensureUser().
  */
-export async function closeUnagreedMatches(userId?: string): Promise<number> {
-  const now = new Date();
-  const rounds = await prisma.matchRound.findMany({ where: { weekStart: { lte: now } }, select: { id: true, weekStart: true } });
-  const closedRounds = rounds.filter((r) => agreeDeadline(r.weekStart) < now).map((r) => r.id);
-  if (closedRounds.length === 0) return 0;
+export async function closeUnagreedMatches(telegramId?: string): Promise<number> {
+  // weekStart is a UTC midnight and the deadline is a fixed offset from it, so
+  // "deadline passed" is "weekStart before now - offset" (offset read from the epoch).
+  const cutoff = new Date(Date.now() - agreeDeadline(new Date(0)).getTime());
 
-  const result = await prisma.match.updateMany({
-    where: {
-      roundId: { in: closedRounds },
-      status: "pending",
-      AND: [
-        { OR: [{ user1AcceptedAt: null }, { user2AcceptedAt: null }] },
-        ...(userId ? [{ OR: [{ user1Id: userId }, { user2Id: userId }] }] : []),
-      ],
-    },
-    data: { status: "not_met" },
-  });
-  if (result.count > 0) console.log(`⌛ ${result.count} unagreed matches → not_met`);
-  return result.count;
+  const count = await prisma.$executeRaw`
+    UPDATE "matches" AS m SET "status" = 'not_met'
+    FROM "match_rounds" AS r
+    WHERE r."id" = m."roundId"
+      AND (r."weekStart"::timestamp AT TIME ZONE 'UTC') < ${cutoff}
+      AND m."status" = 'pending'
+      AND (m."user1AcceptedAt" IS NULL OR m."user2AcceptedAt" IS NULL)
+      AND (${telegramId ?? null}::text IS NULL OR EXISTS (
+        SELECT 1 FROM "users" AS u
+        WHERE u."telegramId" = ${telegramId ?? null}::text AND u."id" IN (m."user1Id", m."user2Id")
+      ))`;
+  if (count > 0) console.log(`⌛ ${count} unagreed matches → not_met`);
+  return count;
 }

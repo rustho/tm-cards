@@ -13,6 +13,7 @@ import {
   type NotMetReason,
 } from "@/models/types";
 import { api } from "@/lib/api";
+import { invalidateCache } from "@/lib/apiCache";
 import { invalidatePendingFeedback } from "@/lib/pendingFeedback";
 import { cn } from "@/lib/utils";
 import { BackButton, Button, TextArea } from "@/components/ui";
@@ -82,6 +83,7 @@ export function MeetingFeedbackFlow({ matchId, embedded = false }: { matchId: st
     try {
       const updated = await api.post<MeetingDetails>(`/api/meetings/${matchId}/feedback`, body);
       invalidatePendingFeedback();
+      invalidateCache("/api/home", "/api/meetings");
       setMeeting(updated);
       if (body.outcome === "later") setStep("later");
       else if (body.outcome === "met") setStep(updated.partnerFeedback ? "view" : "waiting");

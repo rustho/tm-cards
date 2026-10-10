@@ -1,6 +1,6 @@
 import type { Prisma } from "@prisma/client";
 import prisma from "@/lib/prisma";
-import { ensureUser, type AuthUser } from "@/lib/auth";
+import { ensureUser, forgetUser, type AuthUser } from "@/lib/auth";
 import { TAG_CATEGORIES, userWithProfileInclude, type TagCategory, type UserWithProfile } from "@/lib/profileDto";
 import { validateDateOfBirth } from "@/lib/dateUtils";
 import { deleteProfilePhoto, isOwnPhotoUrl } from "@/lib/photoStorage";
@@ -71,6 +71,7 @@ export async function saveProfile(auth: AuthUser, input: Input): Promise<UserWit
     const referrer = await prisma.user.findUnique({ where: { referralCode } });
     if (referrer && referrer.id !== user.id) {
       await prisma.user.update({ where: { id: user.id }, data: { referrerId: referrer.id } });
+      forgetUser(auth.id);
     }
   }
 

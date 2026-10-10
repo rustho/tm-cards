@@ -21,22 +21,23 @@ const ITEMS = [
 
 /**
  * Floating bottom tab bar. Pages include it explicitly; it is not part of the layout.
- * Above it: «Как прошло знакомство?» while a recent meeting waits for my impression,
- * unless the page already shows that flow (`hideReminder`).
+ * Above it, only on pages that opt in (`showReminder`: «Люди» and «Мои встречи»):
+ * «Как прошло знакомство?» while a recent meeting waits for my impression.
  */
-export const FooterMenu = ({ hideReminder = false }: { hideReminder?: boolean }) => {
+export const FooterMenu = ({ showReminder = false }: { showReminder?: boolean }) => {
   const pathname = usePathname();
   const t = useTranslations("menu");
   const [loaded, setLoaded] = useState<PendingFeedback | null>(null);
-  const pending = hideReminder ? null : loaded;
+  const pending = showReminder ? loaded : null;
 
   useEffect(() => {
+    if (!showReminder) return;
     let cancelled = false;
     getPendingFeedback().then((data) => !cancelled && setLoaded(data));
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [showReminder]);
 
   return (
     <>

@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useTranslations } from "next-intl";
 import type { Profile } from "@/models/types";
-import { api, ApiError } from "@/lib/api";
+import { useCachedApi } from "@/lib/apiCache";
 import { FooterMenu } from "@/components/FooterMenu";
 import "./pageStyles.css";
 import { MyProfileView } from "./ui/MyProfileView";
@@ -15,29 +15,17 @@ import { Wizard } from "./ui/Wizard";
  */
 export default function ProfilePage() {
   const t = useTranslations("profile.wizard");
+  // Cached copy first, then the server's (lib/apiCache.ts).
+  const { data, refreshing, refresh } = useCachedApi<Profile>("/api/profile", { allowNotFound: true });
   // undefined = loading, null = no finished profile yet
-  const [profile, setProfile] = useState<Profile | null | undefined>(undefined);
+  const profile: Profile | null | undefined =
+    data === undefined ? (refreshing ? undefined : null) : data?.isComplete ? data : null;
   const [editing, setEditing] = useState(false);
-  const [reload, setReload] = useState(0);
   // Steps autosave, so leaving the editor (done or «Назад») always refetches the profile.
   const stopEditing = () => {
     setEditing(false);
-    setReload((n) => n + 1);
+    refresh();
   };
-
-  useEffect(() => {
-    let cancelled = false;
-    api
-      .get<Profile>("/api/profile")
-      .then((data) => !cancelled && setProfile(data.isComplete ? data : null))
-      .catch((error) => {
-        if (!(error instanceof ApiError && error.status === 404)) console.error("Failed to load profile:", error);
-        if (!cancelled) setProfile(null);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [reload]);
 
   if (profile === undefined) {
     return (

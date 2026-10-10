@@ -61,8 +61,9 @@ Times come from `WEEK_SCHEDULE` in `config/constants.ts` (day + hour in
 Friday 00:00) and are expected to change.
 - Monday: the matching run creates `pending` pairs.
 - Phase `week` (Monday → `agreeDeadline`): each side may accept. A pair not
-  mutual by then becomes `not_met` (`closeUnagreedMatches()`: before every
-  matching run, and lazily for the caller in `/api/home`, `/api/meetings`,
+  mutual by then becomes `not_met` (`closeUnagreedMatches()`: one raw
+  `UPDATE` before every matching run, and lazily for the caller, by Telegram
+  id and in parallel with `ensureUser()`, in `/api/home`, `/api/meetings`,
   `/api/meetings/current`, `/api/meetings/pending-feedback`).
 - Phase `feedback` (`agreeDeadline` → `signupStart`): the «Встречи» tab shows
   the impression flow for this round's pair.
@@ -109,9 +110,10 @@ end against PGlite with sample data; apply with `pnpm db:deploy`.
 
 Unchanged: `Authorization: tma <initDataRaw>` validated with
 `@tma.js/init-data-node/web`; `authenticate()` → `AuthUser`,
-`requireAdmin()`, `authErrorResponse()`. `ensureUser(auth)` upserts the
-`users` row (refreshing Telegram fields) and returns it; every write path
-goes through it. Dev accepts unsigned mock data; prod is strict.
+`requireAdmin()`, `authErrorResponse()`. `ensureUser(auth)` returns the
+`users` row, creating it or refreshing Telegram fields only when they changed;
+rows are memoised per server instance for 10 minutes (`forgetUser()` after
+writing `users` elsewhere). Every write path goes through it. Dev accepts unsigned mock data; prod is strict.
 
 ## API reference
 
