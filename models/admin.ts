@@ -42,6 +42,8 @@ export interface AdminMatchRow {
   status: string;
   score: number;
   createdAt: string;
+  /** null = draft (not shown to users yet). */
+  publishedAt: string | null;
   a: AdminPerson & { acceptedAt: string | null; feedback: AdminFeedback | null };
   b: AdminPerson & { acceptedAt: string | null; feedback: AdminFeedback | null };
 }
@@ -103,7 +105,7 @@ export type AdminUserAction =
 
 export interface AdminOverview {
   users: { total: number; new7d: number; active7d: number; complete: number; blocked: number };
-  week: { weekStart: string; phase: string; pairs: number; mutual: number; met: number; participants: number };
+  week: { weekStart: string; phase: string; pairs: number; drafts: number; mutual: number; met: number; participants: number };
   lastRound: { roundId: string; weekStart: string } | null;
 }
 
@@ -112,6 +114,7 @@ export interface MatchingConfigDto {
   minCompatibilityScore: number;
   cooldownHours: number;
   enableNotifications: boolean;
+  autoPublish: boolean;
   countriesWithoutRegions: string[];
 }
 
@@ -119,7 +122,10 @@ export interface AdminRoundRow {
   roundId: string;
   weekStart: string;
   status: string;
+  /** Published pairs (expired/cancelled left out). */
   pairs: number;
+  /** Unpublished pairs waiting for «Опубликовать». */
+  drafts: number;
   mutual: number;
   met: number;
   notMet: number;
@@ -132,6 +138,8 @@ export interface AdminMatchingState {
 }
 
 export interface AdminRoundDetails extends AdminRoundRow {
+  /** Until when people can press «Хочу познакомиться» (WEEK_SCHEDULE; does not move on publish). */
+  agreeDeadline: string;
   matches: AdminMatchRow[];
 }
 
@@ -153,7 +161,9 @@ export type MatchingMode = "fill" | "rebuild";
 export interface MatchingRunDto {
   success: boolean;
   roundWeekStart: string | null;
+  roundId: string | null;
   mode: MatchingMode;
+  published: boolean;
   removedPairs: number;
   matchesCreated: number;
   notificationsSent: number;
@@ -309,4 +319,14 @@ export type AdminMatchAction =
       notify?: boolean;
     };
 
-export type AdminRoundAction = { action: "createMatch"; a: string; b: string; notify?: boolean };
+export type AdminRoundAction =
+  /** `publish`: live at once (else a draft); `notify` only applies to a published pair. */
+  | { action: "createMatch"; a: string; b: string; publish?: boolean; notify?: boolean }
+  /** Shows every draft pair of the round to its people; `notify` sends the «new pair» message. */
+  | { action: "publish"; notify?: boolean }
+  | { action: "discardDrafts" };
+
+export interface PublishResultDto {
+  published: number;
+  notified: number;
+}

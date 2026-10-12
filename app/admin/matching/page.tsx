@@ -94,6 +94,11 @@ export default function AdminMatching() {
                 {t("runStats", { eligible: run.eligibleUsers, unmatched: run.unmatched, notified: run.notificationsSent })}
                 {run.removedPairs > 0 && ` · ${t("removedPairs", { count: run.removedPairs })}`}
               </div>
+              {run.success && !run.published && run.matchesCreated > 0 && run.roundId && (
+                <Link href={`/admin/matching/${run.roundId}`} className="block text-caption text-primary hover:underline">
+                  {t("runDraft")}
+                </Link>
+              )}
               {run.errors.map((e) => (
                 <ErrorText key={e}>{e}</ErrorText>
               ))}
@@ -116,7 +121,10 @@ export default function AdminMatching() {
                   <li key={r.roundId}>
                     <Link href={`/admin/matching/${r.roundId}`} className="flex items-center gap-3 px-3 py-2.5 transition-colors hover:bg-muted/60">
                       <span className="min-w-0 flex-1">
-                        <span className="block text-body font-medium text-foreground">{t("week", { date: r.weekStart })}</span>
+                        <span className="flex items-center gap-1.5 text-body font-medium text-foreground">
+                          {t("week", { date: r.weekStart })}
+                          {r.drafts > 0 && <Badge tone="warning">{t("draftBadge", { count: r.drafts })}</Badge>}
+                        </span>
                         <span className="block text-caption text-muted-foreground">
                           {t("roundStats", { pairs: r.pairs, mutual: r.mutual, met: r.met, notMet: r.notMet })}
                         </span>
@@ -184,6 +192,7 @@ function ConfigForm({ config, onSaved }: { config: MatchingConfigDto; onSaved: (
         minCompatibilityScore: Number(form.minCompatibilityScore),
         cooldownHours: Number(form.cooldownHours),
         enableNotifications: form.enableNotifications,
+        autoPublish: form.autoPublish,
         countriesWithoutRegions: form.countriesWithoutRegions.split(","),
       });
       setState({ kind: "saved" });
@@ -210,6 +219,11 @@ function ConfigForm({ config, onSaved }: { config: MatchingConfigDto; onSaved: (
         </div>
         {field("countriesWithoutRegions", "text")}
         <label className="flex items-center gap-2 text-body text-foreground">
+          <Switch checked={form.autoPublish} onCheckedChange={(autoPublish) => setForm({ ...form, autoPublish })} />
+          {t("config.autoPublish")}
+        </label>
+        <p className="m-0 text-caption text-muted-foreground">{t("config.autoPublishHint")}</p>
+        <label className="flex items-center gap-2 text-body text-foreground">
           <Switch checked={form.enableNotifications} onCheckedChange={(enableNotifications) => setForm({ ...form, enableNotifications })} />
           {t("config.enableNotifications")}
         </label>
@@ -230,5 +244,6 @@ const toForm = (c: MatchingConfigDto) => ({
   minCompatibilityScore: String(c.minCompatibilityScore),
   cooldownHours: String(c.cooldownHours),
   enableNotifications: c.enableNotifications,
+  autoPublish: c.autoPublish,
   countriesWithoutRegions: c.countriesWithoutRegions.join(", "),
 });

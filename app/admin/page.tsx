@@ -54,7 +54,11 @@ export default function AdminHome() {
           </Section>
           <Section title={t("overview.weekTitle", { date: data.week.weekStart })} aside={<span className="text-caption text-muted-foreground">{t(`phases.${data.week.phase}`)}</span>}>
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-              <Stat label={t("overview.pairs")} value={data.week.pairs} />
+              <Stat
+                label={t("overview.pairs")}
+                value={data.week.pairs}
+                hint={data.week.drafts > 0 ? t("overview.drafts", { count: data.week.drafts }) : undefined}
+              />
               <Stat label={t("overview.mutual")} value={data.week.mutual} />
               <Stat label={t("overview.met")} value={data.week.met} />
               <Stat label={t("overview.participants")} value={data.week.participants} hint={t("overview.participantsHint")} />

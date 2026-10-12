@@ -19,6 +19,8 @@ export interface MatchingConfig {
   minCompatibilityScore: number;
   cooldownHours: number;
   enableNotifications: boolean;
+  /** false: a run makes drafts that the admin publishes; true: pairs go live (and are announced) at once. */
+  autoPublish: boolean;
   countriesWithoutRegions: string[];
 }
 
@@ -75,7 +77,10 @@ interface ScoredPair {
 export interface RunResult {
   success: boolean;
   roundWeekStart: string | null;
+  roundId: string | null;
   mode: MatchingMode;
+  /** false: the pairs are drafts waiting for «Опубликовать». */
+  published: boolean;
   removedPairs: number;
   matchesCreated: number;
   notificationsSent: number;
@@ -95,6 +100,7 @@ export function defaultMatchingConfig(): MatchingConfig {
     minCompatibilityScore: 0.3,
     cooldownHours: 24,
     enableNotifications: process.env.MATCHING_NOTIFICATIONS === "true",
+    autoPublish: false,
     countriesWithoutRegions: ["Singapore", "Monaco", "Luxembourg", "Сингапур"],
   };
 }
@@ -111,15 +117,30 @@ export function sanitizeMatchingConfig(input: Record<string, unknown>, base: Mat
   num("maxMatchesPerRun", 1, 10000);
   num("minCompatibilityScore", 0, 100);
   num("cooldownHours", 0, 24 * 60);
-  if (input.enableNotifications !== undefined) {
-    if (typeof input.enableNotifications !== "boolean") throw new Error("enableNotifications must be a boolean");
-    next.enableNotifications = input.enableNotifications;
+  for (const key of ["enableNotifications", "autoPublish"] as const) {
+    if (input[key] === undefined) continue;
+    if (typeof input[key] !== "boolean") throw new Error(`${key} must be a boolean`);
+    next[key] = input[key] as boolean;
   }
   if (input.countriesWithoutRegions !== undefined) {
     if (!Array.isArray(input.countriesWithoutRegions)) throw new Error("countriesWithoutRegions must be an array");
     next.countriesWithoutRegions = input.countriesWithoutRegions.map(String).map((c) => c.trim()).filter(Boolean);
   }
   return next;
+}
+
+/** A round is live once any of its pairs is published. */
+export async function isRoundLive(roundId: string): Promise<boolean> {
+  return (await prisma.match.count({ where: { roundId, publishedAt: { not: null } } })) > 0;
+}
+
+/**
+ * «Пропускаю неделю» is spent when a round goes live. Callers check isRoundLive() before
+ * publishing and call this only for the first publish: extra pairs published mid-week
+ * must not eat skips people already set for the next week.
+ */
+export async function consumeSkips() {
+  await prisma.userSettings.updateMany({ where: { skipNextRound: true }, data: { skipNextRound: false } });
 }
 
 /** Monday 00:00 UTC of the week containing `date`. */
@@ -361,7 +382,14 @@ class MatchingService {
 
     const ids = users.map((u) => u.id);
     const history = await prisma.match.findMany({
-      where: { OR: [{ user1Id: { in: ids } }, { user2Id: { in: ids } }], id: { notIn: freedIds } },
+      where: {
+        AND: [
+          { OR: [{ user1Id: { in: ids } }, { user2Id: { in: ids } }] },
+          // Stale drafts of past weeks never reached anyone: they are not "previous partners".
+          { OR: [{ publishedAt: { not: null } }, { round: { weekStart } }] },
+        ],
+        id: { notIn: freedIds },
+      },
       select: { user1Id: true, user2Id: true },
     });
     const partners = new Map<string, Set<string>>();
@@ -415,7 +443,9 @@ class MatchingService {
     const result: RunResult = {
       success: true,
       roundWeekStart: null,
+      roundId: null,
       mode,
+      published: false,
       removedPairs: 0,
       matchesCreated: 0,
       notificationsSent: 0,
@@ -440,6 +470,10 @@ class MatchingService {
         create: { weekStart },
       });
       result.roundWeekStart = weekStart.toISOString().slice(0, 10);
+      result.roundId = round.id;
+      const publish = this.config.autoPublish;
+      result.published = publish;
+      const wasLive = await isRoundLive(round.id);
 
       const freed = mode === "rebuild" ? await this.untouchedPairs(weekStart) : [];
       if (freed.length > 0) {
@@ -467,14 +501,18 @@ class MatchingService {
                 score: compatibility.score,
                 factors: compatibility.factors as unknown as Prisma.InputJsonValue,
                 expiresAt: new Date(Date.now() + MATCH_TTL_MS),
+                publishedAt: publish ? new Date() : null,
               },
             }),
-            prisma.user.updateMany({ where: { id: { in: [user1Id, user2Id] } }, data: { lastMatchedAt: new Date() } }),
+            // A draft does not start the cooldown: it may still be discarded (publishRound sets it).
+            ...(publish
+              ? [prisma.user.updateMany({ where: { id: { in: [user1Id, user2Id] } }, data: { lastMatchedAt: new Date() } })]
+              : []),
           ]);
           result.matchesCreated++;
-          console.log(`✅ Match: ${a.name} ↔ ${b.name} (${compatibility.score})`);
+          console.log(`✅ ${publish ? "Match" : "Draft"}: ${a.name} ↔ ${b.name} (${compatibility.score})`);
 
-          if (this.config.enableNotifications) {
+          if (publish && this.config.enableNotifications) {
             const sent = await Promise.all([
               notifyUser(a.telegramId, this.matchMessage(b)),
               notifyUser(b.telegramId, this.matchMessage(a)),
@@ -494,8 +532,8 @@ class MatchingService {
         }
       }
 
-      // "skip next round" is consumed by this run
-      await prisma.userSettings.updateMany({ where: { skipNextRound: true }, data: { skipNextRound: false } });
+      // "skip next round" is consumed when the round goes live (for drafts: on its first publish)
+      if (publish && !wasLive && result.matchesCreated > 0) await consumeSkips();
 
       const matched = new Set(pairs.flatMap((p) => [p.a.userId, p.b.userId]));
       result.unmatched = candidates.filter((c) => !matched.has(c.userId)).length;
@@ -580,7 +618,7 @@ class MatchingService {
   async cleanupExpiredMatches(): Promise<number> {
     await closeUnagreedMatches();
     const result = await prisma.match.updateMany({
-      where: { status: "pending", expiresAt: { lt: new Date() } },
+      where: { status: "pending", publishedAt: { not: null }, expiresAt: { lt: new Date() } },
       data: { status: "expired" },
     });
     if (result.count > 0) console.log(`🧹 Expired ${result.count} matches`);

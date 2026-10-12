@@ -44,10 +44,11 @@ export const meetingInclude = {
 
 type MatchRow = Prisma.MatchGetPayload<{ include: typeof meetingInclude }>;
 
-/** Matches the meetings UI lists for a user: everything except expired ones. */
+/** Matches the meetings UI lists for a user: published ones (no admin drafts), except expired. */
 export const visibleMatchesWhere = (userId: string): Prisma.MatchWhereInput => ({
   OR: [{ user1Id: userId }, { user2Id: userId }],
   status: { not: "expired" },
+  publishedAt: { not: null },
 });
 
 /** Statuses in which the viewer can still leave an impression. */
@@ -198,7 +199,7 @@ export class FeedbackError extends Error {
  */
 export async function submitFeedback(matchId: string, viewerId: string, input: FeedbackInput): Promise<MatchRow> {
   const match = await prisma.match.findUnique({ where: { id: matchId }, include: meetingInclude });
-  if (!match || (match.user1Id !== viewerId && match.user2Id !== viewerId)) {
+  if (!match || !match.publishedAt || (match.user1Id !== viewerId && match.user2Id !== viewerId)) {
     throw new FeedbackError("Meeting not found", 404);
   }
   if (!OPEN_STATUSES.includes(match.status as MeetingStatus)) {

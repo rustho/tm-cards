@@ -61,6 +61,7 @@ export function MatchCard({
   return (
     <div className={cn("space-y-2 rounded-md border bg-card p-3", editing ? "border-primary" : "border-divider")}>
       <div className="flex flex-wrap items-center gap-1.5">
+        {!match.publishedAt && <Badge tone="warning">{t("draft")}</Badge>}
         <Badge tone={STATUS_TONES[match.status] ?? "neutral"}>{t(`status.${match.status}`)}</Badge>
         <span className="text-caption text-muted-foreground">
           {t("score", { score: match.score })}
@@ -125,7 +126,11 @@ function MatchEditor({
 
   const replace = async () => {
     if (!replacement) return;
-    const ok = await onAction({ action: "update", replace: { side: replaceSide, telegramId: replacement.telegramId }, notify });
+    const ok = await onAction({
+      action: "update",
+      replace: { side: replaceSide, telegramId: replacement.telegramId },
+      notify: Boolean(match.publishedAt) && notify,
+    });
     if (ok) onDone();
   };
 
@@ -176,11 +181,13 @@ function MatchEditor({
           ))}
         </div>
         <UserPicker value={replacement} onChange={setReplacement} />
-        <label className="flex items-center gap-2 text-body text-foreground">
-          <Switch checked={notify} onCheckedChange={setNotify} />
-          {t("notifyBoth")}
-        </label>
-        <p className="m-0 text-caption text-muted-foreground">{t("replaceHint")}</p>
+        {match.publishedAt && (
+          <label className="flex items-center gap-2 text-body text-foreground">
+            <Switch checked={notify} onCheckedChange={setNotify} />
+            {t("notifyBoth")}
+          </label>
+        )}
+        <p className="m-0 text-caption text-muted-foreground">{t(match.publishedAt ? "replaceHint" : "replaceDraftHint")}</p>
         <ConfirmButton size="sm" onConfirm={replace} disabled={busy || !replacement}>
           {t("replace")}
         </ConfirmButton>

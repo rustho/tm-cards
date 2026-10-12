@@ -1,8 +1,9 @@
 import type { Prisma } from "@prisma/client";
 import prisma from "@/lib/prisma";
-import MatchingService from "@/lib/matchingService";
+import MatchingService, { consumeSkips, isRoundLive } from "@/lib/matchingService";
 import { notifyUser } from "@/lib/bot";
 import { formatDateOnly } from "@/lib/profileDto";
+import { agreeDeadline } from "@/lib/weekCycle";
 import { AdminError, adminMatchInclude, toAdminMatch } from "@/lib/adminService";
 import {
   MATCH_STATUSES,
@@ -19,6 +20,7 @@ type RoundCounts = {
   weekStart: Date;
   status: string;
   pairs: bigint;
+  drafts: bigint;
   mutual: bigint;
   met: bigint;
   notMet: bigint;
@@ -29,6 +31,7 @@ const toRow = (r: RoundCounts): AdminRoundRow => ({
   weekStart: formatDateOnly(r.weekStart),
   status: r.status,
   pairs: Number(r.pairs),
+  drafts: Number(r.drafts),
   mutual: Number(r.mutual),
   met: Number(r.met),
   notMet: Number(r.notMet),
@@ -38,7 +41,8 @@ const toRow = (r: RoundCounts): AdminRoundRow => ({
 async function roundCounts(roundId?: string): Promise<RoundCounts[]> {
   return prisma.$queryRaw<RoundCounts[]>`
     SELECT r."id", r."weekStart", r."status",
-      COUNT(m."id") FILTER (WHERE m."status" <> 'expired') AS "pairs",
+      COUNT(m."id") FILTER (WHERE m."status" <> 'expired' AND m."publishedAt" IS NOT NULL) AS "pairs",
+      COUNT(m."id") FILTER (WHERE m."status" <> 'expired' AND m."publishedAt" IS NULL) AS "drafts",
       COUNT(m."id") FILTER (WHERE m."user1AcceptedAt" IS NOT NULL AND m."user2AcceptedAt" IS NOT NULL) AS "mutual",
       COUNT(m."id") FILTER (WHERE m."status" = 'met') AS "met",
       COUNT(m."id") FILTER (WHERE m."status" = 'not_met') AS "notMet"
@@ -60,7 +64,7 @@ export async function getRound(roundId: string): Promise<AdminRoundDetails> {
     prisma.match.findMany({ where: { roundId }, include: adminMatchInclude, orderBy: { score: "desc" } }),
   ]);
   if (!counts) throw new AdminError("Round not found", 404);
-  return { ...toRow(counts), matches: matches.map(toAdminMatch) };
+  return { ...toRow(counts), agreeDeadline: agreeDeadline(counts.weekStart).toISOString(), matches: matches.map(toAdminMatch) };
 }
 
 /** Removes a pair from the users' screens (status expired). Only while nobody has met yet. */
@@ -142,6 +146,7 @@ export async function updateMatch(matchId: string, input: Extract<AdminMatchActi
     if (exists) throw new AdminError("This pair already exists in the round", 409);
 
     const { score, factors } = await MatchingService.getInstance().scorePair(user1Id, user2Id);
+    const live = Boolean(match.publishedAt);
     // A different person: everything said about the old pair no longer applies.
     await prisma.$transaction([
       prisma.matchFeedback.deleteMany({ where: { matchId } }),
@@ -158,9 +163,10 @@ export async function updateMatch(matchId: string, input: Extract<AdminMatchActi
           notifiedAt: null,
         },
       }),
-      prisma.user.update({ where: { id: incoming.id }, data: { lastMatchedAt: new Date() } }),
+      ...(live ? [prisma.user.update({ where: { id: incoming.id }, data: { lastMatchedAt: new Date() } })] : []),
     ]);
-    if (input.notify) {
+    // A draft is announced by «Опубликовать», not here.
+    if (live && input.notify) {
       const [keep] = await prisma.user.findMany({
         where: { id: keepId },
         select: { id: true, telegramId: true, firstName: true, profile: { select: { name: true } } },
@@ -188,8 +194,11 @@ export async function updateMatch(matchId: string, input: Extract<AdminMatchActi
   return match.roundId;
 }
 
-/** A pair added by hand to any round (the engine's rules are not applied, except one pair per person). */
-export async function createMatch(roundId: string, input: AdminRoundAction) {
+/**
+ * A pair added by hand to any round (the engine's rules are not applied, except one pair per person).
+ * A draft unless `publish`.
+ */
+export async function createMatch(roundId: string, input: Extract<AdminRoundAction, { action: "createMatch" }>) {
   const round = await prisma.matchRound.findUnique({ where: { id: roundId } });
   if (!round) throw new AdminError("Round not found", 404);
   if (input.a === input.b) throw new AdminError("Pick two different users", 400);
@@ -199,6 +208,7 @@ export async function createMatch(roundId: string, input: AdminRoundAction) {
   const [user1Id, user2Id] = [a.id, b.id].sort();
   const { score, factors } = await MatchingService.getInstance().scorePair(user1Id, user2Id);
   const now = new Date();
+  const publish = input.publish === true;
   const created = await prisma.$transaction(async (tx) => {
     const match = await tx.match.create({
       data: {
@@ -208,13 +218,72 @@ export async function createMatch(roundId: string, input: AdminRoundAction) {
         score,
         factors: factors as unknown as Prisma.InputJsonValue,
         expiresAt: new Date(now.getTime() + MATCH_TTL_MS),
+        publishedAt: publish ? now : null,
       },
     });
-    await tx.user.updateMany({ where: { id: { in: [user1Id, user2Id] } }, data: { lastMatchedAt: now } });
+    if (publish) await tx.user.updateMany({ where: { id: { in: [user1Id, user2Id] } }, data: { lastMatchedAt: now } });
     return match;
   });
-  if (input.notify && (await notifyPair(a, b)) > 0) {
+  if (publish && input.notify && (await notifyPair(a, b)) > 0) {
     await prisma.match.update({ where: { id: created.id }, data: { notifiedAt: new Date() } });
   }
   return created.id;
+}
+
+// --- drafts --------------------------------------------------------------------------
+
+const SEND_INTERVAL_MS = 40;
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+/**
+ * Publishes every draft pair of the round: users see them in «Встречи» from now on,
+ * the week's agree deadline still applies. Starts the cooldown, gives each pair a fresh
+ * expiry, spends «Пропускаю неделю» on the round's first publish and, with `notify`,
+ * sends both people the «new pair» message (~25 msg/s).
+ */
+export async function publishRound(roundId: string, notify: boolean) {
+  const drafts = await prisma.match.findMany({
+    where: { roundId, publishedAt: null, status: { not: "expired" } },
+    select: {
+      id: true,
+      user1Id: true,
+      user2Id: true,
+      user1: { select: { id: true, telegramId: true, firstName: true, profile: { select: { name: true } } } },
+      user2: { select: { id: true, telegramId: true, firstName: true, profile: { select: { name: true } } } },
+    },
+  });
+  if (drafts.length === 0) throw new AdminError("No draft pairs to publish", 400);
+
+  const wasLive = await isRoundLive(roundId);
+  const now = new Date();
+  await prisma.$transaction([
+    prisma.match.updateMany({
+      where: { id: { in: drafts.map((d) => d.id) } },
+      data: { publishedAt: now, expiresAt: new Date(now.getTime() + MATCH_TTL_MS) },
+    }),
+    prisma.user.updateMany({
+      where: { id: { in: drafts.flatMap((d) => [d.user1Id, d.user2Id]) } },
+      data: { lastMatchedAt: now },
+    }),
+  ]);
+  if (!wasLive) await consumeSkips();
+  console.log(`📢 Round ${roundId}: published ${drafts.length} pairs`);
+
+  let notified = 0;
+  if (notify) {
+    for (const pair of drafts) {
+      const sent = await notifyPair(pair.user1, pair.user2);
+      notified += sent;
+      if (sent > 0) await prisma.match.update({ where: { id: pair.id }, data: { notifiedAt: new Date() } });
+      await sleep(SEND_INTERVAL_MS * 2);
+    }
+  }
+  return { published: drafts.length, notified };
+}
+
+/** Deletes the round's unpublished pairs (nobody has seen them). */
+export async function discardDrafts(roundId: string) {
+  const { count } = await prisma.match.deleteMany({ where: { roundId, publishedAt: null } });
+  console.log(`🗑️ Round ${roundId}: discarded ${count} draft pairs`);
+  return count;
 }
