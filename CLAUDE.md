@@ -53,8 +53,9 @@ client learns it from `GET /api/me` (`useAuth().isAdmin`). Admins get an
 inside the Mini App (works stretched on desktop Telegram too):
 `/admin` (KPIs), `/admin/funnel` (cohort funnel, wizard drop-off, weekly
 cohorts; period + source filters), `/admin/users` (+ `[telegramId]` card: access, status, chat
-with the bot + reply, meetings, event log), `/admin/matching` (preview, run, config, rounds,
-cancel a pair), `/admin/broadcasts` (segment → test → send in batches).
+with the bot + reply, meetings, event log), `/admin/matching` (preview/run in `fill` or `rebuild` mode,
+config, rounds; per round: add a pair by hand, edit status/accepts, replace a person,
+cancel or delete a pair, past rounds included), `/admin/broadcasts` (segment → test → send in batches).
 `app/admin/layout.tsx` gates all of them; building blocks in `components/admin/`.
 
 ## Stack

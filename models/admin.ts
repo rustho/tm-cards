@@ -136,6 +136,7 @@ export interface AdminRoundDetails extends AdminRoundRow {
 }
 
 export interface MatchingPreviewDto {
+  removedPairs: number;
   eligibleUsers: number;
   pairs: { a: PreviewPerson; b: PreviewPerson; score: number }[];
   unmatched: PreviewPerson[];
@@ -147,9 +148,13 @@ export interface PreviewPerson {
   place: string;
 }
 
+export type MatchingMode = "fill" | "rebuild";
+
 export interface MatchingRunDto {
   success: boolean;
   roundWeekStart: string | null;
+  mode: MatchingMode;
+  removedPairs: number;
   matchesCreated: number;
   notificationsSent: number;
   eligibleUsers: number;
@@ -283,3 +288,25 @@ export interface BotDialogDto {
   /** Older messages exist: ask again with `before` = the first message's createdAt. */
   hasMore: boolean;
 }
+
+// --- pair editing --------------------------------------------------------------------
+
+export const MATCH_STATUSES = ["pending", "met", "not_met", "postponed", "expired"] as const;
+export type MatchStatusId = (typeof MATCH_STATUSES)[number];
+
+/** Side `a` = user1 of the match, `b` = user2 (as in AdminMatchRow). */
+export type MatchSide = "a" | "b";
+
+export type AdminMatchAction =
+  | { action: "cancel" }
+  | { action: "delete" }
+  | {
+      action: "update";
+      status?: MatchStatusId;
+      accepted?: Partial<Record<MatchSide, boolean>>;
+      /** New person on one side: resets accepts, feedback and status. */
+      replace?: { side: MatchSide; telegramId: string };
+      notify?: boolean;
+    };
+
+export type AdminRoundAction = { action: "createMatch"; a: string; b: string; notify?: boolean };

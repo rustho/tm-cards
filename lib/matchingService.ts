@@ -51,7 +51,16 @@ export interface PreviewPair {
   score: number;
 }
 
+/**
+ * fill: pair only users without a pair in this week's round (repeat runs are safe);
+ * rebuild: also dissolve this round's untouched pairs (pending, nobody accepted, no
+ * feedback) and pair those people again.
+ */
+export type MatchingMode = "fill" | "rebuild";
+
 export interface PreviewResult {
+  /** Untouched pairs a rebuild would dissolve (0 for fill). */
+  removedPairs: number;
   eligibleUsers: number;
   pairs: PreviewPair[];
   unmatched: { telegramId: string; name: string; place: string }[];
@@ -66,6 +75,8 @@ interface ScoredPair {
 export interface RunResult {
   success: boolean;
   roundWeekStart: string | null;
+  mode: MatchingMode;
+  removedPairs: number;
   matchesCreated: number;
   notificationsSent: number;
   eligibleUsers: number;
@@ -270,12 +281,46 @@ class MatchingService {
     };
   }
 
+  /** Compatibility of two users as the engine sees them now (manual pairs in the admin). */
+  async scorePair(userIdA: string, userIdB: string): Promise<CompatibilityResult> {
+    const users = await prisma.user.findMany({
+      where: { id: { in: [userIdA, userIdB] } },
+      include: { ...userWithProfileInclude, settings: true },
+    });
+    const [a, b] = [userIdA, userIdB].map((id) => users.find((u) => u.id === id));
+    if (!a?.profile || !b?.profile) return { score: 0, factors: [] };
+    return this.calculateCompatibilityScore(this.toCandidate(a, new Set()), this.toCandidate(b, new Set()));
+  }
+
+  /** Pairs of the round that nobody touched yet: pending, no «Хочу познакомиться», no feedback. */
+  private async untouchedPairs(weekStart: Date) {
+    return prisma.match.findMany({
+      where: {
+        round: { weekStart },
+        status: "pending",
+        user1AcceptedAt: null,
+        user2AcceptedAt: null,
+        feedback: { none: {} },
+      },
+      select: { id: true, user1Id: true, user2Id: true },
+    });
+  }
+
   /**
    * Active users with a complete profile and a location, past cooldown, not paused or skipping,
-   * and with access: an active subscription or still inside the trial (same rule as getAccess).
+   * with access (an active subscription or still inside the trial, same rule as getAccess),
+   * and without a pair in this week's round. `freed` pairs (a rebuild) count as not existing:
+   * their people are candidates again and the pair is not "previous partners".
    */
-  private async getCandidates({ dryRun = false } = {}): Promise<Candidate[]> {
+  private async getCandidates({
+    dryRun = false,
+    freed = [],
+  }: { dryRun?: boolean; freed?: { id: string; user1Id: string; user2Id: string }[] } = {}): Promise<Candidate[]> {
     const now = new Date();
+    const weekStart = weekStartOf(now);
+    const freedIds = freed.map((m) => m.id);
+    const freedUsers = freed.flatMap((m) => [m.user1Id, m.user2Id]);
+    const pairedThisRound = { round: { weekStart }, status: { not: "expired" }, id: { notIn: freedIds } };
 
     // Pauses that are over count as active; a real run also clears them.
     if (!dryRun) {
@@ -290,8 +335,10 @@ class MatchingService {
       where: {
         status: "active",
         profile: { isComplete: true, locationId: { not: null } },
-        OR: [{ lastMatchedAt: { lt: cooldown } }, { lastMatchedAt: null }],
+        OR: [{ lastMatchedAt: { lt: cooldown } }, { lastMatchedAt: null }, { id: { in: freedUsers } }],
         AND: [
+          { matchesAsUser1: { none: pairedThisRound } },
+          { matchesAsUser2: { none: pairedThisRound } },
           {
             OR: [
               { settings: null },
@@ -314,7 +361,7 @@ class MatchingService {
 
     const ids = users.map((u) => u.id);
     const history = await prisma.match.findMany({
-      where: { OR: [{ user1Id: { in: ids } }, { user2Id: { in: ids } }] },
+      where: { OR: [{ user1Id: { in: ids } }, { user2Id: { in: ids } }], id: { notIn: freedIds } },
       select: { user1Id: true, user2Id: true },
     });
     const partners = new Map<string, Set<string>>();
@@ -344,9 +391,10 @@ class MatchingService {
   }
 
   /** What a run would do now, without writing anything. */
-  async previewMatching(): Promise<PreviewResult> {
+  async previewMatching(mode: MatchingMode = "fill"): Promise<PreviewResult> {
     await this.loadConfig();
-    const candidates = await this.getCandidates({ dryRun: true });
+    const freed = mode === "rebuild" ? await this.untouchedPairs(weekStartOf(new Date())) : [];
+    const candidates = await this.getCandidates({ dryRun: true, freed });
     const pairs = this.planPairs(candidates);
     const person = (c: Candidate) => ({
       telegramId: c.telegramId,
@@ -355,17 +403,20 @@ class MatchingService {
     });
     const matched = new Set(pairs.flatMap((p) => [p.a.userId, p.b.userId]));
     return {
+      removedPairs: freed.length,
       eligibleUsers: candidates.length,
       pairs: pairs.map(({ a, b, score }) => ({ a: person(a), b: person(b), score })),
       unmatched: candidates.filter((c) => !matched.has(c.userId)).map(person),
     };
   }
 
-  async runMatching(): Promise<RunResult> {
+  async runMatching(mode: MatchingMode = "fill"): Promise<RunResult> {
     const startedAt = new Date().toISOString();
     const result: RunResult = {
       success: true,
       roundWeekStart: null,
+      mode,
+      removedPairs: 0,
       matchesCreated: 0,
       notificationsSent: 0,
       eligibleUsers: 0,
@@ -378,7 +429,7 @@ class MatchingService {
       return { ...result, success: false, errors: ["Matching is already running"] };
     }
     this.isRunning = true;
-    console.log("🚀 Matching run started");
+    console.log(`🚀 Matching run started (${mode})`);
 
     try {
       await this.loadConfig();
@@ -390,7 +441,14 @@ class MatchingService {
       });
       result.roundWeekStart = weekStart.toISOString().slice(0, 10);
 
-      const candidates = await this.getCandidates();
+      const freed = mode === "rebuild" ? await this.untouchedPairs(weekStart) : [];
+      if (freed.length > 0) {
+        await prisma.match.deleteMany({ where: { id: { in: freed.map((m) => m.id) } } });
+        result.removedPairs = freed.length;
+        console.log(`♻️ Rebuild: dissolved ${freed.length} untouched pairs`);
+      }
+
+      const candidates = await this.getCandidates({ freed });
       result.eligibleUsers = candidates.length;
       console.log(`👥 ${candidates.length} candidates for round ${result.roundWeekStart}`);
 

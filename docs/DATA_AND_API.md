@@ -208,9 +208,10 @@ Shapes in `models/admin.ts`. Errors are `{ error }` with a status.
 | `POST /api/admin/users/[telegramId]/message` | `{ text, withAppButton? }` → `{ ok }` or `{ ok: false, blocked, error }`; logged as `admin_message` |
 | `GET /api/admin/matching` | `{ config, isRunning, rounds }` (last 20 rounds with counts) |
 | `PUT /api/admin/matching` | partial `MatchingConfig` → saved full config (400 on bad values) |
-| `POST /api/admin/matching?action=preview\|run\|mock-users` | `preview`: pairs a run would create now, nothing written; `run`: cleanup + `runMatching()` (same as the cron); `mock-users`: development only |
+| `POST /api/admin/matching?action=preview\|run\|mock-users[&mode=fill\|rebuild]` | `preview`: pairs a run would create now, nothing written; `run`: cleanup + `runMatching(mode)`; `mock-users`: development only. `fill` (default, also the cron) pairs only people without a live pair in this week's round, so repeat runs are safe; `rebuild` first deletes the week's untouched pairs (pending, no accepts, no feedback) and pairs those people again |
 | `GET /api/admin/matching/rounds/[roundId]` | `AdminRoundDetails`: every pair with accepts and feedback |
-| `POST /api/admin/matching/matches/[matchId]` | `{ action: "cancel" }`: pending/postponed pair → `expired` (hidden from users); returns the round |
+| `POST /api/admin/matching/rounds/[roundId]` | `{ action: "createMatch", a, b, notify? }` (Telegram ids): a pair by hand in any round; engine rules are not applied, but nobody may have two live pairs in one round (409) |
+| `POST /api/admin/matching/matches/[matchId]` | `AdminMatchAction`: `cancel` (pending/postponed → `expired`, hidden from users); `delete` (row and its feedback, any round); `update` with `status`, `accepted: { a?, b? }`, or `replace: { side, telegramId }` + `notify` (new person: score recomputed, accepts/feedback reset, status pending). Returns the round; every change is an `admin_match_*` event |
 | `GET /api/admin/broadcasts` | last 30 `BroadcastDto` with delivery counts |
 | `POST /api/admin/broadcasts` | `{ text, withAppButton, segment }` → creates and snapshots recipients (users with `status active`, not `botBlockedAt`) |
 | `GET /api/admin/broadcasts/audience?segment=&country=` | `{ total, reachable }` |
@@ -229,7 +230,7 @@ Shapes in `models/admin.ts`. Errors are `{ error }` with a status.
    deadline → `not_met`, pending past `expiresAt` → `expired`.)
 1. Upsert the `MatchRound` for the current week (Monday UTC).
 2. Reset settings whose pause expired.
-3. Candidates: `status active`, `profile.isComplete`, has `locationId`,
+3. Candidates (none with a live pair in this week's round already): `status active`, `profile.isComplete`, has `locationId`,
    `lastMatchedAt` older than `cooldownHours` (24) or null, settings absent
    or `matchingOption active` (or a pause whose resume date passed) and
    `skipNextRound false`, and with access:
