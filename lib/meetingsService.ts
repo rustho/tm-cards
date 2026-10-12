@@ -233,7 +233,7 @@ export async function submitFeedback(matchId: string, viewerId: string, input: F
 
   const [me, partner] = updated.user1Id === viewerId ? [updated.user1, updated.user2] : [updated.user2, updated.user1];
   if (met) {
-    void notifyUser(partner.telegramId, `💌 ${toPerson(me).name} поделился(ась) впечатлением о вашей встрече. Загляни в TravelMate!`);
+    void notifyUser(partner.telegramId, `💌 ${toPerson(me).name} поделился(ась) впечатлением о вашей встрече. Загляни в Normal People!`);
   } else if (input.reason === "report") {
     console.log(`🚩 Report on user ${partner.telegramId} from ${me.telegramId} (match ${matchId})`);
   }

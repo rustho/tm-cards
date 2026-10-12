@@ -558,7 +558,7 @@ class MatchingService {
       `🎯 <b>Новое совпадение!</b>\n\n` +
       `<b>${other.name || "Путешественник"}</b>${where ? ` · ${where}` : ""}\n` +
       (interests ? `Интересы: ${interests}\n` : "") +
-      `\nОткрой TravelMate, чтобы посмотреть профиль.`
+      `\nОткрой Normal People, чтобы посмотреть профиль.`
     );
   }
 

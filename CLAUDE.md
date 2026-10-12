@@ -1,4 +1,4 @@
-# CLAUDE.md — TravelMate (tm-cards)
+# CLAUDE.md — Normal People (tm-cards)
 
 Entry point for AI agents working in this repo. Read this first, then the
 focused docs in `docs/`. Verified against the code on branch
@@ -6,7 +6,7 @@ focused docs in `docs/`. Verified against the code on branch
 
 ## What this is
 
-TravelMate is a **Telegram Mini App** (Next.js 14 App Router, React 18,
+Normal People is a **Telegram Mini App** (Next.js 14 App Router, React 18,
 TypeScript strict) for finding travel companions in South-East Asia
 (Vietnam, Bali, Thailand, Sri Lanka). UI copy is Russian. Product areas:
 
