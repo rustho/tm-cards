@@ -8,7 +8,7 @@ example code.
 
 | Path | Status | Notes |
 |---|---|---|
-| `package.json` | LIVE | name `travelmate`; scripts `dev`, `build` (prisma generate && next build), `typecheck`, `db:migrate`, `db:deploy`, `db:studio`, `health:check` |
+| `package.json` | LIVE | name `normal-people`; scripts `dev`, `build` (prisma generate && next build), `typecheck`, `db:migrate`, `db:deploy`, `db:studio`, `health:check` |
 | `pnpm-lock.yaml` | LIVE | the only lockfile |
 | `next.config.mjs` | LIVE | next-intl plugin + `serverComponentsExternalPackages: ['@prisma/client','prisma']` |
 | `tsconfig.json` | LIVE | strict, aliases `@/*`, `@public/*` |

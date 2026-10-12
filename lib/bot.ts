@@ -9,23 +9,23 @@ import { logIncoming, logOutgoing, withSendContext, type SendContext } from "@/l
  */
 
 export const BOT_COMMANDS = [
-  { command: "start", description: "Начать и открыть TravelMate" },
+  { command: "start", description: "Начать и открыть Normal People" },
   { command: "app", description: "Открыть мини-приложение" },
   { command: "help", description: "Как пользоваться ботом" },
 ];
 
 const TEXTS = {
   start:
-    "🌍 Привет! Я бот TravelMate.\n\n" +
+    "🌍 Привет! Я бот Normal People.\n\n" +
     "Здесь ты найдёшь попутчиков и единомышленников в Юго-Восточной Азии. " +
     "Заполни анкету в приложении, а я пришлю уведомление, когда появится совпадение.",
   help:
     "Команды:\n" +
-    "/app — открыть TravelMate\n" +
+    "/app — открыть Normal People\n" +
     "/help — эта подсказка\n\n" +
     "Все основные действия выполняются в мини-приложении.",
-  fallback: "Я понимаю только команды. Нажми /app, чтобы открыть TravelMate.",
-  openApp: "🚀 Открыть TravelMate",
+  fallback: "Я понимаю только команды. Нажми /app, чтобы открыть Normal People.",
+  openApp: "🚀 Открыть Normal People",
 };
 
 let instance: Bot | undefined;
@@ -179,7 +179,7 @@ export async function sendToUser(
 }
 
 /**
- * Sends a notification with the «Открыть TravelMate» button. Fails softly
+ * Sends a notification with the «Открыть Normal People» button. Fails softly
  * (returns false) when the bot is not configured or cannot reach the user,
  * and skips users who turned off «Уведомления от бота» (`notifyNewMatches`).
  * Admin replies and broadcasts go through sendToUser() and are not affected.

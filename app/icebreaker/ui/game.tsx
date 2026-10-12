@@ -48,7 +48,7 @@ export default function Game({ onEndGame }: GameProps) {
             <div key={card.id} className="card">
               <div className={`card-content ${card.type}`}>
                 <div className="card-logo logo-font">
-                  TRAVEL MATE
+                  NORMAL PEOPLE
                 </div>
                 <div className="card-text">{card.text}</div>
                 <div className="card-category">

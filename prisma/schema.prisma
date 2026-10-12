@@ -1,4 +1,4 @@
-// TravelMate data model. Tables are snake_case via @@map; Prisma models stay PascalCase.
+// Normal People data model. Tables are snake_case via @@map; Prisma models stay PascalCase.
 // External identifiers (API paths) use User.telegramId; internal FKs use User.id.
 
 generator client {
@@ -314,7 +314,7 @@ model AppConfig {
 model Broadcast {
   id             String    @id @default(uuid())
   text           String
-  /// Adds the «Открыть TravelMate» button.
+  /// Adds the «Открыть Normal People» button.
   withAppButton  Boolean   @default(true)
   /// Segment id from BROADCAST_SEGMENTS plus optional filters, as chosen in the admin.
   segment        Json

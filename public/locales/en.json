@@ -4,7 +4,7 @@
     "footer": "You can select a different language from the dropdown menu."
   },
   "app": {
-    "title": "TravelMate",
+    "title": "Normal People",
     "description": "Find your perfect travel companion"
   },
   "menu": {
@@ -65,7 +65,7 @@
       "lockHint": "Once you send your impression, you'll be able to read your companion's.",
       "notMetTitle": "Something went wrong?",
       "otherPlaceholder": "Tell us what happened",
-      "reportPlaceholder": "Describe what happened. Only the TravelMate team will see this",
+      "reportPlaceholder": "Describe what happened. Only the Normal People team will see this",
       "submit": "Send",
       "saveFailed": "Could not save. Please try again."
     },
@@ -435,7 +435,7 @@
       "message": "Bot message",
       "messagePlaceholder": "Message text",
       "messageHint": "HTML: <b>, <i>, <a href=\"…\">. {name} becomes the user's name.",
-      "withAppButton": "«Open TravelMate» button",
+      "withAppButton": "«Open Normal People» button",
       "send": "Send",
       "sending": "Sending…",
       "sent": "Sent.",
@@ -601,7 +601,7 @@
       "anyCountry": "Any",
       "textPlaceholder": "Message text",
       "textHint": "HTML: <b>, <i>, <a href=\"…\">. {name} becomes the recipient's name.",
-      "withAppButton": "«Open TravelMate» button",
+      "withAppButton": "«Open Normal People» button",
       "audience": "{reachable} of {total} will get it (the rest blocked the bot)",
       "audienceLoading": "Counting recipients…",
       "test": "Send to me",
@@ -869,7 +869,7 @@
     "invitedTitle": "Invited friends",
     "invitedEmpty": "No one yet. Send the link — invited friends will appear here.",
     "invite": "Invite",
-    "shareText": "Join TravelMate — find companions to meet in South-East Asia!",
+    "shareText": "Join Normal People — find companions to meet in South-East Asia!",
     "copied": "Link copied"
   }
 }

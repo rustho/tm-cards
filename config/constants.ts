@@ -24,7 +24,7 @@ export const MENU_ITEMS = [
 ] as const;
 
 export const APP_METADATA = {
-  title: "TravelMate",
+  title: "Normal People",
   description: "Find your perfect travel companion",
 } as const;
 

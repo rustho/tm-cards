@@ -4,7 +4,7 @@
     "footer": "Вы можете выбрать другой язык в выпадающем меню."
   },
   "app": {
-    "title": "TravelMate",
+    "title": "Normal People",
     "description": "Найди идеального попутчика"
   },
   "menu": {
@@ -65,7 +65,7 @@
       "lockHint": "Когда ты отправишь своё впечатление, ты сможешь прочитать впечатление собеседника.",
       "notMetTitle": "Что-то пошло не так?",
       "otherPlaceholder": "Расскажи, что случилось",
-      "reportPlaceholder": "Опиши, что произошло. Это увидит только команда TravelMate",
+      "reportPlaceholder": "Опиши, что произошло. Это увидит только команда Normal People",
       "submit": "Отправить",
       "saveFailed": "Не удалось сохранить. Попробуй ещё раз."
     },
@@ -434,7 +434,7 @@
       "message": "Сообщение от бота",
       "messagePlaceholder": "Текст сообщения",
       "messageHint": "HTML: <b>, <i>, <a href=\"…\">. {name} заменится на имя.",
-      "withAppButton": "Кнопка «Открыть TravelMate»",
+      "withAppButton": "Кнопка «Открыть Normal People»",
       "send": "Отправить",
       "sending": "Отправляем…",
       "sent": "Отправлено.",
@@ -600,7 +600,7 @@
       "anyCountry": "Любая",
       "textPlaceholder": "Текст сообщения",
       "textHint": "HTML: <b>, <i>, <a href=\"…\">. {name} заменится на имя получателя.",
-      "withAppButton": "Кнопка «Открыть TravelMate»",
+      "withAppButton": "Кнопка «Открыть Normal People»",
       "audience": "Получат {reachable} из {total} (остальные заблокировали бота)",
       "audienceLoading": "Считаем получателей…",
       "test": "Отправить себе",
@@ -868,7 +868,7 @@
     "invitedTitle": "Приглашённые друзья",
     "invitedEmpty": "Пока никого. Отправь ссылку — приглашённые друзья появятся здесь.",
     "invite": "Пригласить",
-    "shareText": "Присоединяйся к TravelMate — находим попутчиков для встреч в Юго-Восточной Азии!",
+    "shareText": "Присоединяйся к Normal People — находим попутчиков для встреч в Юго-Восточной Азии!",
     "copied": "Ссылка скопирована"
   }
 }

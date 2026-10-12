@@ -117,7 +117,7 @@ const nameOf = (u: { firstName: string | null; profile: { name: string | null } 
 /** «New pair» bot message for a pair created or changed by hand. Returns how many were sent. */
 async function notifyPair(a: Awaited<ReturnType<typeof usersByTelegramId>>[number], b: typeof a) {
   const text = (partner: typeof a) =>
-    `🎯 <b>У тебя новая пара на этой неделе:</b> ${nameOf(partner)}.\n\nОткрой «Встречи» в TravelMate, чтобы познакомиться.`;
+    `🎯 <b>У тебя новая пара на этой неделе:</b> ${nameOf(partner)}.\n\nОткрой «Встречи» в Normal People, чтобы познакомиться.`;
   const sent = await Promise.all([notifyUser(a.telegramId, text(b)), notifyUser(b.telegramId, text(a))]);
   return sent.filter(Boolean).length;
 }
