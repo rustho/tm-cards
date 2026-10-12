@@ -108,12 +108,13 @@ async function toCurrentMatch(match: WeekMatchRow, viewerId: string): Promise<Cu
   };
 }
 
-/** The viewer's pair from this week's round (expired ones excluded), or null. */
+/** The viewer's published pair from this week's round (expired ones and drafts excluded), or null. */
 export async function getCurrentMatch(userId: string): Promise<CurrentMatch | null> {
   const match = await prisma.match.findFirst({
     where: {
       OR: [{ user1Id: userId }, { user2Id: userId }],
       status: { not: "expired" },
+      publishedAt: { not: null },
       round: { weekStart: weekStartOf(new Date()) },
     },
     include: weekMatchInclude,
@@ -130,7 +131,7 @@ export class WeekMatchError extends Error {
 
 async function loadForParticipant(matchId: string, userId: string): Promise<WeekMatchRow> {
   const match = await prisma.match.findUnique({ where: { id: matchId }, include: weekMatchInclude });
-  if (!match || (match.user1Id !== userId && match.user2Id !== userId)) {
+  if (!match || !match.publishedAt || (match.user1Id !== userId && match.user2Id !== userId)) {
     throw new WeekMatchError("Meeting not found", 404);
   }
   return match;

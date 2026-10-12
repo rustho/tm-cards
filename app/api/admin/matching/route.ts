@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import MatchingService from "@/lib/matchingService";
+import MatchingService, { type MatchingMode } from "@/lib/matchingService";
 import { adminRoute, jsonBody } from "@/lib/adminRoute";
 import { AdminError, findUserId } from "@/lib/adminService";
 import { listRounds } from "@/lib/adminMatching";
@@ -32,21 +32,26 @@ export const PUT = adminRoute("matching config", async (request, { admin }) => {
 });
 
 /**
- * POST /api/admin/matching?action=preview|run|mock-users
+ * POST /api/admin/matching?action=preview|run|mock-users[&mode=fill|rebuild]
  * - preview: the pairs a run would create now (nothing is written);
  * - run: closes stale pairs and runs matching for the current week (same as the cron);
+ *   mode fill (default) pairs only people without a pair this week, rebuild also
+ *   dissolves the week's untouched pairs and pairs those people again;
  * - mock-users: { count } fake complete profiles, development only.
  */
 export const POST = adminRoute("matching action", async (request, { admin }) => {
   const action = request.nextUrl.searchParams.get("action");
+  const mode: MatchingMode = request.nextUrl.searchParams.get("mode") === "rebuild" ? "rebuild" : "fill";
   switch (action) {
     case "preview":
-      return service.previewMatching();
+      return service.previewMatching(mode);
     case "run": {
       await service.cleanupExpiredMatches();
-      const result = await service.runMatching();
+      const result = await service.runMatching(mode);
       track("admin_matching_run", await findUserId(admin.id).catch(() => null), {
         by: admin.id,
+        mode,
+        removedPairs: result.removedPairs,
         roundWeekStart: result.roundWeekStart,
         matchesCreated: result.matchesCreated,
         errors: result.errors.length,

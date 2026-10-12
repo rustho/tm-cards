@@ -25,6 +25,11 @@ export type EventName =
   | "admin_access_granted"
   | "admin_access_revoked"
   | "admin_match_cancelled"
+  | "admin_match_deleted"
+  | "admin_match_updated"
+  | "admin_match_created"
+  | "admin_round_published"
+  | "admin_drafts_discarded"
   | "admin_matching_run"
   | "admin_matching_config"
   | "admin_broadcast";

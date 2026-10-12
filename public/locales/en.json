@@ -355,7 +355,8 @@
       "mutual": "Mutual",
       "met": "Met",
       "participants": "In next round",
-      "participantsHint": "profile, access, not paused"
+      "participantsHint": "profile, access, not paused",
+      "drafts": "+ draft: {count}"
     },
     "phases": {
       "week": "phase: meeting",
@@ -465,7 +466,12 @@
       "admin_match_cancelled": "Admin cancelled a pair",
       "admin_matching_run": "Admin ran matching",
       "admin_matching_config": "Admin changed matching settings",
-      "admin_broadcast": "Admin created a broadcast"
+      "admin_broadcast": "Admin created a broadcast",
+      "admin_match_deleted": "Admin deleted a pair",
+      "admin_match_updated": "Admin changed a pair",
+      "admin_match_created": "Admin created a pair",
+      "admin_round_published": "Admin published a round",
+      "admin_drafts_discarded": "Admin discarded drafts"
     },
     "match": {
       "accepted": "wants to meet",
@@ -481,12 +487,26 @@
         "not_met": "did not meet",
         "postponed": "later",
         "expired": "cancelled/expired"
-      }
+      },
+      "edit": "Edit",
+      "close": "Close",
+      "delete": "Delete",
+      "editState": "Status and answers",
+      "statusLabel": "Status",
+      "acceptedBy": "{name} wants to meet",
+      "save": "Save",
+      "replaceTitle": "Replace a person",
+      "replaceWho": "instead of {name}",
+      "notifyBoth": "Message both in the bot about the new pair",
+      "replaceHint": "A new person makes a new pair: «Want to meet» answers and feedback are reset, status becomes waiting.",
+      "replace": "Replace",
+      "draft": "draft",
+      "replaceDraftHint": "The pair is still a draft: replacing sends nothing, the message goes out on publish."
     },
     "matching": {
       "title": "Matching",
       "runTitle": "Pairs for this week",
-      "runHint": "Preview writes nothing. Running creates pairs in this week's round and, if enabled, sends notifications.",
+      "runHint": "Preview writes nothing. A run creates pairs in this week's round: as a draft (users don't see them until you publish) or live at once if «Publish right away» is on in the settings.",
       "preview": "Preview",
       "previewing": "Calculating…",
       "run": "Run matching",
@@ -513,10 +533,45 @@
         "minCompatibilityScore": "Min compatibility",
         "cooldownHours": "Cooldown between pairs, h",
         "countriesWithoutRegions": "Countries without regions (comma separated)",
-        "enableNotifications": "Notify users about a new pair"
+        "enableNotifications": "Notify users about a new pair",
+        "autoPublish": "Publish right after matching",
+        "autoPublishHint": "Off: a run (and the cron) makes a draft to review and publish in the round. On: pairs are visible to people at once, as before."
       },
       "save": "Save",
-      "saved": "Saved."
+      "saved": "Saved.",
+      "modeLabel": "Mode",
+      "modes": {
+        "fill": "Fill gaps",
+        "rebuild": "Rebuild round"
+      },
+      "modeHints": {
+        "fill": "Pairs only people without a pair this week. Existing pairs stay; safe to run again any time.",
+        "rebuild": "Deletes this week's untouched pairs (nobody pressed «Want to meet», no feedback) and pairs those people again with everyone else. If the old pairs were already announced, people get new messages."
+      },
+      "runRebuild": "Rebuild",
+      "removedPairs": "untouched pairs removed: {count}",
+      "previewRemoved": "Untouched pairs to remove: {count}",
+      "pairsTitle": "Pairs ({count})",
+      "noPairs": "No pairs in this round.",
+      "addPair": "Add a pair by hand",
+      "firstPerson": "First person: name, @username or id",
+      "secondPerson": "Second person",
+      "addPairHint": "Engine rules (region, age, previous partners) are not checked; only one pair per person per round is enforced.",
+      "addPairButton": "Create pair",
+      "notifyBoth": "Message both in the bot about the new pair",
+      "runDraft": "Pairs were created as a draft: open the round, review and publish →",
+      "draftBadge": "draft: {count}",
+      "draftTitle": "Draft: {count, plural, one {# pair is} other {# pairs are}} hidden from users",
+      "draftHint": "Review and adjust the pairs below, then publish: they appear in «Meetings» and people get the new-pair message.",
+      "deadline": "«Want to meet» is open until {date}; publishing does not move it.",
+      "deadlinePassed": "This week's «Want to meet» deadline has passed ({date}): published pairs will turn into «did not meet» right away.",
+      "publishNotify": "Send the new-pair message in the bot ({count} messages)",
+      "publish": "Publish {count}",
+      "publishConfirm": "Publish {count}?",
+      "discardDrafts": "Discard draft",
+      "publishedResult": "Pairs published: {count}, messages sent: {notified}",
+      "publishNow": "Publish right away (otherwise a draft)",
+      "addPairDraftHint": "The pair is a draft and goes live with «Publish». Engine rules are not checked; only one pair per person per round is enforced."
     },
     "broadcasts": {
       "title": "Broadcasts",
@@ -673,6 +728,11 @@
       "connect": "Connect webhook",
       "reconnect": "Reconnect",
       "connecting": "Connecting…"
+    },
+    "picker": {
+      "placeholder": "Name, @username or id",
+      "nothing": "No completed profiles found.",
+      "clear": "Clear"
     }
   },
   "common": {

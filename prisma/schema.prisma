@@ -177,6 +177,7 @@ model MatchRound {
 }
 
 /// A pair produced in a round. user1Id < user2Id (by User.id) so a pair is stored once per round.
+/// Users see a pair only once `publishedAt` is set (drafts are admin-only).
 model Match {
   id      String     @id @default(uuid())
   roundId String
@@ -194,6 +195,9 @@ model Match {
   /// pending | met | not_met | postponed | expired. postponed = «встретимся позже»: never expires, feedback stays open.
   status          String    @default("pending")
   notifiedAt      DateTime?
+  /// Null = draft: made by a run or by hand in the admin, invisible to users and not
+  /// announced until «Опубликовать» (or the config's autoPublish) sets it.
+  publishedAt     DateTime?
   /// «Хочу познакомиться» per side; both set = mutual, contacts are shared.
   user1AcceptedAt DateTime?
   user2AcceptedAt DateTime?

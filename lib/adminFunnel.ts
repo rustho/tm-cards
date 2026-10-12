@@ -34,7 +34,7 @@ export async function getFunnel(period: FunnelPeriod, source: FunnelSource): Pro
       WITH cohort AS (${cohort}),
       flags AS (
         SELECT c.*,
-          EXISTS (SELECT 1 FROM "matches" m WHERE c."id" IN (m."user1Id", m."user2Id")) AS "matched",
+          EXISTS (SELECT 1 FROM "matches" m WHERE c."id" IN (m."user1Id", m."user2Id") AND m."publishedAt" IS NOT NULL) AS "matched",
           EXISTS (SELECT 1 FROM "matches" m WHERE (m."user1Id" = c."id" AND m."user1AcceptedAt" IS NOT NULL)
                                               OR (m."user2Id" = c."id" AND m."user2AcceptedAt" IS NOT NULL)) AS "accepted",
           EXISTS (SELECT 1 FROM "matches" m WHERE c."id" IN (m."user1Id", m."user2Id")

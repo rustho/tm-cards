@@ -10,7 +10,8 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { TextInput } from "@/components/ui/text-input";
 import { AdminPage, Badge, ConfirmButton, ErrorText, LoadError, Loading, Panel, Section, errorMessage } from "@/components/admin/AdminUI";
-import type { AdminMatchingState, MatchingConfigDto, MatchingPreviewDto, MatchingRunDto } from "@/models/admin";
+import { cn } from "@/lib/utils";
+import type { AdminMatchingState, MatchingConfigDto, MatchingMode, MatchingPreviewDto, MatchingRunDto } from "@/models/admin";
 
 /** `/admin/matching`: preview and run the weekly matching, its config, past rounds. */
 export default function AdminMatching() {
@@ -19,15 +20,16 @@ export default function AdminMatching() {
   const [preview, setPreview] = useState<MatchingPreviewDto | null>(null);
   const [run, setRun] = useState<MatchingRunDto | null>(null);
   const [busy, setBusy] = useState<"preview" | "run" | "mock" | null>(null);
+  const [mode, setMode] = useState<MatchingMode>("fill");
   const [actionError, setActionError] = useState<string | null>(null);
 
   const action = async (kind: "preview" | "run" | "mock") => {
     setBusy(kind);
     setActionError(null);
     try {
-      if (kind === "preview") setPreview(await api.post<MatchingPreviewDto>("/api/admin/matching?action=preview", {}));
+      if (kind === "preview") setPreview(await api.post<MatchingPreviewDto>(`/api/admin/matching?action=preview&mode=${mode}`, {}));
       if (kind === "run") {
-        setRun(await api.post<MatchingRunDto>("/api/admin/matching?action=run", {}));
+        setRun(await api.post<MatchingRunDto>(`/api/admin/matching?action=run&mode=${mode}`, {}));
         setPreview(null);
         refresh();
       }
@@ -47,12 +49,34 @@ export default function AdminMatching() {
       <Section title={t("runTitle")}>
         <Panel className="space-y-3">
           <p className="m-0 text-body text-muted-foreground">{t("runHint")}</p>
+          <div className="space-y-1.5">
+            <div className="flex flex-wrap gap-1.5" role="group" aria-label={t("modeLabel")}>
+              {(["fill", "rebuild"] as const).map((id) => (
+                <button
+                  key={id}
+                  type="button"
+                  aria-pressed={mode === id}
+                  onClick={() => {
+                    setMode(id);
+                    setPreview(null);
+                  }}
+                  className={cn(
+                    "rounded-full border px-3 py-1 text-chip transition-colors",
+                    mode === id ? "border-primary bg-primary-muted text-primary" : "border-divider bg-card text-muted-foreground"
+                  )}
+                >
+                  {t(`modes.${id}`)}
+                </button>
+              ))}
+            </div>
+            <p className="m-0 text-caption text-muted-foreground">{t(`modeHints.${mode}`)}</p>
+          </div>
           <div className="flex flex-wrap gap-2">
             <Button variant="outline" onClick={() => action("preview")} disabled={busy !== null}>
               {busy === "preview" ? t("previewing") : t("preview")}
             </Button>
             <ConfirmButton onConfirm={() => action("run")} disabled={busy !== null || data?.isRunning} confirmLabel={t("runConfirm")}>
-              {busy === "run" ? t("running") : t("run")}
+              {busy === "run" ? t("running") : t(mode === "rebuild" ? "runRebuild" : "run")}
             </ConfirmButton>
             {process.env.NODE_ENV === "development" && (
               <Button variant="ghost" onClick={() => action("mock")} disabled={busy !== null}>
@@ -68,7 +92,13 @@ export default function AdminMatching() {
               </div>
               <div className="text-caption text-muted-foreground">
                 {t("runStats", { eligible: run.eligibleUsers, unmatched: run.unmatched, notified: run.notificationsSent })}
+                {run.removedPairs > 0 && ` · ${t("removedPairs", { count: run.removedPairs })}`}
               </div>
+              {run.success && !run.published && run.matchesCreated > 0 && run.roundId && (
+                <Link href={`/admin/matching/${run.roundId}`} className="block text-caption text-primary hover:underline">
+                  {t("runDraft")}
+                </Link>
+              )}
               {run.errors.map((e) => (
                 <ErrorText key={e}>{e}</ErrorText>
               ))}
@@ -91,7 +121,10 @@ export default function AdminMatching() {
                   <li key={r.roundId}>
                     <Link href={`/admin/matching/${r.roundId}`} className="flex items-center gap-3 px-3 py-2.5 transition-colors hover:bg-muted/60">
                       <span className="min-w-0 flex-1">
-                        <span className="block text-body font-medium text-foreground">{t("week", { date: r.weekStart })}</span>
+                        <span className="flex items-center gap-1.5 text-body font-medium text-foreground">
+                          {t("week", { date: r.weekStart })}
+                          {r.drafts > 0 && <Badge tone="warning">{t("draftBadge", { count: r.drafts })}</Badge>}
+                        </span>
                         <span className="block text-caption text-muted-foreground">
                           {t("roundStats", { pairs: r.pairs, mutual: r.mutual, met: r.met, notMet: r.notMet })}
                         </span>
@@ -117,6 +150,9 @@ function PreviewList({ preview }: { preview: MatchingPreviewDto }) {
       <div className="text-body font-medium text-foreground">
         {t("previewSummary", { pairs: preview.pairs.length, eligible: preview.eligibleUsers })}
       </div>
+      {preview.removedPairs > 0 && (
+        <div className="text-caption text-warning">{t("previewRemoved", { count: preview.removedPairs })}</div>
+      )}
       {preview.pairs.length > 0 && (
         <ul className="m-0 list-none space-y-1.5 p-0">
           {preview.pairs.map(({ a, b, score }) => (
@@ -156,6 +192,7 @@ function ConfigForm({ config, onSaved }: { config: MatchingConfigDto; onSaved: (
         minCompatibilityScore: Number(form.minCompatibilityScore),
         cooldownHours: Number(form.cooldownHours),
         enableNotifications: form.enableNotifications,
+        autoPublish: form.autoPublish,
         countriesWithoutRegions: form.countriesWithoutRegions.split(","),
       });
       setState({ kind: "saved" });
@@ -182,6 +219,11 @@ function ConfigForm({ config, onSaved }: { config: MatchingConfigDto; onSaved: (
         </div>
         {field("countriesWithoutRegions", "text")}
         <label className="flex items-center gap-2 text-body text-foreground">
+          <Switch checked={form.autoPublish} onCheckedChange={(autoPublish) => setForm({ ...form, autoPublish })} />
+          {t("config.autoPublish")}
+        </label>
+        <p className="m-0 text-caption text-muted-foreground">{t("config.autoPublishHint")}</p>
+        <label className="flex items-center gap-2 text-body text-foreground">
           <Switch checked={form.enableNotifications} onCheckedChange={(enableNotifications) => setForm({ ...form, enableNotifications })} />
           {t("config.enableNotifications")}
         </label>
@@ -202,5 +244,6 @@ const toForm = (c: MatchingConfigDto) => ({
   minCompatibilityScore: String(c.minCompatibilityScore),
   cooldownHours: String(c.cooldownHours),
   enableNotifications: c.enableNotifications,
+  autoPublish: c.autoPublish,
   countriesWithoutRegions: c.countriesWithoutRegions.join(", "),
 });

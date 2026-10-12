@@ -19,6 +19,8 @@ export interface MatchingConfig {
   minCompatibilityScore: number;
   cooldownHours: number;
   enableNotifications: boolean;
+  /** false: a run makes drafts that the admin publishes; true: pairs go live (and are announced) at once. */
+  autoPublish: boolean;
   countriesWithoutRegions: string[];
 }
 
@@ -51,7 +53,16 @@ export interface PreviewPair {
   score: number;
 }
 
+/**
+ * fill: pair only users without a pair in this week's round (repeat runs are safe);
+ * rebuild: also dissolve this round's untouched pairs (pending, nobody accepted, no
+ * feedback) and pair those people again.
+ */
+export type MatchingMode = "fill" | "rebuild";
+
 export interface PreviewResult {
+  /** Untouched pairs a rebuild would dissolve (0 for fill). */
+  removedPairs: number;
   eligibleUsers: number;
   pairs: PreviewPair[];
   unmatched: { telegramId: string; name: string; place: string }[];
@@ -66,6 +77,11 @@ interface ScoredPair {
 export interface RunResult {
   success: boolean;
   roundWeekStart: string | null;
+  roundId: string | null;
+  mode: MatchingMode;
+  /** false: the pairs are drafts waiting for «Опубликовать». */
+  published: boolean;
+  removedPairs: number;
   matchesCreated: number;
   notificationsSent: number;
   eligibleUsers: number;
@@ -84,6 +100,7 @@ export function defaultMatchingConfig(): MatchingConfig {
     minCompatibilityScore: 0.3,
     cooldownHours: 24,
     enableNotifications: process.env.MATCHING_NOTIFICATIONS === "true",
+    autoPublish: false,
     countriesWithoutRegions: ["Singapore", "Monaco", "Luxembourg", "Сингапур"],
   };
 }
@@ -100,15 +117,30 @@ export function sanitizeMatchingConfig(input: Record<string, unknown>, base: Mat
   num("maxMatchesPerRun", 1, 10000);
   num("minCompatibilityScore", 0, 100);
   num("cooldownHours", 0, 24 * 60);
-  if (input.enableNotifications !== undefined) {
-    if (typeof input.enableNotifications !== "boolean") throw new Error("enableNotifications must be a boolean");
-    next.enableNotifications = input.enableNotifications;
+  for (const key of ["enableNotifications", "autoPublish"] as const) {
+    if (input[key] === undefined) continue;
+    if (typeof input[key] !== "boolean") throw new Error(`${key} must be a boolean`);
+    next[key] = input[key] as boolean;
   }
   if (input.countriesWithoutRegions !== undefined) {
     if (!Array.isArray(input.countriesWithoutRegions)) throw new Error("countriesWithoutRegions must be an array");
     next.countriesWithoutRegions = input.countriesWithoutRegions.map(String).map((c) => c.trim()).filter(Boolean);
   }
   return next;
+}
+
+/** A round is live once any of its pairs is published. */
+export async function isRoundLive(roundId: string): Promise<boolean> {
+  return (await prisma.match.count({ where: { roundId, publishedAt: { not: null } } })) > 0;
+}
+
+/**
+ * «Пропускаю неделю» is spent when a round goes live. Callers check isRoundLive() before
+ * publishing and call this only for the first publish: extra pairs published mid-week
+ * must not eat skips people already set for the next week.
+ */
+export async function consumeSkips() {
+  await prisma.userSettings.updateMany({ where: { skipNextRound: true }, data: { skipNextRound: false } });
 }
 
 /** Monday 00:00 UTC of the week containing `date`. */
@@ -270,12 +302,46 @@ class MatchingService {
     };
   }
 
+  /** Compatibility of two users as the engine sees them now (manual pairs in the admin). */
+  async scorePair(userIdA: string, userIdB: string): Promise<CompatibilityResult> {
+    const users = await prisma.user.findMany({
+      where: { id: { in: [userIdA, userIdB] } },
+      include: { ...userWithProfileInclude, settings: true },
+    });
+    const [a, b] = [userIdA, userIdB].map((id) => users.find((u) => u.id === id));
+    if (!a?.profile || !b?.profile) return { score: 0, factors: [] };
+    return this.calculateCompatibilityScore(this.toCandidate(a, new Set()), this.toCandidate(b, new Set()));
+  }
+
+  /** Pairs of the round that nobody touched yet: pending, no «Хочу познакомиться», no feedback. */
+  private async untouchedPairs(weekStart: Date) {
+    return prisma.match.findMany({
+      where: {
+        round: { weekStart },
+        status: "pending",
+        user1AcceptedAt: null,
+        user2AcceptedAt: null,
+        feedback: { none: {} },
+      },
+      select: { id: true, user1Id: true, user2Id: true },
+    });
+  }
+
   /**
    * Active users with a complete profile and a location, past cooldown, not paused or skipping,
-   * and with access: an active subscription or still inside the trial (same rule as getAccess).
+   * with access (an active subscription or still inside the trial, same rule as getAccess),
+   * and without a pair in this week's round. `freed` pairs (a rebuild) count as not existing:
+   * their people are candidates again and the pair is not "previous partners".
    */
-  private async getCandidates({ dryRun = false } = {}): Promise<Candidate[]> {
+  private async getCandidates({
+    dryRun = false,
+    freed = [],
+  }: { dryRun?: boolean; freed?: { id: string; user1Id: string; user2Id: string }[] } = {}): Promise<Candidate[]> {
     const now = new Date();
+    const weekStart = weekStartOf(now);
+    const freedIds = freed.map((m) => m.id);
+    const freedUsers = freed.flatMap((m) => [m.user1Id, m.user2Id]);
+    const pairedThisRound = { round: { weekStart }, status: { not: "expired" }, id: { notIn: freedIds } };
 
     // Pauses that are over count as active; a real run also clears them.
     if (!dryRun) {
@@ -290,8 +356,10 @@ class MatchingService {
       where: {
         status: "active",
         profile: { isComplete: true, locationId: { not: null } },
-        OR: [{ lastMatchedAt: { lt: cooldown } }, { lastMatchedAt: null }],
+        OR: [{ lastMatchedAt: { lt: cooldown } }, { lastMatchedAt: null }, { id: { in: freedUsers } }],
         AND: [
+          { matchesAsUser1: { none: pairedThisRound } },
+          { matchesAsUser2: { none: pairedThisRound } },
           {
             OR: [
               { settings: null },
@@ -314,7 +382,14 @@ class MatchingService {
 
     const ids = users.map((u) => u.id);
     const history = await prisma.match.findMany({
-      where: { OR: [{ user1Id: { in: ids } }, { user2Id: { in: ids } }] },
+      where: {
+        AND: [
+          { OR: [{ user1Id: { in: ids } }, { user2Id: { in: ids } }] },
+          // Stale drafts of past weeks never reached anyone: they are not "previous partners".
+          { OR: [{ publishedAt: { not: null } }, { round: { weekStart } }] },
+        ],
+        id: { notIn: freedIds },
+      },
       select: { user1Id: true, user2Id: true },
     });
     const partners = new Map<string, Set<string>>();
@@ -344,9 +419,10 @@ class MatchingService {
   }
 
   /** What a run would do now, without writing anything. */
-  async previewMatching(): Promise<PreviewResult> {
+  async previewMatching(mode: MatchingMode = "fill"): Promise<PreviewResult> {
     await this.loadConfig();
-    const candidates = await this.getCandidates({ dryRun: true });
+    const freed = mode === "rebuild" ? await this.untouchedPairs(weekStartOf(new Date())) : [];
+    const candidates = await this.getCandidates({ dryRun: true, freed });
     const pairs = this.planPairs(candidates);
     const person = (c: Candidate) => ({
       telegramId: c.telegramId,
@@ -355,17 +431,22 @@ class MatchingService {
     });
     const matched = new Set(pairs.flatMap((p) => [p.a.userId, p.b.userId]));
     return {
+      removedPairs: freed.length,
       eligibleUsers: candidates.length,
       pairs: pairs.map(({ a, b, score }) => ({ a: person(a), b: person(b), score })),
       unmatched: candidates.filter((c) => !matched.has(c.userId)).map(person),
     };
   }
 
-  async runMatching(): Promise<RunResult> {
+  async runMatching(mode: MatchingMode = "fill"): Promise<RunResult> {
     const startedAt = new Date().toISOString();
     const result: RunResult = {
       success: true,
       roundWeekStart: null,
+      roundId: null,
+      mode,
+      published: false,
+      removedPairs: 0,
       matchesCreated: 0,
       notificationsSent: 0,
       eligibleUsers: 0,
@@ -378,7 +459,7 @@ class MatchingService {
       return { ...result, success: false, errors: ["Matching is already running"] };
     }
     this.isRunning = true;
-    console.log("🚀 Matching run started");
+    console.log(`🚀 Matching run started (${mode})`);
 
     try {
       await this.loadConfig();
@@ -389,8 +470,19 @@ class MatchingService {
         create: { weekStart },
       });
       result.roundWeekStart = weekStart.toISOString().slice(0, 10);
+      result.roundId = round.id;
+      const publish = this.config.autoPublish;
+      result.published = publish;
+      const wasLive = await isRoundLive(round.id);
 
-      const candidates = await this.getCandidates();
+      const freed = mode === "rebuild" ? await this.untouchedPairs(weekStart) : [];
+      if (freed.length > 0) {
+        await prisma.match.deleteMany({ where: { id: { in: freed.map((m) => m.id) } } });
+        result.removedPairs = freed.length;
+        console.log(`♻️ Rebuild: dissolved ${freed.length} untouched pairs`);
+      }
+
+      const candidates = await this.getCandidates({ freed });
       result.eligibleUsers = candidates.length;
       console.log(`👥 ${candidates.length} candidates for round ${result.roundWeekStart}`);
 
@@ -409,14 +501,18 @@ class MatchingService {
                 score: compatibility.score,
                 factors: compatibility.factors as unknown as Prisma.InputJsonValue,
                 expiresAt: new Date(Date.now() + MATCH_TTL_MS),
+                publishedAt: publish ? new Date() : null,
               },
             }),
-            prisma.user.updateMany({ where: { id: { in: [user1Id, user2Id] } }, data: { lastMatchedAt: new Date() } }),
+            // A draft does not start the cooldown: it may still be discarded (publishRound sets it).
+            ...(publish
+              ? [prisma.user.updateMany({ where: { id: { in: [user1Id, user2Id] } }, data: { lastMatchedAt: new Date() } })]
+              : []),
           ]);
           result.matchesCreated++;
-          console.log(`✅ Match: ${a.name} ↔ ${b.name} (${compatibility.score})`);
+          console.log(`✅ ${publish ? "Match" : "Draft"}: ${a.name} ↔ ${b.name} (${compatibility.score})`);
 
-          if (this.config.enableNotifications) {
+          if (publish && this.config.enableNotifications) {
             const sent = await Promise.all([
               notifyUser(a.telegramId, this.matchMessage(b)),
               notifyUser(b.telegramId, this.matchMessage(a)),
@@ -436,8 +532,8 @@ class MatchingService {
         }
       }
 
-      // "skip next round" is consumed by this run
-      await prisma.userSettings.updateMany({ where: { skipNextRound: true }, data: { skipNextRound: false } });
+      // "skip next round" is consumed when the round goes live (for drafts: on its first publish)
+      if (publish && !wasLive && result.matchesCreated > 0) await consumeSkips();
 
       const matched = new Set(pairs.flatMap((p) => [p.a.userId, p.b.userId]));
       result.unmatched = candidates.filter((c) => !matched.has(c.userId)).length;
@@ -522,7 +618,7 @@ class MatchingService {
   async cleanupExpiredMatches(): Promise<number> {
     await closeUnagreedMatches();
     const result = await prisma.match.updateMany({
-      where: { status: "pending", expiresAt: { lt: new Date() } },
+      where: { status: "pending", publishedAt: { not: null }, expiresAt: { lt: new Date() } },
       data: { status: "expired" },
     });
     if (result.count > 0) console.log(`🧹 Expired ${result.count} matches`);

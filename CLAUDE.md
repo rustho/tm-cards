@@ -53,8 +53,9 @@ client learns it from `GET /api/me` (`useAuth().isAdmin`). Admins get an
 inside the Mini App (works stretched on desktop Telegram too):
 `/admin` (KPIs), `/admin/funnel` (cohort funnel, wizard drop-off, weekly
 cohorts; period + source filters), `/admin/users` (+ `[telegramId]` card: access, status, chat
-with the bot + reply, meetings, event log), `/admin/matching` (preview, run, config, rounds,
-cancel a pair), `/admin/broadcasts` (segment → test → send in batches).
+with the bot + reply, meetings, event log), `/admin/matching` (preview/run in `fill` or `rebuild` mode,
+config, rounds; per round: publish or discard the draft, add a pair by hand, edit
+status/accepts, replace a person, cancel or delete a pair, past rounds included), `/admin/broadcasts` (segment → test → send in batches).
 `app/admin/layout.tsx` gates all of them; building blocks in `components/admin/`.
 
 ## Stack
@@ -216,6 +217,11 @@ anything new there.
   `DATABASE_URL`; at runtime every DB route needs the real URL.
 - The matching config lives in `app_config` (key `matching`), edited on
   `/admin/matching`; defaults in `defaultMatchingConfig()`.
+- Match drafts: `matches.publishedAt` null = draft, admin-only. Unless the matching
+  config has `autoPublish`, a run (and the cron) only makes drafts: no messages, no
+  cooldown, nothing in «Встречи» until «Опубликовать» on the round. Every user-facing
+  match read must filter `publishedAt: { not: null }` (`visibleMatchesWhere`,
+  `getCurrentMatch`, `loadForParticipant`, feedback, `closeUnagreedMatches`, expiry).
 - Analytics/audit: call `track(name, userId, props)` from `lib/events.ts`
   (add the name to `EventName` and to `admin.events` in both locales). It never
   awaits the insert; do not await DB work for analytics on a request path.

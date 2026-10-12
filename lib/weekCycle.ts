@@ -41,8 +41,8 @@ export function getWeekPhase(now = new Date()): WeekPhase {
 }
 
 /**
- * Pairs that did not both press «Хочу познакомиться» before their round's deadline
- * become `not_met`. Runs before matching for everyone, and lazily for one user on read.
+ * Published pairs that did not both press «Хочу познакомиться» before their round's deadline
+ * become `not_met` (drafts are left to the admin). Runs before matching for everyone, and lazily for one user on read.
  * A single UPDATE (Prisma's updateMany with a relation filter costs a transaction and
  * extra round trips); filtering by Telegram id lets routes run it alongside ensureUser().
  */
@@ -57,6 +57,7 @@ export async function closeUnagreedMatches(telegramId?: string): Promise<number>
     WHERE r."id" = m."roundId"
       AND (r."weekStart"::timestamp AT TIME ZONE 'UTC') < ${cutoff}
       AND m."status" = 'pending'
+      AND m."publishedAt" IS NOT NULL
       AND (m."user1AcceptedAt" IS NULL OR m."user2AcceptedAt" IS NULL)
       AND (${telegramId ?? null}::text IS NULL OR EXISTS (
         SELECT 1 FROM "users" AS u

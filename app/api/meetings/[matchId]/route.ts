@@ -11,7 +11,7 @@ export async function GET(request: NextRequest, { params }: { params: { matchId:
   try {
     const user = await ensureUser(await authenticate(request));
     const match = await prisma.match.findUnique({ where: { id: params.matchId }, include: meetingInclude });
-    if (!match || match.status === "expired" || (match.user1Id !== user.id && match.user2Id !== user.id)) {
+    if (!match || match.status === "expired" || !match.publishedAt || (match.user1Id !== user.id && match.user2Id !== user.id)) {
       return NextResponse.json({ error: "Meeting not found" }, { status: 404 });
     }
     return NextResponse.json(toMeetingDetails(match, user.id));

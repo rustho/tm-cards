@@ -187,6 +187,7 @@ export function toAdminMatch(match: AdminMatch): AdminMatchRow {
     status: match.status,
     score: match.score,
     createdAt: match.createdAt.toISOString(),
+    publishedAt: match.publishedAt?.toISOString() ?? null,
     a: side(match.user1Id, match.user1, match.user1AcceptedAt),
     b: side(match.user2Id, match.user2, match.user2AcceptedAt),
   };
@@ -310,18 +311,25 @@ export async function getOverview(): Promise<AdminOverview> {
     prisma.user.count({ where: { botBlockedAt: { not: null } } }),
     prisma.matchRound.findUnique({
       where: { weekStart },
-      select: { matches: { where: { status: { not: "expired" } }, select: { status: true, user1AcceptedAt: true, user2AcceptedAt: true } } },
+      select: {
+        matches: {
+          where: { status: { not: "expired" } },
+          select: { status: true, publishedAt: true, user1AcceptedAt: true, user2AcceptedAt: true },
+        },
+      },
     }),
     prisma.matchRound.findFirst({ orderBy: { weekStart: "desc" }, select: { id: true, weekStart: true } }),
     prisma.user.count({ where: segmentWhere({ id: "participants" }, now) }),
   ]);
-  const matches = round?.matches ?? [];
+  const matches = round?.matches.filter((m) => m.publishedAt) ?? [];
+  const drafts = round?.matches.filter((m) => !m.publishedAt).length ?? 0;
   return {
     users: { total, new7d, active7d, complete, blocked },
     week: {
       weekStart: formatDateOnly(weekStart),
       phase: getWeekPhase(now),
       pairs: matches.length,
+      drafts,
       mutual: matches.filter((m) => m.user1AcceptedAt && m.user2AcceptedAt).length,
       met: matches.filter((m) => m.status === "met").length,
       participants,
@@ -353,8 +361,8 @@ export function segmentWhere(segment: BroadcastSegment, now = new Date()): Prism
     case "this_week":
       and.push({
         OR: [
-          { matchesAsUser1: { some: { round: { weekStart: weekStartOf(now) }, status: { not: "expired" } } } },
-          { matchesAsUser2: { some: { round: { weekStart: weekStartOf(now) }, status: { not: "expired" } } } },
+          { matchesAsUser1: { some: { round: { weekStart: weekStartOf(now) }, status: { not: "expired" }, publishedAt: { not: null } } } },
+          { matchesAsUser2: { some: { round: { weekStart: weekStartOf(now) }, status: { not: "expired" }, publishedAt: { not: null } } } },
         ],
       });
       break;
