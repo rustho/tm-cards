@@ -13,6 +13,7 @@ import { FooterMenu } from "@/components/FooterMenu";
 import { Avatar } from "@/components/ui/avatar";
 import { MenuList, MenuRow } from "@/components/ui/menu-list";
 import { Switch } from "@/components/ui/switch";
+import { SubscriptionCard } from "@/components/SubscriptionCard";
 
 /** Short participation label for the menu row. */
 function participationLabel(p: Participation, t: (key: string, values?: Record<string, string>) => string) {
@@ -21,7 +22,7 @@ function participationLabel(p: Participation, t: (key: string, values?: Record<s
 }
 
 /**
- * «Профиль» tab: who I am and my access, then one flat list — questionnaire, location,
+ * «Профиль» tab: who I am and my access, the subscription card, then one flat list — questionnaire, location,
  * meetings participation, bot notifications, subscription, how it works, support, admin.
  */
 export default function Settings() {
@@ -63,7 +64,7 @@ export default function Settings() {
       <div className="mx-auto max-w-xl space-y-4 px-4 pb-28 pt-4">
         <h1 className="m-0 text-[28px] font-bold leading-9">{t("title")}</h1>
 
-        <section className="flex items-center gap-4 rounded-md border border-divider bg-card p-4">
+        <section className="flex items-center gap-4 rounded-[12px] border border-divider bg-card p-4">
           <Avatar name={name || "?"} photo={profile?.photo || user?.photo_url} className="size-16 text-title" />
           <div className="min-w-0 flex-1">
             <p className="m-0 truncate text-title text-foreground">{name}</p>
@@ -73,6 +74,8 @@ export default function Settings() {
             )}
           </div>
         </section>
+
+        <SubscriptionCard access={access} />
 
         <MenuList>
           <MenuRow icon="📝" label={t("items.editProfile")} href="/profile/edit" />

@@ -74,10 +74,10 @@ export default function EditProfilePage() {
 
   return (
     <div className="min-h-screen">
-      <div className="mx-auto max-w-xl space-y-4 px-4 pb-28 pt-4">
+      <div className="mx-auto max-w-xl space-y-5 px-4 pb-28 pt-4">
         <BackButton />
-        <div className="space-y-2">
-          <h1 className="m-0 text-[28px] font-bold leading-9">{t("title")}</h1>
+        <div className="space-y-2 pt-2">
+          <h1 className="m-0 text-[28px] font-bold leading-9 text-foreground">{t("title")}</h1>
           <p className="m-0 text-body text-muted-foreground">{t("subtitle")}</p>
         </div>
 
@@ -86,7 +86,7 @@ export default function EditProfilePage() {
             <div className="size-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
           </div>
         ) : (
-          <MenuList>
+          <MenuList variant="separate">
             {EDIT_STEPS.map(({ id }) => (
               <MenuRow
                 key={id}
