@@ -44,7 +44,7 @@ export function StepReview({ onNext, autoAdvanceMs }: StepReviewProps) {
       role="status"
       aria-live="polite"
       className="fixed inset-0 z-50 flex flex-col items-center bg-primary px-8 text-primary-foreground"
-      style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+      style={{ paddingTop: "var(--app-safe-top, 0px)", paddingBottom: "var(--app-safe-bottom)" }}
     >
       <div className="flex flex-1 flex-col items-center justify-center gap-6 text-center">
         <p className="m-0 text-title">{name ? t("title", { name }) : t("titleNoName")}</p>

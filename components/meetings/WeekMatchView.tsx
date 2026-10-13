@@ -12,6 +12,7 @@ import { cn } from "@/lib/utils";
 import { openTgLink } from "@/lib/telegramLinks";
 import { Avatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { BottomAction } from "./BottomAction";
 import { CelebrationScreen } from "./CelebrationScreen";
 import { CountdownBoxes } from "./Countdown";
 
@@ -151,26 +152,27 @@ export const WeekMatchView = ({ initial }: { initial: CurrentMatch }) => {
       </button>
 
       <section className="space-y-3 rounded-md border border-divider bg-card p-4 text-center">
-        {match.iAccepted && !match.partnerAccepted ? (
-          <>
-            <p className="m-0 text-body text-muted-foreground">{t("timeLeft")}</p>
-            <CountdownBoxes deadline={match.deadline} plain />
-            <p className="m-0 flex items-center justify-center gap-3 text-option">
-              <span aria-hidden>⏳</span>
-              {t("waitingPartner")}
-            </p>
-          </>
-        ) : (
-          <>
-            <p className="m-0 text-body text-muted-foreground">{t("timeLeft")}</p>
-            <CountdownBoxes deadline={match.deadline} plain />
+        <p className="m-0 text-body text-muted-foreground">{t("timeLeft")}</p>
+        <CountdownBoxes deadline={match.deadline} plain />
+        {match.iAccepted && !match.partnerAccepted && (
+          <p className="m-0 flex items-center justify-center gap-3 text-option">
+            <span aria-hidden>⏳</span>
+            {t("waitingPartner")}
+          </p>
+        )}
+      </section>
+
+      {(mutual || !match.iAccepted) && (
+        <BottomAction aboveFooter>
+          <div className="space-y-2">
+            {error && <p className="m-0 text-center text-body text-destructive">{t("acceptFailed")}</p>}
             {mutual ? (
               <>
                 <Button variant="primary" size="block" disabled={!match.contactUrl} onClick={write}>
                   {t("write")}
                 </Button>
                 {match.canShareFeedback && (
-                  <Button asChild variant="outline" size="block" className="border-primary-light text-primary">
+                  <Button asChild variant="outline" size="block" className="border-primary-light bg-card text-primary">
                     <Link href={`/home/meetings/${match.matchId}`}>{t("shareFeedback")}</Link>
                   </Button>
                 )}
@@ -180,10 +182,9 @@ export const WeekMatchView = ({ initial }: { initial: CurrentMatch }) => {
                 {t("accept")}
               </Button>
             )}
-            {error && <p className="m-0 text-body text-destructive">{t("acceptFailed")}</p>}
-          </>
-        )}
-      </section>
+          </div>
+        </BottomAction>
+      )}
 
       {overlay === "questionLocked" && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/30 px-8" role="dialog" aria-modal>

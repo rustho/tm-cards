@@ -163,8 +163,15 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* Telegram safe areas. --app-safe-top is set by core/init.ts (non-zero only in fullscreen);
+   the bottom takes Telegram's device inset when the webview's env() reports none. */
+:root {
+  --app-safe-bottom: max(env(safe-area-inset-bottom, 0px), var(--tg-viewport-safe-area-inset-bottom, 0px));
+}
+
 /* Body 15/20 is the default text style; set on body only so 1rem stays 16px. */
 body {
+  padding-top: var(--app-safe-top, 0px);
   font-size: 15px;
   line-height: 20px;
   background-color: hsl(var(--background));
