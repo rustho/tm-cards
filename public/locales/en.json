@@ -291,8 +291,8 @@
       "edit": "Edit profile"
     },
     "edit": {
-      "title": "Questionnaire",
-      "subtitle": "Tap an item to change just that.",
+      "title": "Edit profile",
+      "subtitle": "Choose the section you want to change",
       "empty": "Not set",
       "photoSet": "Added",
       "fields": {
@@ -758,6 +758,20 @@
       "subscribed": "Subscribed until {date}",
       "trial": "Trial until {date}",
       "expired": "Trial has ended"
+    },
+    "subscriptionCard": {
+      "title": "N.People subscription",
+      "status": {
+        "active": "Active",
+        "trial": "Trial",
+        "expired": "Inactive"
+      },
+      "features": {
+        "weekly": "A new person in your city every week",
+        "hours": "72 hours to start the conversation",
+        "matching": "Matched by interests, hobbies and what matters to you now",
+        "question": "A new question or task every week to get to know each other better"
+      }
     },
     "items": {
       "editProfile": "Edit questionnaire",
