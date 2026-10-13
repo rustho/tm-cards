@@ -45,7 +45,7 @@ export const FooterMenu = ({ showReminder = false }: { showReminder?: boolean })
       {pending && <div className="h-20" aria-hidden />}
       <nav
         className="fixed inset-x-0 bottom-0 z-40 space-y-2 px-3"
-        style={{ paddingBottom: "max(0.75rem, env(safe-area-inset-bottom))" }}
+        style={{ paddingBottom: "max(0.75rem, var(--app-safe-bottom))" }}
         aria-label="Main"
       >
         {pending && (

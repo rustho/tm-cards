@@ -118,7 +118,7 @@ example code.
 | `lib/bot.ts` | OPS | grammY bot, `BOT_COMMANDS`, `notifyUser`, `isBotConfigured`, `getBotUsername`, `getInviteLink` |
 | `lib/matchingService.ts` | OPS | engine over users/profiles/tags with weekly `match_rounds`; candidates need access; see DATA_AND_API |
 | `lib/meetingsService.ts` | LIVE | `getAccess`, `getWeekPhase`, participation, meeting DTOs, feedback validation + status rules |
-| `lib/weekMatchService.ts` | LIVE | `getCurrentMatch`, `acceptMatch` (bot nudges / contacts), `getWeeklyQuestion` |
+| `lib/weekMatchService.ts` | LIVE | `getCurrentMatch`, `acceptMatch` (bot nudges; the contact is shown only in the app), `getWeeklyQuestion` |
 | `lib/weekCycle.ts` | LIVE | `agreeDeadline`, `closeUnagreedMatches` |
 | `lib/pendingFeedback.ts`, `lib/telegramLinks.ts` | LIVE | client: reminder cache / invalidation; `openTgLink` |
 | `lib/dateUtils.ts` | LIVE | `calculateAge`, `validateDateOfBirth`, `formatDateForInput` |

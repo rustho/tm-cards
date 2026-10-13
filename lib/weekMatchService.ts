@@ -1,6 +1,6 @@
 import type { Prisma } from "@prisma/client";
 import prisma from "@/lib/prisma";
-import { getBotUsername, notifyUser } from "@/lib/bot";
+import { notifyUser } from "@/lib/bot";
 import { track } from "@/lib/events";
 import { weekStartOf } from "@/lib/matchingService";
 import { OPEN_STATUSES, toPerson } from "@/lib/meetingsService";
@@ -68,11 +68,9 @@ function sides(match: WeekMatchRow, viewerId: string) {
 
 const isMutual = (match: WeekMatchRow) => Boolean(match.user1AcceptedAt && match.user2AcceptedAt);
 
-/** t.me link to the partner, or the bot chat (where the contact was sent) when they have no @username. */
-async function contactUrl(partner: SideRow): Promise<string | null> {
-  if (partner.username) return `https://t.me/${partner.username}`;
-  const bot = await getBotUsername();
-  return bot ? `https://t.me/${bot}` : null;
+/** t.me link to the partner, or a tg://user link when they have no @username. Shown only in the app. */
+function contactUrl(partner: SideRow): string {
+  return partner.username ? `https://t.me/${partner.username}` : `tg://user?id=${partner.telegramId}`;
 }
 
 async function toCurrentMatch(match: WeekMatchRow, viewerId: string): Promise<CurrentMatch> {
@@ -99,7 +97,7 @@ async function toCurrentMatch(match: WeekMatchRow, viewerId: string): Promise<Cu
     deadline: agreeDeadline(match.round.weekStart).toISOString(),
     iAccepted: Boolean(myAcceptedAt),
     partnerAccepted: Boolean(partnerAcceptedAt),
-    contactUrl: mutual ? await contactUrl(partner) : null,
+    contactUrl: mutual ? contactUrl(partner) : null,
     canShareFeedback:
       mutualAt !== null &&
       Date.now() - mutualAt.getTime() >= FEEDBACK_OPENS_AFTER_HOURS * HOUR_MS &&
@@ -137,17 +135,9 @@ async function loadForParticipant(matchId: string, userId: string): Promise<Week
   return match;
 }
 
-/** Display name with a link: @username if there is one, else a tg://user mention. */
-function contactHtml(user: SideRow): string {
-  const name = toPerson(user).name.replace(/[<>&]/g, "");
-  return user.username
-    ? `<a href="https://t.me/${user.username}">${name}</a>`
-    : `<a href="tg://user?id=${user.telegramId}">${name}</a>`;
-}
-
 /**
  * «Хочу познакомиться». Idempotent. The first click nudges the partner; the second one
- * makes the pair mutual and sends both a direct contact through the bot.
+ * makes the pair mutual and tells both through the bot; the contact itself is only in the app.
  */
 export async function acceptMatch(matchId: string, userId: string): Promise<CurrentMatch> {
   const match = await loadForParticipant(matchId, userId);
@@ -170,8 +160,7 @@ export async function acceptMatch(matchId: string, userId: string): Promise<Curr
   if (isMutual(updated)) {
     console.log(`🤝 Match ${matchId} is mutual`);
     track("match_mutual", null, { matchId });
-    void notifyUser(me.telegramId, `🎉 Вы оба хотите познакомиться! Напиши ${contactHtml(partner)} и договоритесь о встрече.`);
-    void notifyUser(partner.telegramId, `🎉 ${contactHtml(me)} тоже хочет познакомиться! Напиши и договоритесь о встрече.`);
+    void notifyUser(partner.telegramId, `🎉 ${toPerson(me).name} тоже хочет познакомиться! Контакт — во «Встречах», договоритесь о встрече.`);
   } else {
     void notifyUser(partner.telegramId, `👋 ${toPerson(me).name} хочет с тобой познакомиться. Загляни во «Встречи»!`);
   }

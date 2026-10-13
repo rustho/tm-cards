@@ -69,9 +69,28 @@ export async function init(options: {
   // requests, and blocking here would keep Root on its loader forever.
   void Promise.resolve()
     .then(() => viewport.mount({ timeout: 3000 }))
-    .then(() => viewport.bindCssVars())
+    .then(() => {
+      viewport.bindCssVars();
+      bindSafeTop();
+    })
     .catch((error) => {
       // viewport not available in this environment (or already bound)
       console.warn("Viewport mount skipped:", error);
     });
+}
+
+/**
+ * `--app-safe-top` on <html>: in fullscreen the page starts under the status bar and
+ * Telegram's own close/menu buttons, so it is the device inset plus Telegram's content
+ * inset; 0 in the regular (fullsize) mode. Used by body and fixed full-screen overlays.
+ */
+function bindSafeTop(): void {
+  const apply = () => {
+    const top = viewport.isFullscreen() ? viewport.safeAreaInsetTop() + viewport.contentSafeAreaInsetTop() : 0;
+    document.documentElement.style.setProperty("--app-safe-top", `${top}px`);
+  };
+  apply();
+  viewport.isFullscreen.sub(apply);
+  viewport.safeAreaInsetTop.sub(apply);
+  viewport.contentSafeAreaInsetTop.sub(apply);
 }

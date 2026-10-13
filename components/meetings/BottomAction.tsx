@@ -23,8 +23,8 @@ export const BottomAction = ({ children, aboveFooter }: { children: ReactNode; a
       className="fixed inset-x-0 z-30 bg-gradient-to-t from-background via-background to-transparent px-4 pt-6"
       style={
         lifted
-          ? { bottom: "calc(max(0.75rem, env(safe-area-inset-bottom)) + 4.75rem)", paddingBottom: "0.5rem" }
-          : { bottom: 0, paddingBottom: "max(1rem, env(safe-area-inset-bottom))" }
+          ? { bottom: "calc(max(0.75rem, var(--app-safe-bottom)) + 4.75rem)", paddingBottom: "0.5rem" }
+          : { bottom: 0, paddingBottom: "max(1rem, var(--app-safe-bottom))" }
       }
     >
       <div className="mx-auto max-w-xl">{children}</div>

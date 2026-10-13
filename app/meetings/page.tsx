@@ -61,7 +61,7 @@ export default function MeetingsTab() {
 
   return (
     <div className="min-h-screen">
-      <div className={cn("mx-auto max-w-xl px-4 pb-48", week?.match ? "pt-4" : "pt-10")}>
+      <div className={cn("mx-auto max-w-xl px-4", week?.match ? "pb-64 pt-4" : "pb-48 pt-10")}>
         {failed ? (
           <p className="m-0 py-12 text-center text-body text-muted-foreground">{t("loadFailed")}</p>
         ) : !week ? (

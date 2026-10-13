@@ -39,7 +39,7 @@ export function StepFirstMeeting({ onNext }: StepProps) {
   return (
     <div
       className="fixed inset-0 z-50 overflow-y-auto bg-background px-4"
-      style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+      style={{ paddingTop: "var(--app-safe-top, 0px)", paddingBottom: "var(--app-safe-bottom)" }}
     >
       <div className="mx-auto flex min-h-full max-w-md flex-col justify-center gap-8 py-10">
         <h1 className="m-0 whitespace-pre-line text-center text-[28px] font-bold leading-[34px] text-foreground">
